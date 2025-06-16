@@ -1,0 +1,36 @@
+{
+  "name": "electron-progress-bar",
+  "version": "1.0.0",
+  "description": "A desktop app for creating customizable, widget-like progress bars. Built with Electron, React, and Tailwind.",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm --prefix frontend run dev\" \"tsc --watch\" \"wait-on http://localhost:5173 && electron .\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MihaiAC/electron-progress-bar.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MihaiAC/electron-progress-bar/issues"
+  },
+  "homepage": "https://github.com/MihaiAC/electron-progress-bar#readme",
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "@types/node": "^24.0.3",
+    "concurrently": "^9.1.2",
+    "electron": "^36.4.0",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.1",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.2.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1",
+    "wait-on": "^8.0.3"
+  }
+}
