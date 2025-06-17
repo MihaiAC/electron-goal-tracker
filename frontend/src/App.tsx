@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import "./App.css";
+import React from "react";
+import ProgressBar from "./components/ProgressBar";
+import { useState } from "react";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [progress, setProgress] = useState<number>(20); // Start with 20% progress
+
+  const handleIncrement = (): void => {
+    setProgress((prevProgress) => Math.min(prevProgress + 10, 100));
+  };
+
+  const handleReset = (): void => {
+    setProgress(0);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen bg-slate-800 flex flex-col items-center justify-center gap-8 p-4">
+      <div className="w-full max-w-md">
+        <ProgressBar progress={progress} />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+
+      <div className="flex gap-4">
+        <button
+          onClick={handleIncrement}
+          className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
+        >
+          Increment +10
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <button
+          onClick={handleReset}
+          className="px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
+        >
+          Reset
+        </button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;

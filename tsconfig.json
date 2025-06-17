@@ -11,5 +11,5 @@
       "*": ["node_modules/*"]
     }
   },
-  "include": ["main.ts", "preload.ts"]
+  "include": ["index.ts", "preload.ts"]
 }
