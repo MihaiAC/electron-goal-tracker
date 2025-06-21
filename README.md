@@ -19,6 +19,7 @@ Current objectives:
 - Admin panel: see completed goals;
 - All state should persist across sessions;
 - Application should start on boot (target is Ubuntu);
+- Add sounds to incrementing / decrementing;
 
 Stretch goals:
 

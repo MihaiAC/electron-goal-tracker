@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+@layer components {
+  .titlebar {
+    @apply fixed top-0 left-0 w-full h-8 flex items-center justify-between z-50;
+    -webkit-app-region: drag;
+  }
+
+  .titlebar-button {
+    @apply inline-flex items-center justify-center w-7 h-7 rounded-full text-white transition-colors duration-200 hover:bg-white/20;
+    -webkit-app-region: no-drag;
+  }
+}
