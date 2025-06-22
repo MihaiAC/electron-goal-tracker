@@ -1,6 +1,34 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 
+ipcMain.on("minimize-app", () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    console.log("--- Main Process: Minimizing window ---");
+    win.minimize();
+  }
+});
+
+ipcMain.on("maximize-app", () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    console.log("--- Main Process: Maximizing/Restoring window ---");
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+  }
+});
+
+ipcMain.on("close-app", () => {
+  const win = BrowserWindow.getFocusedWindow();
+  if (win) {
+    console.log("--- Main Process: Closing window ---");
+    win.close();
+  }
+});
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
@@ -13,23 +41,6 @@ function createWindow() {
       sandbox: true,
       contextIsolation: true,
     },
-  });
-
-  // Add IPC listeners to control the window
-  ipcMain.on("minimize-app", () => {
-    win.minimize();
-  });
-
-  ipcMain.on("maximize-app", () => {
-    if (win.isMaximized()) {
-      win.unmaximize();
-    } else {
-      win.maximize();
-    }
-  });
-
-  ipcMain.on("close-app", () => {
-    win.close();
   });
 
   // Listen for window state changes and notify the renderer
@@ -46,14 +57,18 @@ function createWindow() {
     // In production, load the build index.html from the frontend.
     win.loadFile(path.join(__dirname, "../frontend/dist/index.html"));
   }
-
-  app.whenReady().then(createWindow);
-
-  app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
-      app.quit();
-    }
-  });
 }
 
 app.whenReady().then(createWindow);
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});

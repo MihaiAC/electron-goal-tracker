@@ -4,7 +4,7 @@
   "description": "A desktop app for creating customizable, widget-like progress bars. Built with Electron, React, and Tailwind.",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "concurrently \"npm --prefix frontend run dev\" \"tsc --watch\" \"wait-on http://localhost:5173 && electron .\""
+    "dev": "concurrently \"npm --prefix frontend run dev\" \"tsc --watch\" \"wait-on http://localhost:5173 && NODE_ENV=development electron .\""
   },
   "repository": {
     "type": "git",

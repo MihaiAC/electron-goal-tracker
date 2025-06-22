@@ -13,7 +13,13 @@ export default function WindowControls() {
 
   return (
     <div className="flex">
-      <button onClick={() => window.api.minimize()} className="titlebar-button">
+      <button
+        onClick={() => {
+          window.api.minimize();
+          console.log("Minimize button clicked. window.api is:", window.api);
+        }}
+        className="titlebar-button"
+      >
         <MinimizeIcon />
       </button>
       <button onClick={() => window.api.maximize()} className="titlebar-button">
