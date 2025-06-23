@@ -14,12 +14,14 @@ Current objectives:
   - set % to custom value;
   - how many bars to display;
 - Initially thought that the bars should be independently movable, but I think that would gey messy fast -> all in one window;
-- Bars should be movable by dragging;
+- Bars should be re-arrangeable by dragging;
 - Application should have a small icon in the bar, similar to Steam when it's in the background - clicking on it should bring up the option of closing it and / or going to an admin panel;
 - Admin panel: see completed goals;
 - All state should persist across sessions;
 - Application should start on boot (target is Ubuntu);
 - Add sounds to incrementing / decrementing;
+- Smoother animations with framer motion;
+- Process should also stop when closing the window;
 
 Stretch goals:
 

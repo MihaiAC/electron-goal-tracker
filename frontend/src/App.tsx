@@ -3,16 +3,46 @@ import WindowControls from "./components/WindowControls";
 import ProgressBar from "./components/ProgressBar";
 import { useState } from "react";
 
+interface Bar {
+  id: string;
+  title: string;
+  current: number;
+  max: number;
+  incrementDelta: number;
+  unit: string;
+  completedColor: string;
+  remainingColor: string;
+}
+
 function App() {
-  const [progress, setProgress] = useState<number>(20);
+  const [bars, setBars] = useState<Bar[]>(() => {
+    return [
+      {
+        id: "1",
+        title: "Test bar",
+        current: 0,
+        max: 100,
+        unit: "pounds",
+        incrementDelta: 1,
+        completedColor: "#10B981",
+        remainingColor: "#374151",
+      },
+    ];
+  });
 
-  const handleIncrement = (): void => {
-    setProgress((prevProgress) => Math.min(prevProgress + 10, 100));
-  };
-
-  const handleReset = (): void => {
-    setProgress(0);
-  };
+  function onIncrement(id: string) {
+    setBars((prevBars) => {
+      return prevBars.map((bar) => {
+        if (bar.id === id) {
+          return {
+            ...bar,
+            current: Math.min(bar.current + bar.incrementDelta, bar.max),
+          };
+        }
+        return bar;
+      });
+    });
+  }
 
   return (
     <div className="h-full text-white">
@@ -26,24 +56,23 @@ function App() {
 
       {/* Main Content Area */}
       <main className="h-full flex flex-col items-center justify-center gap-8 pt-8">
-        <div className="w-full max-w-md">
-          <ProgressBar progress={progress} />
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            onClick={handleIncrement}
-            className="px-6 py-2 bg-blue-600 font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75"
-          >
-            Increment +10
-          </button>
-          <button
-            onClick={handleReset}
-            className="px-6 py-2 bg-gray-600 font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
-          >
-            Reset
-          </button>
-        </div>
+        {bars.map((bar) => (
+          <div key={bar.id} className="w-full max-w-md">
+            <ProgressBar
+              title={bar.title}
+              current={bar.current}
+              max={bar.max}
+              unit={bar.unit}
+              completedColor={bar.completedColor}
+              remainingColor={bar.remainingColor}
+              onRightClick={() => {}}
+              onIncrement={() => {
+                onIncrement(bar.id);
+              }}
+              onCustomValueChange={() => {}}
+            />
+          </div>
+        ))}
       </main>
     </div>
   );
