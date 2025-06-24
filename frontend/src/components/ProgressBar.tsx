@@ -9,7 +9,7 @@ interface ProgressBarProps {
   remainingColor: string;
   onRightClick: (e: React.MouseEvent) => void;
   onIncrement: () => void;
-  onCustomValueChange: (value: number) => void;
+  onCustomValueChange?: (value: number) => void;
 }
 
 export default function ProgressBar({

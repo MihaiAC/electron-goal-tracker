@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import WindowControls from "./components/WindowControls";
 import ProgressBar from "./components/ProgressBar";
-import { useState } from "react";
+import BarSettings from "./components/BarSettings";
 
 interface Bar {
   id: string;
@@ -19,10 +19,10 @@ function App() {
     return [
       {
         id: "1",
-        title: "Test bar",
+        title: "Weight Loss",
         current: 0,
         max: 100,
-        unit: "pounds",
+        unit: "lbs",
         incrementDelta: 1,
         completedColor: "#10B981",
         remainingColor: "#374151",
@@ -30,23 +30,56 @@ function App() {
     ];
   });
 
-  function onIncrement(id: string) {
-    setBars((prevBars) => {
-      return prevBars.map((bar) => {
-        if (bar.id === id) {
-          return {
-            ...bar,
-            current: Math.min(bar.current + bar.incrementDelta, bar.max),
-          };
-        }
-        return bar;
-      });
-    });
-  }
+  const [editingBarId, setEditingBarId] = useState<string | null>(null);
+
+  const onIncrement = (id: string) => {
+    setBars((prevBars) =>
+      prevBars.map((bar) =>
+        bar.id === id
+          ? {
+              ...bar,
+              current: Math.min(bar.current + bar.incrementDelta, bar.max),
+            }
+          : bar
+      )
+    );
+  };
+
+  const handleSaveBar = (updates: Partial<Bar>) => {
+    if (!editingBarId) return;
+    setBars((prevBars) =>
+      prevBars.map((bar) =>
+        bar.id === editingBarId ? { ...bar, ...updates } : bar
+      )
+    );
+    setEditingBarId(null);
+  };
+
+  const handleDeleteBar = () => {
+    if (!editingBarId) return;
+    setBars((prevBars) => prevBars.filter((bar) => bar.id !== editingBarId));
+    setEditingBarId(null);
+  };
+
+  const addNewBar = () => {
+    const newBar: Bar = {
+      id: Date.now().toString(),
+      title: `Progress ${bars.length + 1}`,
+      current: 0,
+      max: 100,
+      unit: "units",
+      incrementDelta: 1,
+      completedColor: `hsl(${Math.random() * 360}, 70%, 60%)`,
+      remainingColor: "#374151",
+    };
+    setBars((prev) => [...prev, newBar]);
+    setEditingBarId(newBar.id);
+  };
+
+  const editingBar = bars.find((bar) => bar.id === editingBarId);
 
   return (
     <div className="h-full text-white">
-      {/* Draggable Title Bar */}
       <header className="titlebar">
         <span className="text-xs font-bold text-gray-400 pl-3">
           Progress Bars
@@ -54,26 +87,49 @@ function App() {
         <WindowControls />
       </header>
 
-      {/* Main Content Area */}
-      <main className="h-full flex flex-col items-center justify-center gap-8 pt-8">
-        {bars.map((bar) => (
-          <div key={bar.id} className="w-full max-w-md">
-            <ProgressBar
-              title={bar.title}
-              current={bar.current}
-              max={bar.max}
-              unit={bar.unit}
-              completedColor={bar.completedColor}
-              remainingColor={bar.remainingColor}
-              onRightClick={() => {}}
-              onIncrement={() => {
-                onIncrement(bar.id);
+      <main className="flex flex-col items-center h-full">
+        <div className="w-3/4">
+          {bars.map((bar) => (
+            <div
+              key={bar.id}
+              className="bg-gray-800 p-4 rounded-lg"
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setEditingBarId(bar.id);
               }}
-              onCustomValueChange={() => {}}
-            />
-          </div>
-        ))}
+            >
+              <ProgressBar
+                title={bar.title}
+                current={bar.current}
+                max={bar.max}
+                unit={bar.unit}
+                completedColor={bar.completedColor}
+                remainingColor={bar.remainingColor}
+                onRightClick={(e) => {
+                  e.preventDefault();
+                  setEditingBarId(bar.id);
+                }}
+                onIncrement={() => onIncrement(bar.id)}
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={addNewBar}
+          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+        >
+          + Add New Bar
+        </button>
       </main>
+
+      {editingBar && (
+        <BarSettings
+          bar={editingBar}
+          onSave={handleSaveBar}
+          onDelete={handleDeleteBar}
+          onClose={() => setEditingBarId(null)}
+        />
+      )}
     </div>
   );
 }
