@@ -69,7 +69,7 @@ function App() {
       max: 100,
       unit: "units",
       incrementDelta: 1,
-      completedColor: `hsl(${Math.random() * 360}, 70%, 60%)`,
+      completedColor: "#555555",
       remainingColor: "#374151",
     };
     setBars((prev) => [...prev, newBar]);
@@ -87,7 +87,7 @@ function App() {
         <WindowControls />
       </header>
 
-      <main className="flex flex-col items-center h-full">
+      <main className="flex flex-col items-center h-full my-16">
         <div className="w-3/4">
           {bars.map((bar) => (
             <div

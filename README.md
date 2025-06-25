@@ -33,3 +33,4 @@ Current bugs:
 
 - Completed color cannot be changed.
 - Closing the window does not stop the Electron process.
+- Consolidate the Bar type in a types.ts file.
