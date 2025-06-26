@@ -1,5 +1,11 @@
 {
   "files": [],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }

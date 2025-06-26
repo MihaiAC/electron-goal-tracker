@@ -1,32 +1,42 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-// console.log("[Preload] ipcRenderer object:", ipcRenderer);
+interface WindowAPI {
+  minimize: () => void;
+  maximize: () => void;
+  close: () => void;
+  onWindowStateChange: (callback: (isMaximized: boolean) => void) => void;
+}
 
 // Define the API we are exposing
-const api = {
+const api: WindowAPI = {
   minimize: () => {
-    // console.log('[Preload] Calling ipcRenderer.send with "minimize-app"');
     ipcRenderer.send("minimize-app");
   },
   maximize: () => {
-    // console.log('[Preload] Calling ipcRenderer.send with "maximize-app"');
     ipcRenderer.send("maximize-app");
   },
   close: () => {
-    // console.log('[Preload] Calling ipcRenderer.send with "close-app"');
     ipcRenderer.send("close-app");
   },
   onWindowStateChange: (callback: (isMaximized: boolean) => void) => {
     ipcRenderer.on("window-maximized", (_event, isMaximized) =>
       callback(isMaximized)
     );
+
+    return () => {
+      ipcRenderer.removeAllListeners("window-maximized");
+    };
   },
 };
 
 // Expose the API to the renderer process
-try {
-  contextBridge.exposeInMainWorld("api", api);
-  console.log("[Preload] API exposed successfully");
-} catch (error) {
-  console.error("[Preload] Failed to expose API:", error);
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld("api", api);
+  } catch (error) {
+    console.error("[Preload] Failed to expose API:", error);
+  }
+} else {
+  // Fallback for development
+  (window as any).api = api;
 }

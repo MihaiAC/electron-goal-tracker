@@ -1,62 +1,63 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 
-ipcMain.on("minimize-app", () => {
-  const win = BrowserWindow.getFocusedWindow();
-  if (win) {
-    console.log("--- Main Process: Minimizing window ---");
-    win.minimize();
-  }
-});
-
-ipcMain.on("maximize-app", () => {
-  const win = BrowserWindow.getFocusedWindow();
-  if (win) {
-    console.log("--- Main Process: Maximizing/Restoring window ---");
-    if (win.isMaximized()) {
-      win.unmaximize();
-    } else {
-      win.maximize();
-    }
-  }
-});
-
-ipcMain.on("close-app", () => {
-  const win = BrowserWindow.getFocusedWindow();
-  if (win) {
-    console.log("--- Main Process: Closing window ---");
-    win.close();
-  }
-});
+// Global reference to window to prevent GC (?).
+let mainWindow: BrowserWindow | null = null;
 
 function createWindow() {
-  const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+  mainWindow = new BrowserWindow({
+    width: 1000,
+    height: 800,
     show: false,
-    autoHideMenuBar: true,
-    titleBarStyle: "hidden",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      sandbox: true,
       contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
     },
   });
 
-  // Listen for window state changes and notify the renderer
-  win.on("maximize", () => win.webContents.send("window-maximized", true));
-  win.on("unmaximize", () => win.webContents.send("window-maximized", false));
+  // Load the app.
+  if (process.env.VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.loadFile(path.join(__dirname, "../frontend/dist/index.html"));
+  }
 
-  win.on("ready-to-show", () => {
-    win.show();
+  // Show window when ready.
+  mainWindow.once("ready-to-show", () => {
+    if (mainWindow) {
+      mainWindow.show();
+    }
   });
 
-  if (process.env.NODE_ENV === "development") {
-    win.loadURL("http://localhost:5173");
-  } else {
-    // In production, load the build index.html from the frontend.
-    win.loadFile(path.join(__dirname, "../frontend/dist/index.html"));
-  }
+  // Handle window controls.
+  ipcMain.on("minimize-app", () => {
+    if (mainWindow) {
+      mainWindow.minimize();
+    }
+  });
+
+  ipcMain.on("maximize-app", () => {
+    if (mainWindow) {
+      if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+      } else {
+        mainWindow.maximize();
+      }
+    }
+  });
+
+  ipcMain.on("close-app", () => {
+    if (mainWindow) {
+      mainWindow.close();
+    }
+  });
+
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
 }
 
 app.whenReady().then(createWindow);
@@ -68,7 +69,15 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  if (mainWindow === null) {
     createWindow();
   }
+});
+
+// Clean-up function if needed in the future.
+app.on("before-quit", () => {});
+
+// Handle any uncaught exceptions.
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception: ", error);
 });

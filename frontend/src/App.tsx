@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import WindowControls from "./components/WindowControls";
 import ProgressBar from "./components/ProgressBar";
 import BarSettings from "./components/BarSettings";

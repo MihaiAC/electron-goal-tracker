@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import React from "react";
 import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseIcon } from "./Icons";
 
 export default function WindowControls() {
