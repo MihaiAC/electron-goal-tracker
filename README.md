@@ -6,6 +6,7 @@ Implemented features:
 
 - Basic progress bar, incrementing with left click;
 - Menu for editing existing progress bars and adding new ones; (accessible through right-clicking a bar or clicking "Add new bar" button);
+- Bars can now be re-arranged with drag and drop (through dnd-kit);
 - React process is now correctly stopped when the main window is closed;
 
 Remaining features:
