@@ -2,7 +2,13 @@
 
 A desktop app for creating customizable, widget-like progress bars. Built with Electron, React, and Tailwind.
 
-Current objectives:
+Implemented features:
+
+- Basic progress bar, incrementing with left click;
+- Menu for editing existing progress bars and adding new ones; (accessible through right-clicking a bar or clicking "Add new bar" button);
+- React process is now correctly stopped when the main window is closed;
+
+Remaining features:
 
 - Dismiss prompt when a progress bar reaches 100%;
 - Animation when a progress bar reaches 100%;
@@ -31,7 +37,4 @@ Stretch goals:
 
 Current bugs:
 
-- Completed color cannot be changed.
-- Closing the window does not stop the Electron process.
-  Tried to make the frontend process be managed by the Electron process but couldn't make it work.
 - Consolidate the Bar type in a types.ts file.
