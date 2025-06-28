@@ -1,8 +1,29 @@
 import { useState } from "react";
-import WindowControls from "./components/WindowControls";
-import ProgressBar from "./components/ProgressBar";
-import BarSettings from "./components/BarSettings";
+// --- DND-KIT IMPORTS START ---
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+// Import types separately with the `type` keyword
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+// --- DND-KIT IMPORTS END ---
 
+import WindowControls from "./components/WindowControls";
+// REMOVE THIS IMPORT: import ProgressBar from "./components/ProgressBar";
+import BarSettings from "./components/BarSettings";
+import SortableProgressBar from "./components/SortableProgressBar"; // Import the new wrapper
+
+// Keep your Bar interface
 interface Bar {
   id: string;
   title: string;
@@ -16,21 +37,54 @@ interface Bar {
 
 function App() {
   const [bars, setBars] = useState<Bar[]>(() => {
+    // Let's add a second bar for easier testing of drag-and-drop
     return [
       {
         id: "1",
         title: "Weight Loss",
-        current: 0,
+        current: 25,
         max: 100,
         unit: "lbs",
         incrementDelta: 1,
         completedColor: "#10B981",
         remainingColor: "#374151",
       },
+      {
+        id: "2",
+        title: "Read Books",
+        current: 5,
+        max: 20,
+        unit: "books",
+        incrementDelta: 1,
+        completedColor: "#3B82F6",
+        remainingColor: "#374151",
+      },
     ];
   });
 
   const [editingBarId, setEditingBarId] = useState<string | null>(null);
+
+  // --- DND-KIT SENSORS AND HANDLER START ---
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setBars((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  }
+  // --- DND-KIT SENSORS AND HANDLER END ---
 
   const onIncrement = (id: string) => {
     setBars((prevBars) =>
@@ -88,35 +142,36 @@ function App() {
       </header>
 
       <main className="flex flex-col items-center h-full my-16">
-        <div className="w-3/4">
-          {bars.map((bar) => (
-            <div
-              key={bar.id}
-              className="bg-gray-800 p-4 rounded-lg"
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setEditingBarId(bar.id);
-              }}
+        <div className="w-3/4 space-y-4">
+          {" "}
+          {/* Added space-y-4 for margin between bars */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={bars.map((b) => b.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <ProgressBar
-                title={bar.title}
-                current={bar.current}
-                max={bar.max}
-                unit={bar.unit}
-                completedColor={bar.completedColor}
-                remainingColor={bar.remainingColor}
-                onRightClick={(e) => {
-                  e.preventDefault();
-                  setEditingBarId(bar.id);
-                }}
-                onIncrement={() => onIncrement(bar.id)}
-              />
-            </div>
-          ))}
+              {bars.map((bar) => (
+                // Use the new SortableProgressBar component here
+                <SortableProgressBar
+                  key={bar.id}
+                  bar={bar}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setEditingBarId(bar.id);
+                  }}
+                  onIncrement={() => onIncrement(bar.id)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
         <button
           onClick={addNewBar}
-          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
+          className="mt-8 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700" // Added margin top
         >
           + Add New Bar
         </button>

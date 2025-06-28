@@ -37,4 +37,5 @@ Stretch goals:
 
 Current bugs:
 
+- Can drag a progress bar outside the window and it creates a horizontal scroll bar to the right -> need to prevent that;
 - Consolidate the Bar type in a types.ts file.
