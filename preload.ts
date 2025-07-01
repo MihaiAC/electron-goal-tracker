@@ -5,6 +5,9 @@ interface WindowAPI {
   maximize: () => void;
   close: () => void;
   onWindowStateChange: (callback: (isMaximized: boolean) => void) => void;
+  // TODO: Data shouldn't be any, but the progress bar or a list of progress bars, or augmented with security metadata.
+  saveData: (data: any) => Promise<{ success: boolean; path: string }>;
+  loadData: () => Promise<any>;
 }
 
 // Define the API we are exposing
@@ -27,6 +30,8 @@ const api: WindowAPI = {
       ipcRenderer.removeAllListeners("window-maximized");
     };
   },
+  saveData: (data) => ipcRenderer.invoke("save-data", data),
+  loadData: () => ipcRenderer.invoke("load-data"),
 };
 
 // Expose the API to the renderer process

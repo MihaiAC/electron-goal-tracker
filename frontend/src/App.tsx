@@ -1,5 +1,4 @@
-import { useState } from "react";
-// --- DND-KIT IMPORTS START ---
+import { useEffect, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -8,7 +7,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-// Import types separately with the `type` keyword
 import type { DragEndEvent } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -16,10 +14,8 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-// --- DND-KIT IMPORTS END ---
 
 import WindowControls from "./components/WindowControls";
-// REMOVE THIS IMPORT: import ProgressBar from "./components/ProgressBar";
 import BarSettings from "./components/BarSettings";
 import SortableProgressBar from "./components/SortableProgressBar"; // Import the new wrapper
 
@@ -62,9 +58,25 @@ function App() {
     ];
   });
 
+  useEffect(() => {
+    let savedBars: Bar[] = [];
+
+    const loadSavedData = async () => {
+      try {
+        savedBars = (await window.api.loadData()) as Bar[];
+        if (savedBars) {
+          setBars(savedBars);
+        }
+      } catch (error) {
+        console.error("Failed to load saved data", error);
+      }
+    };
+
+    loadSavedData();
+  }, []);
+
   const [editingBarId, setEditingBarId] = useState<string | null>(null);
 
-  // --- DND-KIT SENSORS AND HANDLER START ---
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -72,7 +84,7 @@ function App() {
     })
   );
 
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
@@ -83,8 +95,7 @@ function App() {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
-  }
-  // --- DND-KIT SENSORS AND HANDLER END ---
+  };
 
   const onIncrement = (id: string) => {
     setBars((prevBars) =>
@@ -130,8 +141,13 @@ function App() {
     setEditingBarId(newBar.id);
   };
 
+  const handleSave = async () => {
+    await window.api.saveData(bars);
+  };
+
   const editingBar = bars.find((bar) => bar.id === editingBarId);
 
+  // TODO: button Tailwind class or React component
   return (
     <div className="h-full text-white">
       <header className="titlebar">
@@ -174,6 +190,12 @@ function App() {
           className="mt-8 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700" // Added margin top
         >
           + Add New Bar
+        </button>
+        <button
+          onClick={handleSave}
+          className="mt-8 ml-4 px-4 py-2 bg-green-600 rounded hover:bg-green-700"
+        >
+          Save
         </button>
       </main>
 

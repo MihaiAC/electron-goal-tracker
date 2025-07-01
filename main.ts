@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
+import fs from "fs";
 
 // Global reference to window to prevent GC (?).
 let mainWindow: BrowserWindow | null = null;
@@ -9,6 +10,7 @@ function createWindow() {
     width: 1000,
     height: 800,
     show: false,
+    frame: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -24,6 +26,30 @@ function createWindow() {
   } else {
     mainWindow.loadFile(path.join(__dirname, "../frontend/dist/index.html"));
   }
+
+  // Listener to handle saving progress bar data.
+  ipcMain.handle("save-data", async (_event, data) => {
+    const filePath = path.join(app.getPath("userData"), "my-data.json");
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+    return { success: true, path: filePath };
+  });
+
+  // Handle loading bar data from local storage on app start.
+  ipcMain.handle("load-data", async () => {
+    const filePath = path.join(app.getPath("userData"), "my-data.json");
+    try {
+      if (fs.existsSync(filePath)) {
+        const data = fs.readFileSync(filePath, "utf-8");
+        return JSON.parse(data);
+      } else {
+        return null;
+      }
+    } catch (error) {
+      // TODO: need proper logging.
+      console.error("Error loading data: ", error);
+      return null;
+    }
+  });
 
   // Show window when ready.
   mainWindow.once("ready-to-show", () => {
