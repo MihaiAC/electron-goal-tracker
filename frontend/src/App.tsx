@@ -17,7 +17,8 @@ import {
 
 import WindowControls from "./components/WindowControls";
 import BarSettings from "./components/BarSettings";
-import SortableProgressBar from "./components/SortableProgressBar"; // Import the new wrapper
+import SortableProgressBar from "./components/SortableProgressBar";
+import SaveButton from "./components/SaveButton";
 
 // Keep your Bar interface
 interface Bar {
@@ -32,6 +33,11 @@ interface Bar {
 }
 
 function App() {
+  // Track save status for animations.
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "idle"
+  );
+
   const [bars, setBars] = useState<Bar[]>(() => {
     // Let's add a second bar for easier testing of drag-and-drop
     return [
@@ -142,7 +148,16 @@ function App() {
   };
 
   const handleSave = async () => {
-    await window.api.saveData(bars);
+    setSaveStatus("saving");
+
+    try {
+      await window.api.saveData(bars);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (error) {
+      console.error("Save failed:", error);
+      setSaveStatus("idle");
+    }
   };
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
@@ -191,12 +206,12 @@ function App() {
         >
           + Add New Bar
         </button>
-        <button
+
+        <SaveButton 
+          status={saveStatus}
           onClick={handleSave}
-          className="mt-8 ml-4 px-4 py-2 bg-green-600 rounded hover:bg-green-700"
-        >
-          Save
-        </button>
+          className="mt-8 ml-4"
+        />
       </main>
 
       {editingBar && (

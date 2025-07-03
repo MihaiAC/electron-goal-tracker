@@ -13,6 +13,7 @@ Implemented features:
 - Bars can now be re-arranged with drag and drop (through dnd-kit);
 - React process is now correctly stopped when the main window is closed;
 - Can save / load data from disk;
+- Showing the state update when saving bars to disk;
 
 Remaining features:
 
@@ -26,16 +27,16 @@ Remaining features:
 - All state should persist across sessions;
 - Application should start on boot (target is Ubuntu);
 - Animations with framer motion;
-- Back-up encrypted state in Google Drive;
+- Encrypt bar info when on disk; prompt password on startup, unencrypt, save it for the session;
+- Back-up encrypted state in Google Drive; Add sync button; Have to save salt on GDrive too, along with the encrypted information;
 - Add proper logging;
 - Add types;
 - Extract constants in a separate file;
-- Add proper error handling for file operations
-- Add user feedback for save/load operations
-- Add loading states
-- Add success/error notifications
-- Consider auto-saving instead of manual save
-- Validate the loaded data matches the expected schema; handle malicious, corrupted data?
+- Add proper error handling for file operations;
+- Add loading states;
+- Add success/error notifications;
+- Consider auto-saving instead of manual save;
+- Validate the loaded data matches the expected schema; handle malicious, corrupted data?;
 
 Stretch goals:
 
