@@ -37,6 +37,7 @@ Remaining features:
 - Add success/error notifications;
 - Consider auto-saving instead of manual save;
 - Validate the loaded data matches the expected schema; handle malicious, corrupted data?;
+- Autosave on window close? Ok if it takes a bit of a delay;
 
 Stretch goals:
 

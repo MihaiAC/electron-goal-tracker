@@ -34,9 +34,9 @@ interface Bar {
 
 function App() {
   // Track save status for animations.
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-    "idle"
-  );
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
 
   const [bars, setBars] = useState<Bar[]>(() => {
     // Let's add a second bar for easier testing of drag-and-drop
@@ -153,11 +153,12 @@ function App() {
     try {
       await window.api.saveData(bars);
       setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
     } catch (error) {
       console.error("Save failed:", error);
-      setSaveStatus("idle");
+      setSaveStatus("error");
     }
+
+    setTimeout(() => setSaveStatus("idle"), 2000);
   };
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
@@ -207,7 +208,7 @@ function App() {
           + Add New Bar
         </button>
 
-        <SaveButton 
+        <SaveButton
           status={saveStatus}
           onClick={handleSave}
           className="mt-8 ml-4"

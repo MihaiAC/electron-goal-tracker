@@ -1,8 +1,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import CheckmarkIcon from "../assets/icons/checkmark.svg?react";
+import ErrorIcon from "../assets/icons/error.svg?react";
+import clsx from "clsx";
 
 interface SaveButtonProps {
-  status: "idle" | "saving" | "saved";
+  status: "idle" | "saving" | "saved" | "error";
   onClick: () => void;
   className?: string;
 }
@@ -16,7 +18,15 @@ export default function SaveButton({
     <button
       onClick={onClick}
       disabled={status === "saving"}
-      className={`px-4 py-2 bg-green-600 rounded hover:bg-green-700 disabled:bg-green-400 flex items-center justify-center min-w-[100px] ${className}`}
+      className={clsx(
+        "px-4 py-2 rounded flex items-center justify-center min-w-[100px]",
+        {
+          "bg-green-600 hover:bg-green-700 disabled:bg-green-400":
+            status !== "error",
+          "bg-red-600 hover:bg-red-700 disabled:bg-red-400": status === "error",
+        },
+        className
+      )}
     >
       <AnimatePresence mode="wait">
         {status === "idle" && (
@@ -65,6 +75,24 @@ export default function SaveButton({
               <CheckmarkIcon className="w-4 h-4 mr-1.5" />
             </motion.span>
             Saved!
+          </motion.span>
+        )}
+        {status === "error" && (
+          <motion.span
+            key="error"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-center"
+          >
+            <motion.span
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
+            >
+              <ErrorIcon className="w-4 h-4 mr-1.5" />
+            </motion.span>
+            Error!
           </motion.span>
         )}
       </AnimatePresence>
