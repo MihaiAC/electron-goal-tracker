@@ -13,7 +13,7 @@ Implemented features:
 - Bars can now be re-arranged with drag and drop (through dnd-kit);
 - React process is now correctly stopped when the main window is closed;
 - Can save / load data from disk;
-- Showing the state update when saving bars to disk;
+- Showing the state update when saving bars to disk (+ potentially error state as well);
 
 Remaining features:
 
@@ -28,9 +28,10 @@ Remaining features:
 - Application should start on boot (target is Ubuntu);
 - Animations with framer motion;
 - Encrypt bar info when on disk; prompt password on startup, unencrypt, save it for the session;
-- Back-up encrypted state in Google Drive; Add sync button; Have to save salt on GDrive too, along with the encrypted information;
+- Back-up encrypted state in Google Drive; Add sync button; Have to save salt on GDrive too, along with the encrypted information; Should be opt-in + pop-up on start with sync to GDrive, otherwise just reachable by sync button;
+- Decrement when clicking on left half, increment on right half, animations on hover updated to reflect that;
 - Add proper logging;
-- Add types;
+- Add types - already got a few enums and a few states that are repeating: WindowAPI, save state, etc.;
 - Extract constants in a separate file;
 - Add proper error handling for file operations;
 - Add loading states;
@@ -38,6 +39,8 @@ Remaining features:
 - Consider auto-saving instead of manual save;
 - Validate the loaded data matches the expected schema; handle malicious, corrupted data?;
 - Autosave on window close? Ok if it takes a bit of a delay;
+- Increment with buttons;
+- Minimize in bar, like Steam, Discord;
 
 Stretch goals:
 
