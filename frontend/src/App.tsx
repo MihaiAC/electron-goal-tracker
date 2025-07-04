@@ -163,7 +163,21 @@ function App() {
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
 
+  // Trigger a save before the window closes.
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      window.api.saveData(bars).catch(console.error);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [bars]);
+
   // TODO: button Tailwind class or React component
+  // TODO: Too much things are happening here - modularise it.
   return (
     <div className="h-full text-white">
       <header className="titlebar">

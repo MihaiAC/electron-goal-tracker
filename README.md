@@ -14,6 +14,7 @@ Implemented features:
 - React process is now correctly stopped when the main window is closed;
 - Can save / load data from disk;
 - Showing the state update when saving bars to disk (+ potentially error state as well);
+- Autosave on window close? - might be slightly bugged as a bar disappeared once;
 
 Remaining features:
 
@@ -38,7 +39,6 @@ Remaining features:
 - Add success/error notifications;
 - Consider auto-saving instead of manual save;
 - Validate the loaded data matches the expected schema; handle malicious, corrupted data?;
-- Autosave on window close? Ok if it takes a bit of a delay;
 - Increment with buttons;
 - Minimize in bar, like Steam, Discord;
 
