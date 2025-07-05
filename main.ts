@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import fs from "fs";
+import { AppData } from "./types/shared";
 
 // Global reference to window to prevent GC (?).
 let mainWindow: BrowserWindow | null = null;
@@ -40,15 +41,15 @@ function createWindow() {
     try {
       if (fs.existsSync(filePath)) {
         const data = fs.readFileSync(filePath, "utf-8");
-        return JSON.parse(data);
+        return JSON.parse(data) as AppData;
       } else {
-        return null;
       }
     } catch (error) {
       // TODO: need proper logging.
       console.error("Error loading data: ", error);
-      return null;
     }
+
+    return { bars: [] };
   });
 
   // Show window when ready.

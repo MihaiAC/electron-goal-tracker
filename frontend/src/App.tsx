@@ -19,26 +19,14 @@ import WindowControls from "./components/WindowControls";
 import BarSettings from "./components/BarSettings";
 import SortableProgressBar from "./components/SortableProgressBar";
 import SaveButton from "./components/SaveButton";
-
-// Keep your Bar interface
-interface Bar {
-  id: string;
-  title: string;
-  current: number;
-  max: number;
-  incrementDelta: number;
-  unit: string;
-  completedColor: string;
-  remainingColor: string;
-}
+import type { ProgressBarData } from "../../types/shared";
+import type { SaveStatus } from "./types";
 
 function App() {
   // Track save status for animations.
-  const [saveStatus, setSaveStatus] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
-  const [bars, setBars] = useState<Bar[]>(() => {
+  const [bars, setBars] = useState<ProgressBarData[]>(() => {
     // Let's add a second bar for easier testing of drag-and-drop
     return [
       {
@@ -65,13 +53,11 @@ function App() {
   });
 
   useEffect(() => {
-    let savedBars: Bar[] = [];
-
     const loadSavedData = async () => {
       try {
-        savedBars = (await window.api.loadData()) as Bar[];
-        if (savedBars) {
-          setBars(savedBars);
+        const savedData = await window.api.loadData();
+        if (savedData?.bars) {
+          setBars(savedData.bars);
         }
       } catch (error) {
         console.error("Failed to load saved data", error);
@@ -116,7 +102,7 @@ function App() {
     );
   };
 
-  const handleSaveBar = (updates: Partial<Bar>) => {
+  const handleSaveBar = (updates: Partial<ProgressBarData>) => {
     if (!editingBarId) return;
     setBars((prevBars) =>
       prevBars.map((bar) =>
@@ -133,7 +119,7 @@ function App() {
   };
 
   const addNewBar = () => {
-    const newBar: Bar = {
+    const newBar: ProgressBarData = {
       id: Date.now().toString(),
       title: `Progress ${bars.length + 1}`,
       current: 0,
@@ -151,7 +137,7 @@ function App() {
     setSaveStatus("saving");
 
     try {
-      await window.api.saveData(bars);
+      await window.api.saveData({ bars });
       setSaveStatus("saved");
     } catch (error) {
       console.error("Save failed:", error);
@@ -166,7 +152,7 @@ function App() {
   // Trigger a save before the window closes.
   useEffect(() => {
     const handleBeforeUnload = () => {
-      window.api.saveData(bars).catch(console.error);
+      window.api.saveData({ bars }).catch(console.error);
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);

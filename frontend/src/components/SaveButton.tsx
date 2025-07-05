@@ -2,9 +2,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import CheckmarkIcon from "../assets/icons/checkmark.svg?react";
 import ErrorIcon from "../assets/icons/error.svg?react";
 import clsx from "clsx";
+import type { SaveStatus } from "../types";
 
 interface SaveButtonProps {
-  status: "idle" | "saving" | "saved" | "error";
+  status: SaveStatus;
   onClick: () => void;
   className?: string;
 }

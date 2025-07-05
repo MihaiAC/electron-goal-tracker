@@ -6,21 +6,10 @@ import ProgressBar from "./ProgressBar";
 // Import the SVG as a React component.
 // The `{ ReactComponent as GripVerticalIcon }` syntax is provided by svgr.
 import GripVerticalIcon from "../assets/icons/grip-vertical.svg?react";
-
-// ... (Your Bar and SortableProgressBarProps interfaces)
-interface Bar {
-  id: string;
-  title: string;
-  current: number;
-  max: number;
-  incrementDelta: number;
-  unit: string;
-  completedColor: string;
-  remainingColor: string;
-}
+import type { ProgressBarData } from "../../../types/shared";
 
 interface SortableProgressBarProps {
-  bar: Bar;
+  bar: ProgressBarData;
   onContextMenu: (e: React.MouseEvent) => void;
   onIncrement: () => void;
 }
@@ -58,7 +47,6 @@ export default function SortableProgressBar({
       className="flex items-center bg-gray-800 p-2 rounded-lg"
       onContextMenu={onContextMenu}
     >
-      {/* DRAG HANDLE with the PROPER ICON COMPONENT */}
       <div
         {...attributes}
         {...listeners}
@@ -67,15 +55,9 @@ export default function SortableProgressBar({
         <GripVerticalIcon className="w-6 h-6 text-gray-500" />
       </div>
 
-      {/* PROGRESS BAR */}
       <div className="flex-grow">
         <ProgressBar
-          title={bar.title}
-          current={bar.current}
-          max={bar.max}
-          unit={bar.unit}
-          completedColor={bar.completedColor}
-          remainingColor={bar.remainingColor}
+          bar={bar}
           onRightClick={onContextMenu}
           onIncrement={onIncrement}
         />

@@ -1,24 +1,15 @@
 import React from "react";
+import type { ProgressBarData } from "../../../types/shared";
 
 interface ProgressBarProps {
-  title: string;
-  current: number;
-  max: number;
-  unit: string;
-  completedColor: string;
-  remainingColor: string;
+  bar: Omit<ProgressBarData, "id">;
   onRightClick: (e: React.MouseEvent) => void;
   onIncrement: () => void;
   onCustomValueChange?: (value: number) => void;
 }
 
 export default function ProgressBar({
-  title,
-  current,
-  max,
-  unit,
-  completedColor,
-  remainingColor,
+  bar: { title, current, max, unit, completedColor, remainingColor },
   onRightClick,
   onIncrement,
   onCustomValueChange,

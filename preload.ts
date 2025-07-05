@@ -1,17 +1,8 @@
 import { contextBridge, ipcRenderer } from "electron";
-
-interface WindowAPI {
-  minimize: () => void;
-  maximize: () => void;
-  close: () => void;
-  onWindowStateChange: (callback: (isMaximized: boolean) => void) => void;
-  // TODO: Data shouldn't be any, but the progress bar or a list of progress bars, or augmented with security metadata.
-  saveData: (data: any) => Promise<{ success: boolean; path: string }>;
-  loadData: () => Promise<any>;
-}
+import { IElectronAPI } from "./types/electron";
 
 // Define the API we are exposing
-const api: WindowAPI = {
+const api: IElectronAPI = {
   minimize: () => {
     ipcRenderer.send("minimize-app");
   },

@@ -1,25 +1,9 @@
 import React, { useState, useEffect } from "react";
+import type { ProgressBarData } from "../../../types/shared";
 
 interface BarSettingsProps {
-  bar: {
-    id: string;
-    title: string;
-    current: number;
-    max: number;
-    unit: string;
-    incrementDelta: number;
-    completedColor: string;
-    remainingColor: string;
-  };
-  onSave: (updates: {
-    title: string;
-    current: number;
-    max: number;
-    unit: string;
-    incrementDelta: number;
-    completedColor: string;
-    remainingColor: string;
-  }) => void;
+  bar: ProgressBarData;
+  onSave: (updates: Partial<Omit<ProgressBarData, "id">>) => void;
   onDelete: () => void;
   onClose: () => void;
 }
