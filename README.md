@@ -31,8 +31,7 @@ Remaining features:
 - Encrypt bar info when on disk; prompt password on startup, unencrypt, save it for the session;
 - Back-up encrypted state in Google Drive; Add sync button; Have to save salt on GDrive too, along with the encrypted information; Should be opt-in + pop-up on start with sync to GDrive, otherwise just reachable by sync button;
 - Decrement when clicking on left half, increment on right half, animations on hover updated to reflect that;
-- Add proper logging;
-- Add types - already got a few enums and a few states that are repeating: WindowAPI, save state, etc.;
+- Add proper logging (warnings, error, normal function - can we do levels like in Django?)
 - Extract constants in a separate file;
 - Add proper error handling for file operations;
 - Add loading states;
@@ -41,6 +40,9 @@ Remaining features:
 - Validate the loaded data matches the expected schema; handle malicious, corrupted data?;
 - Increment with buttons;
 - Minimize in bar, like Steam, Discord;
+- Last changed / last saved / last synced;
+- Properly validate user inputs in the edit bar form;
+- Test the application - not comprehensively, but a few sanity checks;
 
 Stretch goals:
 
@@ -50,4 +52,3 @@ Stretch goals:
 Current bugs:
 
 - Can drag a progress bar outside the window and it creates a horizontal scroll bar to the right -> need to prevent that;
-- Consolidate the Bar type in a types.ts file.
