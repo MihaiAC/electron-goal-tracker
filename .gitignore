@@ -22,6 +22,7 @@
 !.nycrc
 !.yamllint.yaml
 !.configurations/
+!.env.development
 
 # === Rules for root dir ===
 /core

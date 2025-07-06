@@ -52,3 +52,4 @@ Stretch goals:
 Current bugs:
 
 - Can drag a progress bar outside the window and it creates a horizontal scroll bar to the right -> need to prevent that;
+- Pressing cancel when adding a bar keeps the bar - only cancels the details customization; it should remove the bar too;
