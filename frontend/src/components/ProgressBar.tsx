@@ -16,6 +16,8 @@ export default function ProgressBar({
 }: ProgressBarProps) {
   const progress = Math.max(0, Math.min(100, (100 * current) / max));
 
+  // TODO: On completion, need to display: Congratulations max / max unit! + dismiss bar button but do not remove right click listener.
+  // TODO: Extension: stats for each progress bar -> how many days it took.
   return (
     <div className="flex flex-col space-y-2">
       <h3 className="text-center">{title}</h3>

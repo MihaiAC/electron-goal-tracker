@@ -18,11 +18,8 @@ Implemented features:
 
 Remaining features:
 
-- Dismiss prompt when a progress bar reaches 100%;
 - Animation when a progress bar reaches 100%;
-- Add customization:
-  - maybe background image;
-  - sound for increment for each bar, separately - should choose from a tiny list of sounds;
+- Sound on increment / decrement + success + extension - customization;
 - Application should have a small icon in the bar, similar to Steam when it's in the background - clicking on it should bring up the option of closing it and / or going to an admin panel;
 - Panel with completed goals;
 - All state should persist across sessions;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import ProgressBar from "./ProgressBar";
@@ -7,6 +7,7 @@ import ProgressBar from "./ProgressBar";
 // The `{ ReactComponent as GripVerticalIcon }` syntax is provided by svgr.
 import GripVerticalIcon from "../assets/icons/grip-vertical.svg?react";
 import type { ProgressBarData } from "../../../types/shared";
+import ReactConfetti from "react-confetti";
 
 interface SortableProgressBarProps {
   bar: ProgressBarData;
@@ -30,6 +31,17 @@ export default function SortableProgressBar({
     isDragging,
   } = useSortable({ id: bar.id });
 
+  const [completed, setCompleted] = useState(bar.current === bar.max);
+
+  useEffect(() => {
+    if (bar.current === bar.max) {
+      setCompleted(true);
+    } else if (completed) {
+      setCompleted(false);
+    }
+  }, [bar.current]);
+
+  // TODO: Why is this here :/
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -40,11 +52,20 @@ export default function SortableProgressBar({
       : "none",
   };
 
+  // TODO: The confetti should be on the main window, when any bar gets completed.
+  if (completed) {
+    return (
+      <div className="relative">
+        <ReactConfetti numberOfPieces={200} recycle={false}></ReactConfetti>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center bg-gray-800 p-2 rounded-lg"
+      className="flex items-center p-2 rounded-lg"
       onContextMenu={onContextMenu}
     >
       <div

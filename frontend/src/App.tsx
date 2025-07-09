@@ -174,7 +174,7 @@ function App() {
       </header>
 
       <main className="flex flex-col items-center h-full my-16">
-        <div className="w-3/4 space-y-4">
+        <div className="w-3/4 space-y-16">
           {" "}
           {/* Added space-y-4 for margin between bars */}
           <DndContext
