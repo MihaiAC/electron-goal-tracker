@@ -7,7 +7,7 @@ import ProgressBar from "./ProgressBar";
 // The `{ ReactComponent as GripVerticalIcon }` syntax is provided by svgr.
 import GripVerticalIcon from "../assets/icons/grip-vertical.svg?react";
 import type { ProgressBarData } from "../../../types/shared";
-import ReactConfetti from "react-confetti";
+// import ReactConfetti from "react-confetti";
 
 interface SortableProgressBarProps {
   bar: ProgressBarData;
@@ -53,13 +53,13 @@ export default function SortableProgressBar({
   };
 
   // TODO: The confetti should be on the main window, when any bar gets completed.
-  if (completed) {
-    return (
-      <div className="relative">
-        <ReactConfetti numberOfPieces={200} recycle={false}></ReactConfetti>
-      </div>
-    );
-  }
+  // if (completed) {
+  //   return (
+  //     <div className="relative">
+  //       <ReactConfetti numberOfPieces={200} recycle={false}></ReactConfetti>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div

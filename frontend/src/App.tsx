@@ -21,10 +21,16 @@ import SortableProgressBar from "./components/SortableProgressBar";
 import SaveButton from "./components/SaveButton";
 import type { ProgressBarData } from "../../types/shared";
 import type { SaveStatus } from "./types";
+import { SuccessModal } from "./components/SuccessModal";
 
 function App() {
   // Track save status for animations.
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+  // Success modal when a progress bar is completed.
+  const [successModalBarId, setSuccessModalBarId] = useState<string | null>(
+    null
+  );
 
   const [bars, setBars] = useState<ProgressBarData[]>(() => {
     // Let's add a second bar for easier testing of drag-and-drop
@@ -90,16 +96,24 @@ function App() {
   };
 
   const onIncrement = (id: string) => {
-    setBars((prevBars) =>
-      prevBars.map((bar) =>
+    setBars((prevBars) => {
+      const updatedBars = prevBars.map((bar) =>
         bar.id === id
           ? {
               ...bar,
               current: Math.min(bar.current + bar.incrementDelta, bar.max),
             }
           : bar
-      )
-    );
+      );
+
+      // Check if the bar was just completed
+      const updatedBar = updatedBars.find((bar) => bar.id === id);
+      if (updatedBar && updatedBar.current === updatedBar.max) {
+        setSuccessModalBarId(id);
+      }
+
+      return updatedBars;
+    });
   };
 
   const handleSaveBar = (updates: Partial<ProgressBarData>) => {
@@ -163,7 +177,7 @@ function App() {
   }, [bars]);
 
   // TODO: button Tailwind class or React component
-  // TODO: Too much things are happening here - modularise it.
+  // TODO: Too many things are happening here - modularise it.
   return (
     <div className="h-full text-white">
       <header className="titlebar">
@@ -221,6 +235,14 @@ function App() {
           onSave={handleSaveBar}
           onDelete={handleDeleteBar}
           onClose={() => setEditingBarId(null)}
+        />
+      )}
+
+      {successModalBarId && (
+        <SuccessModal
+          barData={bars.find((bar) => bar.id === successModalBarId)!}
+          isOpen={successModalBarId !== null}
+          onRequestClose={() => setSuccessModalBarId(null)}
         />
       )}
     </div>
