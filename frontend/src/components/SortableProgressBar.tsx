@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import ProgressBar from "./ProgressBar";
-
-// Import the SVG as a React component.
-// The `{ ReactComponent as GripVerticalIcon }` syntax is provided by svgr.
+import clsx from "clsx";
 import GripVerticalIcon from "../assets/icons/grip-vertical.svg?react";
 import type { ProgressBarData } from "../../../types/shared";
-// import ReactConfetti from "react-confetti";
+import ReactConfetti from "react-confetti";
 
 interface SortableProgressBarProps {
   bar: ProgressBarData;
@@ -20,7 +18,9 @@ export default function SortableProgressBar({
   onContextMenu,
   onIncrement,
 }: SortableProgressBarProps) {
-  console.log("GripVerticalIcon imported as:", GripVerticalIcon);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [isComplete, setIsComplete] = useState(bar.current === bar.max);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const {
     attributes,
@@ -31,58 +31,72 @@ export default function SortableProgressBar({
     isDragging,
   } = useSortable({ id: bar.id });
 
-  const [completed, setCompleted] = useState(bar.current === bar.max);
-
   useEffect(() => {
     if (bar.current === bar.max) {
-      setCompleted(true);
-    } else if (completed) {
-      setCompleted(false);
+      setIsComplete(true);
+      setShowConfetti(true);
+    } else if (isComplete) {
+      setIsComplete(false);
     }
-  }, [bar.current]);
+  }, [bar.current, bar.max, isComplete]);
 
-  // TODO: Why is this here :/
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.8 : 1,
-    zIndex: isDragging ? 10 : 0,
-    boxShadow: isDragging
-      ? "0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1)"
-      : "none",
-  };
-
-  // TODO: The confetti should be on the main window, when any bar gets completed.
-  // if (completed) {
-  //   return (
-  //     <div className="relative">
-  //       <ReactConfetti numberOfPieces={200} recycle={false}></ReactConfetti>
-  //     </div>
-  //   );
-  // }
-
-  return (
+  const content = (
     <div
       ref={setNodeRef}
-      style={style}
-      className="flex items-center p-2 rounded-lg"
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.8 : 1,
+        zIndex: isDragging ? 10 : 0,
+      }}
+      className={clsx(
+        "flex items-center p-2 rounded-lg relative",
+        isComplete && "golden-pattern completed"
+      )}
       onContextMenu={onContextMenu}
     >
-      <div
-        {...attributes}
-        {...listeners}
-        className="p-2 cursor-grab touch-none"
-      >
-        <GripVerticalIcon className="w-6 h-6 text-gray-500" />
+      <div className="relative z-10 w-full">
+        <div
+          {...attributes}
+          {...listeners}
+          className="p-2 cursor-grab touch-none absolute left-0 top-1/2 -translate-y-1/2"
+        >
+          <GripVerticalIcon className="w-6 h-6 text-gray-500" />
+        </div>
+        <div className="pl-10">
+          <ProgressBar
+            bar={bar}
+            onRightClick={onContextMenu}
+            onIncrement={onIncrement}
+          />
+        </div>
       </div>
+    </div>
+  );
 
-      <div className="flex-grow">
-        <ProgressBar
-          bar={bar}
-          onRightClick={onContextMenu}
-          onIncrement={onIncrement}
-        />
-      </div>
+  if (!showConfetti) return content;
+
+  return (
+    <div ref={containerRef} className="relative w-full h-full">
+      <ReactConfetti
+        width={containerRef.current?.offsetWidth}
+        height={containerRef.current?.offsetHeight}
+        run={true}
+        recycle={true}
+        numberOfPieces={30}
+        colors={["#FFD700", "#FFC000", "#FFA500"]}
+        gravity={0.05}
+        initialVelocityY={0.05}
+        confettiSource={{
+          w: containerRef.current?.offsetWidth || 0,
+          h: containerRef.current?.offsetHeight || 0,
+          x: 0,
+          y: 0,
+        }}
+        className="absolute inset-0"
+        style={{ pointerEvents: "none", zIndex: 20 }}
+      />
+      {content}
     </div>
   );
 }

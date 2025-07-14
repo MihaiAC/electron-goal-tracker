@@ -1,4 +1,5 @@
 import React from "react";
+import clsx from "clsx";
 import type { ProgressBarData } from "../../../types/shared";
 
 interface ProgressBarProps {
@@ -15,24 +16,28 @@ export default function ProgressBar({
   onCustomValueChange,
 }: ProgressBarProps) {
   const progress = Math.max(0, Math.min(100, (100 * current) / max));
+  const isComplete = current >= max;
 
-  // TODO: On completion, need to display: Congratulations max / max unit! + dismiss bar button but do not remove right click listener.
-  // TODO: Extension: stats for each progress bar -> how many days it took.
   return (
     <div className="flex flex-col space-y-2">
       <h3 className="text-center">{title}</h3>
       <div
-        className="w-full h-6 rounded-xl overflow-hidden"
+        className={`w-full h-6 rounded-xl overflow-hidden ${
+          isComplete ? "shadow-md shadow-amber-200/30" : ""
+        }`}
         style={{
           backgroundColor: remainingColor,
         }}
         onClick={onIncrement}
       >
         <div
-          className="h-6 rounded-xl"
+          className={clsx(
+            "h-6 rounded-xl transition-all duration-500",
+            isComplete && "complete-progress"
+          )}
           style={{
             width: `${progress}%`,
-            backgroundColor: completedColor,
+            backgroundColor: isComplete ? undefined : completedColor,
           }}
         ></div>
       </div>

@@ -18,7 +18,7 @@ Implemented features:
 
 Remaining features:
 
-1. Modal + animation when a progress bar is completed.
+1. Modal + animation when a progress bar is completed. - done
 2. Decrement when clicking on left half, increment on right half, animations on hover updated to reflect that.
 3. Add sounds: increment, decrement, completion(?).
 4. Minimize application in bar.
@@ -35,8 +35,15 @@ Remaining features:
 15. Solve all remaining TODOs.
 16. QA the application on small screens + make layout responsive.
 17. Test the application - not comprehensively, but a few sanity checks.
+18. Add different bar styles (visually).
 
 Current bugs:
 
 - Can drag a progress bar outside the window and it creates a horizontal scroll bar to the right -> need to prevent that;
 - Pressing cancel when adding a bar keeps the bar - only cancels the details customization; it should remove the bar too;
+- Need to suppress the scroll bar when it would appear - both horizontal and vertical;
+
+Current styling issues:
+
+1. Color repeats itself in index.css. Should switch to themes - there was a proper way to do this in Tailwind 4.
+2. Confetti should not stop so abruptly - should be easy to fix.

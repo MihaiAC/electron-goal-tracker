@@ -10,4 +10,24 @@
     @apply inline-flex items-center justify-center w-7 h-7 rounded-full text-white transition-colors duration-200 hover:bg-white/20;
     -webkit-app-region: no-drag;
   }
+
+  // Background success animation for ProgressBar.
+  @keyframes shine {
+    to {
+      background-position: 200% center;
+    }
+  }
+
+  .complete-progress {
+    background: linear-gradient(
+      90deg,
+      #ffd700,
+      #ffc000,
+      #ffa500,
+      #ffc000,
+      #ffd700
+    );
+    background-size: 200% auto;
+    animation: shine 2s linear infinite;
+  }
 }
