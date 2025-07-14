@@ -22,6 +22,7 @@ import SaveButton from "./components/SaveButton";
 import type { ProgressBarData } from "../../types/shared";
 import type { SaveStatus } from "./types";
 import { SuccessModal } from "./components/SuccessModal";
+import { Button } from "./components/Button";
 
 function App() {
   // Track save status for animations.
@@ -176,7 +177,6 @@ function App() {
     };
   }, [bars]);
 
-  // TODO: button Tailwind class or React component
   // TODO: Too many things are happening here - modularise it.
   return (
     <div className="h-full text-white">
@@ -187,7 +187,7 @@ function App() {
         <WindowControls />
       </header>
 
-      <main className="flex flex-col items-center h-full my-16">
+      <main className="flex flex-col items-center h-full my-16 space-y-8">
         <div className="w-3/4 space-y-16">
           {" "}
           {/* Added space-y-4 for margin between bars */}
@@ -215,18 +215,15 @@ function App() {
             </SortableContext>
           </DndContext>
         </div>
-        <button
-          onClick={addNewBar}
-          className="mt-8 px-4 py-2 bg-blue-600 rounded hover:bg-blue-700" // Added margin top
-        >
-          + Add New Bar
-        </button>
 
-        <SaveButton
-          status={saveStatus}
-          onClick={handleSave}
-          className="mt-8 ml-4"
-        />
+        <Button
+          onClick={addNewBar}
+          tailwindColors="bg-lime-500 hover:bg-lime-700 text-black"
+        >
+          + Add new bar
+        </Button>
+
+        <SaveButton status={saveStatus} onClick={handleSave} />
       </main>
 
       {editingBar && (

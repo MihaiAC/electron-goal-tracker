@@ -33,7 +33,8 @@ Remaining features:
 13. Add current streak.
 14. Properly validate user inputs in the edit bar form.
 15. Solve all remaining TODOs.
-16. Test the application - not comprehensively, but a few sanity checks.
+16. QA the application on small screens + make layout responsive.
+17. Test the application - not comprehensively, but a few sanity checks.
 
 Current bugs:
 

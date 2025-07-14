@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import type { ProgressBarData } from "../../../types/shared";
+import { Button } from "./Button";
 
 interface BarSettingsProps {
   bar: ProgressBarData;
@@ -160,27 +161,21 @@ export default function BarSettings({
           </div>
 
           <div className="flex justify-between pt-4">
-            <button
-              type="button"
+            <Button
               onClick={onDelete}
-              className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
+              tailwindColors="bg-red-600 hover:bg-red-700"
             >
               Delete Bar
-            </button>
-            <div className="space-x-2">
-              <button
-                type="button"
+            </Button>
+
+            <div className="space-x-4">
+              <Button
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-600 rounded hover:bg-gray-700"
+                tailwindColors="bg-gray-600 hover:bg-gray-700"
               >
                 Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700"
-              >
-                Save
-              </button>
+              </Button>
+              <Button type="submit">Save</Button>
             </div>
           </div>
         </form>

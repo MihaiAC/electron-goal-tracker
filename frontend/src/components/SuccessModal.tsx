@@ -1,5 +1,6 @@
 import Modal from "react-modal";
 import type { ProgressBarData } from "../../../types/shared";
+import { Button } from "./Button";
 
 interface SuccessModalProps {
   barData: ProgressBarData;
@@ -12,6 +13,7 @@ export function SuccessModal({
   barData,
   onRequestClose,
 }: SuccessModalProps) {
+  // TODO: Add custom uplifting dismiss messages.
   return (
     <Modal
       isOpen={isOpen}
@@ -24,7 +26,13 @@ export function SuccessModal({
       <h1>
         {barData.title} {barData.unit} YAY!
       </h1>
-      <button onClick={onRequestClose}>Click me to dismiss me</button>
+
+      <Button
+        onClick={onRequestClose}
+        tailwindColors="bg-lime-500 hover:bg-lime-600 text-black"
+      >
+        Dismiss
+      </Button>
     </Modal>
   );
 }
