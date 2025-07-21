@@ -57,7 +57,9 @@ export default function ProgressBar({
           )}
           style={{
             width: `${progress}%`,
-            backgroundColor: isComplete ? undefined : completedColor,
+            background: isComplete
+              ? undefined
+              : `linear-gradient(to right, ${completedColor}, ${completedColor})`,
           }}
         ></div>
       </div>
