@@ -204,7 +204,6 @@ function App() {
               strategy={verticalListSortingStrategy}
             >
               {bars.map((bar) => (
-                // Use the new SortableProgressBar component here
                 <SortableProgressBar
                   key={bar.id}
                   bar={bar}

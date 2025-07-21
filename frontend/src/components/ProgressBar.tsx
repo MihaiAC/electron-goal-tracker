@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import clsx from "clsx";
 import type { ProgressBarData } from "../../../types/shared";
 
@@ -17,15 +17,8 @@ export default function ProgressBar({
   onDecrement,
   onCustomValueChange,
 }: ProgressBarProps) {
-  // const [hoverSide, setHoverSide] = useState<"left" | "right" | null>(null);
   const progress = Math.max(0, Math.min(100, (100 * current) / max));
   const isComplete = current >= max;
-
-  // const handleMouseMove = (e: React.MouseEvent) => {
-  //   const rect = e.currentTarget.getBoundingClientRect();
-  //   const xCoord = e.clientX - rect.left;
-  //   setHoverSide(xCoord > rect.width / 2 ? "right" : "left");
-  // };
 
   const handleClick = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();

@@ -12,6 +12,7 @@ interface SortableProgressBarProps {
   onContextMenu: (e: React.MouseEvent) => void;
   onIncrement: () => void;
   onDecrement: () => void;
+  className?: string;
 }
 
 export default function SortableProgressBar({
@@ -19,10 +20,14 @@ export default function SortableProgressBar({
   onContextMenu,
   onIncrement,
   onDecrement,
+  className = "",
 }: SortableProgressBarProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isComplete, setIsComplete] = useState(bar.current === bar.max);
+  const [isHovered, setIsHovered] = useState(false);
+  const [hoverSide, setHoverSide] = useState<"left" | "right" | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const {
     attributes,
@@ -42,30 +47,60 @@ export default function SortableProgressBar({
     }
   }, [bar.current, bar.max, isComplete]);
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!contentRef.current) return;
+    const rect = contentRef.current.getBoundingClientRect();
+    const xCoord = e.clientX - rect.left;
+    setHoverSide(xCoord > rect.width / 2 ? "right" : "left");
+  };
+
+  const handleClick = () => {
+    if (hoverSide === "right") {
+      onIncrement();
+    } else if (hoverSide === "left") {
+      onDecrement();
+    }
+  };
+
   const content = (
     <div
       ref={setNodeRef}
       style={{
         transform: CSS.Transform.toString(transform),
-        transition,
+        transition: transition || undefined,
         opacity: isDragging ? 0.8 : 1,
         zIndex: isDragging ? 10 : 0,
       }}
       className={clsx(
-        "flex items-center p-2 rounded-lg relative",
-        isComplete && "golden-pattern completed"
+        "flex items-center rounded-lg p-4",
+        isComplete && "golden-pattern completed",
+        isHovered &&
+          hoverSide === "right" &&
+          "shadow-[0_0_20px_5px_rgba(132,204,22,0.6)] transition-shadow duration-100",
+        isHovered &&
+          hoverSide === "left" &&
+          "shadow-[0_0_20px_5px_rgba(234,88,12,0.6)] transition-shadow duration-100",
+        className
       )}
       onContextMenu={onContextMenu}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setHoverSide(null);
+      }}
+      onMouseMove={handleMouseMove}
+      onClick={handleClick}
     >
-      <div className="relative z-10 w-full">
+      <div ref={contentRef} className="relative z-10 w-full flex items-center">
         <div
           {...attributes}
           {...listeners}
-          className="p-2 cursor-grab touch-none absolute left-0 top-1/2 -translate-y-1/2"
+          className="p-2 cursor-grab touch-none self-stretch flex items-center"
         >
           <GripVerticalIcon className="w-6 h-6 text-gray-500" />
         </div>
-        <div className="pl-10">
+
+        <div className="flex-1 pr-2">
           <ProgressBar
             bar={bar}
             onRightClick={onContextMenu}
@@ -80,7 +115,7 @@ export default function SortableProgressBar({
   if (!showConfetti) return content;
 
   return (
-    <div ref={containerRef} className="relative w-full h-full">
+    <div ref={containerRef} className="relative w-full">
       <ReactConfetti
         width={containerRef.current?.offsetWidth}
         height={containerRef.current?.offsetHeight}
