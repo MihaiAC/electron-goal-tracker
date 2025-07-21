@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import clsx from "clsx";
 import type { ProgressBarData } from "../../../types/shared";
 
@@ -6,6 +6,7 @@ interface ProgressBarProps {
   bar: Omit<ProgressBarData, "id">;
   onRightClick: (e: React.MouseEvent) => void;
   onIncrement: () => void;
+  onDecrement: () => void;
   onCustomValueChange?: (value: number) => void;
 }
 
@@ -13,10 +14,29 @@ export default function ProgressBar({
   bar: { title, current, max, unit, completedColor, remainingColor },
   onRightClick,
   onIncrement,
+  onDecrement,
   onCustomValueChange,
 }: ProgressBarProps) {
+  // const [hoverSide, setHoverSide] = useState<"left" | "right" | null>(null);
   const progress = Math.max(0, Math.min(100, (100 * current) / max));
   const isComplete = current >= max;
+
+  // const handleMouseMove = (e: React.MouseEvent) => {
+  //   const rect = e.currentTarget.getBoundingClientRect();
+  //   const xCoord = e.clientX - rect.left;
+  //   setHoverSide(xCoord > rect.width / 2 ? "right" : "left");
+  // };
+
+  const handleClick = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const xCoord = e.clientX - rect.left;
+
+    if (xCoord > rect.width / 2) {
+      onIncrement();
+    } else {
+      onDecrement();
+    }
+  };
 
   return (
     <div className="flex flex-col space-y-2">
@@ -28,7 +48,7 @@ export default function ProgressBar({
         style={{
           backgroundColor: remainingColor,
         }}
-        onClick={onIncrement}
+        onClick={handleClick}
       >
         <div
           className={clsx(

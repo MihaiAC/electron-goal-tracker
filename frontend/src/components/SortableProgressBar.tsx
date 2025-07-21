@@ -11,12 +11,14 @@ interface SortableProgressBarProps {
   bar: ProgressBarData;
   onContextMenu: (e: React.MouseEvent) => void;
   onIncrement: () => void;
+  onDecrement: () => void;
 }
 
 export default function SortableProgressBar({
   bar,
   onContextMenu,
   onIncrement,
+  onDecrement,
 }: SortableProgressBarProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isComplete, setIsComplete] = useState(bar.current === bar.max);
@@ -68,6 +70,7 @@ export default function SortableProgressBar({
             bar={bar}
             onRightClick={onContextMenu}
             onIncrement={onIncrement}
+            onDecrement={onDecrement}
           />
         </div>
       </div>
