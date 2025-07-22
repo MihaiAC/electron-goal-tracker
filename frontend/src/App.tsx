@@ -96,13 +96,16 @@ function App() {
     }
   };
 
-  const onIncrement = (id: string) => {
+  const onIncrement = (id: string, sign: number = 1) => {
     setBars((prevBars) => {
       const updatedBars = prevBars.map((bar) =>
         bar.id === id
           ? {
               ...bar,
-              current: Math.min(bar.current + bar.incrementDelta, bar.max),
+              current:
+                sign > 0
+                  ? Math.min(bar.current + bar.incrementDelta, bar.max)
+                  : Math.max(bar.current - bar.incrementDelta, 0),
             }
           : bar
       );
@@ -201,7 +204,6 @@ function App() {
               strategy={verticalListSortingStrategy}
             >
               {bars.map((bar) => (
-                // Use the new SortableProgressBar component here
                 <SortableProgressBar
                   key={bar.id}
                   bar={bar}
@@ -209,7 +211,8 @@ function App() {
                     e.preventDefault();
                     setEditingBarId(bar.id);
                   }}
-                  onIncrement={() => onIncrement(bar.id)}
+                  onIncrement={() => onIncrement(bar.id, 1)}
+                  onDecrement={() => onIncrement(bar.id, -1)}
                 />
               ))}
             </SortableContext>

@@ -6,6 +6,7 @@ interface ProgressBarProps {
   bar: Omit<ProgressBarData, "id">;
   onRightClick: (e: React.MouseEvent) => void;
   onIncrement: () => void;
+  onDecrement: () => void;
   onCustomValueChange?: (value: number) => void;
 }
 
@@ -13,10 +14,22 @@ export default function ProgressBar({
   bar: { title, current, max, unit, completedColor, remainingColor },
   onRightClick,
   onIncrement,
+  onDecrement,
   onCustomValueChange,
 }: ProgressBarProps) {
   const progress = Math.max(0, Math.min(100, (100 * current) / max));
   const isComplete = current >= max;
+
+  const handleClick = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const xCoord = e.clientX - rect.left;
+
+    if (xCoord > rect.width / 2) {
+      onIncrement();
+    } else {
+      onDecrement();
+    }
+  };
 
   return (
     <div className="flex flex-col space-y-2">
@@ -28,7 +41,7 @@ export default function ProgressBar({
         style={{
           backgroundColor: remainingColor,
         }}
-        onClick={onIncrement}
+        onClick={handleClick}
       >
         <div
           className={clsx(
@@ -37,7 +50,9 @@ export default function ProgressBar({
           )}
           style={{
             width: `${progress}%`,
-            backgroundColor: isComplete ? undefined : completedColor,
+            background: isComplete
+              ? undefined
+              : `linear-gradient(to right, ${completedColor}, ${completedColor})`,
           }}
         ></div>
       </div>
