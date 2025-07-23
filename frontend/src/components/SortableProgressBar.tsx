@@ -36,7 +36,13 @@ export default function SortableProgressBar({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: bar.id });
+  } = useSortable({
+    id: bar.id,
+    transition: {
+      duration: 150,
+      easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+    },
+  });
 
   useEffect(() => {
     if (bar.current === bar.max) {
@@ -70,6 +76,8 @@ export default function SortableProgressBar({
         transition: transition || undefined,
         opacity: isDragging ? 0.8 : 1,
         zIndex: isDragging ? 10 : 0,
+        position: "relative",
+        touchAction: "none",
       }}
       className={clsx(
         "flex items-center rounded-lg p-4",
