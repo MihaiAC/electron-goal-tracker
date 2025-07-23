@@ -2,13 +2,21 @@
 
 @layer components {
   .titlebar {
-    @apply fixed top-0 left-0 w-full h-8 flex items-center justify-between z-50;
+    @apply fixed top-0 left-0 w-full h-8 flex items-center justify-between z-50 bg-slate-900;
     -webkit-app-region: drag;
   }
 
   .titlebar-button {
     @apply inline-flex items-center justify-center w-7 h-7 rounded-full text-white transition-colors duration-200 hover:bg-white/20;
     -webkit-app-region: no-drag;
+  }
+
+  .app-container {
+    @apply h-screen flex flex-col pt-8 text-white;
+  }
+
+  .content-container {
+    @apply flex-1 overflow-auto;
   }
 
   // Background success animation for ProgressBar.
@@ -29,5 +37,24 @@
     );
     background-size: 200% auto;
     animation: shine 2s linear infinite;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #334155; /* slate-700 */
+    border-radius: 3px;
+    border: 1px solid #1e293b; /* slate-800 */
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #475569; /* slate-600 */
   }
 }

@@ -182,52 +182,53 @@ function App() {
 
   // TODO: Too many things are happening here - modularise it.
   return (
-    <div className="h-full text-white">
+    <div className="app-container">
       <header className="titlebar">
         <span className="text-xs font-bold text-gray-400 pl-3">
           Progress Bars
         </span>
         <WindowControls />
       </header>
-
-      <main className="flex flex-col items-center h-full my-16 space-y-8">
-        <div className="w-3/4 space-y-16">
-          {" "}
-          {/* Added space-y-4 for margin between bars */}
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={bars.map((b) => b.id)}
-              strategy={verticalListSortingStrategy}
+      <div className="content-container">
+        <main className="flex flex-col items-center h-full my-16 space-y-8">
+          <div className="w-3/4 space-y-16">
+            {" "}
+            {/* Added space-y-4 for margin between bars */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
             >
-              {bars.map((bar) => (
-                <SortableProgressBar
-                  key={bar.id}
-                  bar={bar}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setEditingBarId(bar.id);
-                  }}
-                  onIncrement={() => onIncrement(bar.id, 1)}
-                  onDecrement={() => onIncrement(bar.id, -1)}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-        </div>
+              <SortableContext
+                items={bars.map((b) => b.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {bars.map((bar) => (
+                  <SortableProgressBar
+                    key={bar.id}
+                    bar={bar}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setEditingBarId(bar.id);
+                    }}
+                    onIncrement={() => onIncrement(bar.id, 1)}
+                    onDecrement={() => onIncrement(bar.id, -1)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+          </div>
 
-        <Button
-          onClick={addNewBar}
-          tailwindColors="bg-lime-500 hover:bg-lime-700 text-black"
-        >
-          + Add new bar
-        </Button>
+          <Button
+            onClick={addNewBar}
+            tailwindColors="bg-lime-500 hover:bg-lime-700 text-black"
+          >
+            + Add new bar
+          </Button>
 
-        <SaveButton status={saveStatus} onClick={handleSave} />
-      </main>
+          <SaveButton status={saveStatus} onClick={handleSave} />
+        </main>
+      </div>
 
       {editingBar && (
         <BarSettings
