@@ -10,7 +10,8 @@
     "build": "npm run compile && cd frontend && npm run build",
     "start": "electron .",
     "compile": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "test": "cd frontend && npm test"
   },
   "repository": {
     "type": "git",

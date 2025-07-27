@@ -9,6 +9,12 @@ export interface ProgressBarData {
   remainingColor: string;
 }
 
+export interface VersionedAppData {
+  version: number;
+  lastSynced?: string;
+  bars: ProgressBarData[];
+}
+
 export interface AppData {
   bars: ProgressBarData[];
 }
