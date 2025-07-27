@@ -1,3 +1,5 @@
+// This would become horrible to maintain pretty fast.
+// Should probably just use a proper DB / something with automatic migrations.
 import type { VersionedAppData } from "../../../types/shared";
 
 interface ProgressBarDataV1 {
@@ -27,6 +29,22 @@ function isProgressBarDataV1(obj: unknown): obj is ProgressBarDataV1 {
   );
 }
 
+export function validateVersionedData(data: unknown): data is VersionedAppData {
+  if (typeof data !== "object" || data === null) return false;
+
+  const versioned = data as Partial<VersionedAppData>;
+  if (typeof versioned.version !== "number") return false;
+  if (
+    versioned.lastSynced !== undefined &&
+    typeof versioned.lastSynced !== "string"
+  )
+    return false;
+  if (!Array.isArray(versioned.bars)) return false;
+
+  return versioned.bars.every(isProgressBarDataV1);
+}
+
+// Will need to be updated later to go through old versions of ProgressBarData.
 export function migrateToLatest(data: unknown): VersionedAppData {
   // Empty data or non-object data(?).
   if (data === null || typeof data !== "object") {
@@ -51,6 +69,16 @@ export function migrateToLatest(data: unknown): VersionedAppData {
     };
   }
 
-  // Already versioned.
-  return data as VersionedAppData;
+  // Already versioned data
+  if (validateVersionedData(data)) {
+    return data;
+  }
+
+  // If we get here, the data is invalid.
+  console.log("Invalid data, returning default app data.");
+  return {
+    version: 1,
+    lastSynced: new Date().toISOString(),
+    bars: [],
+  };
 }
