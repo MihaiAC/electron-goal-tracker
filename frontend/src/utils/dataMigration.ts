@@ -1,6 +1,7 @@
 // This would become horrible to maintain pretty fast.
 // Should probably just use a proper DB / something with automatic migrations.
-import type { VersionedAppData } from "../../../types/shared";
+import type { ProgressBarData, VersionedAppData } from "../../../types/shared";
+import { APP_DATA_VERSION } from "./constants";
 
 interface ProgressBarDataV1 {
   id: string;
@@ -27,6 +28,16 @@ function isProgressBarDataV1(obj: unknown): obj is ProgressBarDataV1 {
     typeof bar.completedColor === "string" &&
     typeof bar.remainingColor === "string"
   );
+}
+
+export function createVersionedData(bars: ProgressBarData[]): VersionedAppData {
+  const data: VersionedAppData = {
+    version: APP_DATA_VERSION,
+    lastSynced: new Date().toISOString(),
+    bars,
+  };
+
+  return data;
 }
 
 export function validateVersionedData(data: unknown): data is VersionedAppData {

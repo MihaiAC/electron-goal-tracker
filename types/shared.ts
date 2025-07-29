@@ -11,7 +11,7 @@ export interface ProgressBarData {
 
 export interface VersionedAppData {
   version: number;
-  lastSynced?: string;
+  lastSynced: string;
   bars: ProgressBarData[];
 }
 
