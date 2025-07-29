@@ -142,6 +142,10 @@ function App() {
     setEditingBarId(null);
   };
 
+  const handleRestoreData = (restoredBars: ProgressBarData[]) => {
+    setBars(restoredBars);
+  };
+
   const addNewBar = () => {
     const newBar: ProgressBarData = {
       id: Date.now().toString(),
@@ -248,6 +252,7 @@ function App() {
       <SettingsModal
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
+        onDataRestored={handleRestoreData}
       />
 
       {editingBar && (
