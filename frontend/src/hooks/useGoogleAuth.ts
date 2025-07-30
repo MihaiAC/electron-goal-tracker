@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 // Mock Google User - should get it from the API.
-interface GoogleUser {
+export interface GoogleUser {
   email: string;
   name: string;
   picture?: string;
@@ -63,6 +63,8 @@ export function useGoogleAuth() {
     setUser(null);
   };
 
+  const clearError = () => setError(null);
+
   return {
     user,
     isAuthenticated: !!user,
@@ -70,5 +72,6 @@ export function useGoogleAuth() {
     error,
     signIn,
     signOut,
+    clearError,
   };
 }
