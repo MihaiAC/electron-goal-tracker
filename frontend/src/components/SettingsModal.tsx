@@ -1,34 +1,66 @@
-import { Button } from "./Button";
+import { useState } from "react";
+import type { ProgressBarData } from "../../../types/shared";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { useGoogleDriveSync } from "../hooks/useGoogleDriveSync";
 import { CloseIcon } from "./Icons";
+import SyncingDialog from "./dialogs/SyncingDialog";
+import ConfirmationDialog from "./dialogs/ConfirmationDialog";
+import PasswordDialog from "./dialogs/PasswordDialog";
+import AuthenticationSection from "./AuthSection";
+import SyncSection from "./SyncSection";
 
 interface SettingsModalProps {
   open: boolean;
+  currentBars: ProgressBarData[];
   onClose: () => void;
+  onDataRestored: (bars: ProgressBarData[]) => void;
 }
 
-const SYNC_OPTIONS = [
-  { value: 0, label: "Off" },
-  { value: 2 * 60 * 1000, label: "Every 2 minutes" },
-  { value: 5 * 60 * 1000, label: "Every 5 minutes" },
-  { value: 15 * 60 * 1000, label: "Every 15 minutes" },
-  { value: 30 * 60 * 1000, label: "Every 30 minutes" },
-  { value: 60 * 60 * 1000, label: "Every hour" },
-] as const;
+// TODO: Store password using electron's safe storage -> maybe usePassword hook.
+export default function SettingsModal({
+  open,
+  onClose,
+  currentBars,
+  onDataRestored,
+}: SettingsModalProps) {
+  const [dialog, setDialog] = useState<
+    "none" | "confirmRestore" | "passwordForSync" | "passwordForRestore"
+  >("none");
 
-export default function SettingsModal({ open, onClose }: SettingsModalProps) {
+  const {
+    isSyncing,
+    lastSynced,
+    error: syncError,
+    syncToDrive,
+    restoreFromDrive,
+    clearError: clearSyncError,
+  } = useGoogleDriveSync();
+
+  const {
+    user,
+    isAuthenticated,
+    isLoading: authIsLoading,
+    error: authError,
+    signIn,
+    signOut,
+    clearError: clearAuthError,
+  } = useGoogleAuth();
+
   if (!open) {
     return null;
   }
 
-  const handleSync = () => {
-    // TODO: Implement sync with Google Drive.
-    console.log("Syncing...");
+  const combinedError = authError || syncError;
+
+  const handleDismissError = () => {
+    if (authError) clearAuthError();
+    if (syncError) clearSyncError();
   };
 
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-      onClick={onClose}
+      onClick={!isSyncing ? onClose : undefined}
     >
       <div
         className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
@@ -38,7 +70,8 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
           <h2 className="text-xl font-bold">Settings</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={!isSyncing ? onClose : undefined}
+            disabled={isSyncing}
             className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
           >
             <CloseIcon />
@@ -46,45 +79,76 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
         </div>
 
         <div className="space-y-6">
-          <section>
-            <h3 className="text-lg font-semibold mb-3">Sync Settings</h3>
+          <AuthenticationSection
+            isSyncing={isSyncing}
+            authIsLoading={authIsLoading}
+            isAuthenticated={isAuthenticated}
+            user={user}
+            onSignIn={signIn}
+            onSignOut={signOut}
+          />
 
-            <div className="space-y-4">
-              <Button
-                onClick={handleSync}
-                tailwindColors="bg-blue-600 hover:bg-blue-700"
+          {isAuthenticated && (
+            <SyncSection
+              isSyncing={isSyncing}
+              lastSynced={lastSynced}
+              onSync={() => setDialog("passwordForSync")}
+              onRestore={() => setDialog("confirmRestore")}
+            />
+          )}
+
+          {combinedError && (
+            <div className="bg-red-900/50 border border-red-500 text-red-300 p-3 rounded-md flex justify-between items-center">
+              <p>Error: {combinedError}</p>
+              <button
+                onClick={handleDismissError}
+                className="text-sm underline"
               >
-                Sync with Google
-              </Button>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Auto-sync frequency
-                </label>
-                <select className="w-full p-2 rounded bg-gray-700">
-                  {SYNC_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <p className="text-sm text-gray-400">Last synced: Never</p>
+                Dismiss
+              </button>
             </div>
-          </section>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              onClick={onClose}
-              tailwindColors="bg-gray-700 hover:bg-gray-600"
-            >
-              Close
-            </Button>
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Dialogs */}
+      <SyncingDialog isOpen={isSyncing} />
+
+      <ConfirmationDialog
+        isOpen={dialog === "confirmRestore"}
+        onCancel={() => setDialog("none")}
+        onConfirm={() => setDialog("passwordForRestore")}
+        title="Restore from Google Drive?"
+        message="This will overwrite your current local data. This action cannot be undone."
+      />
+
+      <PasswordDialog
+        isOpen={dialog === "passwordForSync"}
+        onCancel={() => setDialog("none")}
+        onConfirm={async (password) => {
+          await syncToDrive(password, currentBars);
+          setDialog("none");
+        }}
+        title="Enter Encryption Password"
+        message="Please enter the password to encrypt your data for Google Drive."
+      />
+
+      <PasswordDialog
+        isOpen={dialog === "passwordForRestore"}
+        onCancel={() => setDialog("none")}
+        onConfirm={async (password) => {
+          try {
+            const restoredData = await restoreFromDrive(password);
+            if (restoredData) {
+              onDataRestored(restoredData);
+            }
+          } finally {
+            setDialog("none");
+          }
+        }}
+        title="Enter Decryption Password"
+        message="Please enter the password to decrypt your data from Google Drive."
+      />
     </div>
   );
 }

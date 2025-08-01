@@ -2,7 +2,7 @@ import { Button } from "./Button";
 
 interface SyncSectionProps {
   isSyncing: boolean;
-  lastSynced: number | null;
+  lastSynced: string | null;
   onSync: () => void;
   onRestore: () => void;
 }

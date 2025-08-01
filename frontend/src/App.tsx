@@ -191,6 +191,8 @@ function App() {
   }, [bars]);
 
   // TODO: Too many things are happening here - modularise it.
+  // TODO: Maybe add state management library.
+  // TODO: Maybe add progress histories (or ++ extensions).
   return (
     <div className="app-container">
       <header className="titlebar">
@@ -253,6 +255,7 @@ function App() {
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onDataRestored={handleRestoreData}
+        currentBars={bars}
       />
 
       {editingBar && (
