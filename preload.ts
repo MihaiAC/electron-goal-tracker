@@ -23,6 +23,10 @@ const api: IElectronAPI = {
   },
   saveData: (data) => ipcRenderer.invoke("save-data", data),
   loadData: () => ipcRenderer.invoke("load-data"),
+  savePassword: (password: string) =>
+    ipcRenderer.invoke("save-password", password),
+  getPassword: () => ipcRenderer.invoke("get-password"),
+  clearPassword: () => ipcRenderer.invoke("clear-password"),
 };
 
 // Expose the API to the renderer process

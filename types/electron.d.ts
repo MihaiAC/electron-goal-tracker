@@ -7,8 +7,15 @@ export interface IElectronAPI {
   onWindowStateChange: (callback: (isMaximized: boolean) => void) => void;
   saveData: (data: AppData) => Promise<SaveResult>;
   loadData: () => Promise<AppData | null>;
+  savePassword: (password: string) => Promise<void>;
+  getPassword: () => Promise<string | null>;
+  clearPassword: () => Promise<void>;
 }
 
 interface Window {
   api: IElectronAPI;
 }
+
+export type SecureStoreData = {
+  syncPassword: string;
+};
