@@ -43,7 +43,7 @@ export function useGoogleDriveSync() {
     setError(null);
 
     try {
-      // TODO: Download from GDrive.
+      // TODO: Download from GDrive + eliminate debug statement.
       console.log("Downloading from Google Drive with password:", password);
 
       // Mock data, replace with downloaded + decrypted data.

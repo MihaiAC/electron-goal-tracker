@@ -17,9 +17,7 @@ interface SettingsModalProps {
   onDataRestored: (bars: ProgressBarData[]) => void;
 }
 
-// TODO: Store password using electron's safe storage -> maybe usePassword hook.
 // TODO: Sync dialog -> flashes then disappears. Need to add a minimum time for it to be showing + success visual effect.
-// TODO: Sign out -> password still saved? Don't know how that works out.
 export default function SettingsModal({
   open,
   onClose,
@@ -162,6 +160,11 @@ export default function SettingsModal({
     setTempPassword(null);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    await clearPassword();
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
@@ -190,7 +193,7 @@ export default function SettingsModal({
             isAuthenticated={isAuthenticated}
             user={user}
             onSignIn={signIn}
-            onSignOut={signOut}
+            onSignOut={handleSignOut}
           />
 
           {isAuthenticated && (
