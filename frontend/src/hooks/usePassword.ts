@@ -22,7 +22,7 @@ export function usePassword() {
     try {
       await window.api.clearPassword();
     } catch (error) {
-      console.error("Failed to create password: ", error);
+      console.error("Failed to clear password: ", error);
       throw error;
     }
   };

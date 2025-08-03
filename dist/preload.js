@@ -20,6 +20,9 @@ const api = {
     },
     saveData: (data) => electron_1.ipcRenderer.invoke("save-data", data),
     loadData: () => electron_1.ipcRenderer.invoke("load-data"),
+    savePassword: (password) => electron_1.ipcRenderer.invoke("save-password", password),
+    getPassword: () => electron_1.ipcRenderer.invoke("get-password"),
+    clearPassword: () => electron_1.ipcRenderer.invoke("clear-password"),
 };
 // Expose the API to the renderer process
 if (process.contextIsolated) {
