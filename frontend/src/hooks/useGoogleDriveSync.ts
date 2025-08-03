@@ -5,6 +5,7 @@ import { encryptData } from "../utils/crypto";
 
 export function useGoogleDriveSync() {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [lastSynced, setLastSynced] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,25 +15,46 @@ export function useGoogleDriveSync() {
   ): Promise<boolean> => {
     setIsSyncing(true);
     setError(null);
+    setShowSuccess(false);
 
-    try {
-      // Create versioned data.
+    // Minimum time to show the spinner for.
+    const minDisplayTimePromise = new Promise((resolve) =>
+      setTimeout(resolve, 1000)
+    );
+
+    // Function that performs the actual sync.
+    const syncOperation = async () => {
       const data = createVersionedData(bars);
-
-      // Encrypt it.
       const encryptedData = await encryptData(JSON.stringify(data), password);
-
       // TODO: Upload to Google Drive.
       console.log("Upload encrypted data to Google Drive: ", encryptedData);
+      return data;
+    };
 
-      setLastSynced(data.lastSynced);
+    try {
+      // Wait for both the sync operation AND the timer to complete.
+      const [syncResult] = await Promise.all([
+        syncOperation(),
+        minDisplayTimePromise,
+      ]);
+
+      // Now that at least 1s has passed and the sync is done, hide the spinner and show the success checkmark.
+      setIsSyncing(false);
+      setShowSuccess(true);
+      setLastSynced(syncResult.lastSynced);
+
+      // Hide the success message after 2 seconds.
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 2000);
+
       return true;
     } catch (err) {
+      // If the sync fails at any point, hide the spinner immediately and show an error.
+      setIsSyncing(false);
       setError("Failed to sync with Google Drive.");
       console.error("Sync error: ", err);
       return false;
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -62,12 +84,19 @@ export function useGoogleDriveSync() {
     }
   };
 
+  // This function should be called when the user signs out.
+  const clearLastSynced = () => {
+    setLastSynced(null);
+  };
+
   return {
     isSyncing,
+    showSuccess,
     lastSynced,
     error,
     syncToDrive,
     restoreFromDrive,
     clearError: () => setError(null),
+    clearLastSynced,
   };
 }

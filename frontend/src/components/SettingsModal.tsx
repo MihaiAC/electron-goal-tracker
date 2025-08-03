@@ -4,7 +4,7 @@ import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { usePassword } from "../hooks/usePassword";
 import { useGoogleDriveSync } from "../hooks/useGoogleDriveSync";
 import { CloseIcon } from "./Icons";
-import SyncingDialog from "./dialogs/SyncingDialog";
+import { SyncingDialog } from "./dialogs/SyncingDialog";
 import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import PasswordDialog from "./dialogs/PasswordDialog";
 import AuthenticationSection from "./AuthSection";
@@ -34,11 +34,13 @@ export default function SettingsModal({
 
   const {
     isSyncing,
+    showSuccess,
     lastSynced,
     error: syncError,
     syncToDrive,
     restoreFromDrive,
     clearError: clearSyncError,
+    clearLastSynced,
   } = useGoogleDriveSync();
 
   const {
@@ -163,6 +165,7 @@ export default function SettingsModal({
   const handleSignOut = async () => {
     await signOut();
     await clearPassword();
+    clearLastSynced();
   };
 
   return (
@@ -220,7 +223,10 @@ export default function SettingsModal({
       </div>
 
       {/* Dialogs */}
-      <SyncingDialog isOpen={isSyncing} />
+      <SyncingDialog
+        isOpen={isSyncing || showSuccess}
+        isSuccess={showSuccess}
+      />
 
       <ConfirmationDialog
         isOpen={dialog === "confirmRestore"}

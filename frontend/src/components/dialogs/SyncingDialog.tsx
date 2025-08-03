@@ -1,17 +1,29 @@
 import React from "react";
 import Dialog from "./Dialog";
-import { SpinnerIcon } from "../Icons";
+import { SpinnerIcon, CheckmarkIcon } from "../Icons";
 
 interface SyncingDialogProps {
   isOpen: boolean;
+  isSuccess: boolean;
 }
 
-export default function SyncingDialog({ isOpen }: SyncingDialogProps) {
+export function SyncingDialog({ isOpen, isSuccess }: SyncingDialogProps) {
+  if (!isOpen) return null;
+
   return (
     <Dialog isOpen={isOpen}>
-      <div className="flex flex-col items-center justify-center space-y-4">
-        <SpinnerIcon />
-        <p className="text-lg">Syncing...</p>
+      <div className="p-8 text-center">
+        {isSuccess ? (
+          <div className="flex flex-col items-center">
+            <CheckmarkIcon />
+            <p className="text-lg">Sync Successful!</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <SpinnerIcon />
+            <p className="text-lg">Syncing with Google Drive...</p>
+          </div>
+        )}
       </div>
     </Dialog>
   );
