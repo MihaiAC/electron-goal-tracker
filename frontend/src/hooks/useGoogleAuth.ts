@@ -7,12 +7,6 @@ export interface GoogleUser {
   picture?: string;
 }
 
-// Mock auth token.
-interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
 export function useGoogleAuth() {
   const [user, setUser] = useState<GoogleUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
