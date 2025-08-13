@@ -1,6 +1,6 @@
-import type { GoogleUser } from "../hooks/useGoogleAuth";
-import { SpinnerIcon } from "./Icons";
-import { Button } from "./Button";
+import type { GoogleUser } from "../../hooks/useGoogleAuth";
+import { SpinnerIcon } from "../Icons";
+import { Button } from "../Button";
 
 interface AuthenticationSectionProps {
   isSyncing: boolean;

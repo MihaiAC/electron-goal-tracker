@@ -1,17 +1,17 @@
 import { useEffect } from "react";
-import type { ProgressBarData } from "../../../types/shared";
-import { useGoogleAuth } from "../hooks/useGoogleAuth";
-import { usePassword } from "../hooks/usePassword";
-import { useGoogleDriveSync } from "../hooks/useGoogleDriveSync";
-import { CloseIcon } from "./Icons";
-import { SyncingDialog } from "./dialogs/SyncingDialog";
-import ConfirmationDialog from "./dialogs/ConfirmationDialog";
-import PasswordDialog from "./dialogs/PasswordDialog";
+import type { ProgressBarData } from "../../../../types/shared";
+import { useGoogleAuth } from "../../hooks/useGoogleAuth";
+import { usePassword } from "../../hooks/usePassword";
+import { useGoogleDriveSync } from "../../hooks/useGoogleDriveSync";
+import { CloseIcon } from "../Icons";
+import { SyncingDialog } from "../dialogs/SyncingDialog";
+import ConfirmationDialog from "../dialogs/ConfirmationDialog";
+import PasswordDialog from "../dialogs/PasswordDialog";
 import AuthenticationSection from "./AuthSection";
 import SyncSection from "./SyncSection";
-import { useSettingsState } from "../state/settingsStateMachine";
-import OperationSuccessDialog from "./dialogs/OperationSuccessDialog";
-import OperationErrorDialog from "./dialogs/OperationErrorDialog";
+import { useSettingsState } from "../../hooks/useSettingsState";
+import OperationSuccessDialog from "../dialogs/OperationSuccessDialog";
+import OperationErrorDialog from "../dialogs/OperationErrorDialog";
 
 interface SettingsModalProps {
   open: boolean;

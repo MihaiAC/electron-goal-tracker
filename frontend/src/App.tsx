@@ -24,7 +24,7 @@ import type { ProgressBarData } from "../../types/shared";
 import type { SaveStatus } from "./types";
 import { SuccessModal } from "./components/SuccessModal";
 import { Button } from "./components/Button";
-import SettingsModal from "./components/SettingsModal";
+import SettingsModal from "./components/settings/SettingsModal";
 import { SettingsIcon } from "./components/Icons";
 
 function App() {

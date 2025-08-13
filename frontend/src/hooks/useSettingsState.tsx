@@ -1,5 +1,5 @@
 import { useReducer } from "react";
-import { useMinDurationDispatch } from "../hooks/useMinDurationDispatch";
+import { useMinDurationDispatch } from "./useMinDurationDispatch";
 
 // One state for each screen/modal the user sees
 type SettingsState =
