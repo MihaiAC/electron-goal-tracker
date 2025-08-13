@@ -22,17 +22,30 @@ export function useMinDurationDispatch(
   const dispatch = useCallback<DispatchFn>(
     (action) => {
       // Mark start of a syncing/restore operation
-      if (action.type === "START_SYNC" || action.type === "START_RESTORE") {
+      if (
+        action.type === "START_SYNC" ||
+        action.type === "CONFIRM_RESTORE" ||
+        action.type === "PASSWORD_PROVIDED"
+      ) {
         startedAtRef.current = Date.now();
         clearTimer();
         baseDispatch(action);
         return;
       }
 
-      // Defer revealing result to ensure min visible time
+      // Handle "abort" flows.
+      if (action.type === "BACK_TO_IDLE" || action.type === "SIGN_OUT") {
+        startedAtRef.current = null;
+        clearTimer();
+        baseDispatch(action);
+        return;
+      }
+
+      // Defer result to ensure min visible time
       if (
         action.type === "OPERATION_SUCCESS" ||
-        action.type === "OPERATION_FAILED"
+        action.type === "OPERATION_FAILED" ||
+        action.type === "OFFER_SAVE_PASSWORD"
       ) {
         const started = startedAtRef.current;
         if (started != null) {

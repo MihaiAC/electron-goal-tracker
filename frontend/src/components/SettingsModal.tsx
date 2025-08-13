@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import type { ProgressBarData } from "../../../types/shared";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { usePassword } from "../hooks/usePassword";
@@ -9,6 +9,9 @@ import ConfirmationDialog from "./dialogs/ConfirmationDialog";
 import PasswordDialog from "./dialogs/PasswordDialog";
 import AuthenticationSection from "./AuthSection";
 import SyncSection from "./SyncSection";
+import { useSettingsState } from "../state/settingsStateMachine";
+import OperationSuccessDialog from "./dialogs/OperationSuccessDialog";
+import OperationErrorDialog from "./dialogs/OperationErrorDialog";
 
 interface SettingsModalProps {
   open: boolean;
@@ -24,25 +27,6 @@ export default function SettingsModal({
   currentBars,
   onDataRestored,
 }: SettingsModalProps) {
-  const [dialog, setDialog] = useState<
-    | "none"
-    | "confirmRestore"
-    | "passwordForSync"
-    | "passwordForRestore"
-    | "confirmSavePassword"
-  >("none");
-
-  const {
-    isSyncing,
-    showSuccess,
-    lastSynced,
-    error: syncError,
-    syncToDrive,
-    restoreFromDrive,
-    clearError: clearSyncError,
-    clearLastSynced,
-  } = useGoogleDriveSync();
-
   const {
     user,
     isAuthenticated,
@@ -53,125 +37,137 @@ export default function SettingsModal({
     clearError: clearAuthError,
   } = useGoogleAuth();
 
+  const { lastSynced, syncToDrive, restoreFromDrive, clearLastSynced } =
+    useGoogleDriveSync();
+
   const { getPassword, savePassword, clearPassword } = usePassword();
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
 
-  if (!open) {
-    return null;
-  }
+  const { state, dispatch, isBusy, canClose } =
+    useSettingsState(isAuthenticated);
 
-  const combinedError = authError || syncError;
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch({ type: "SIGN_IN_SUCCESS" });
+    } else {
+      dispatch({ type: "SIGN_OUT" });
+    }
+  }, [isAuthenticated, dispatch]);
 
   const handleDismissError = () => {
     if (authError) clearAuthError();
-    if (syncError) clearSyncError();
   };
 
   const handleAttemptSync = async () => {
     const savedPassword = await getPassword();
     if (savedPassword) {
       try {
-        // Try to sync with saved password.
-        await syncToDrive(savedPassword, currentBars);
+        dispatch({ type: "START_SYNC" });
+        const success = await syncToDrive(savedPassword, currentBars);
+        if (success) {
+          dispatch({
+            type: "OPERATION_SUCCESS",
+            operation: "sync",
+            message: "Synced successfully",
+          });
+        } else {
+          await clearPassword();
+          dispatch({ type: "NEED_PASSWORD", purpose: "sync" });
+        }
       } catch {
-        // TODO: Likely password was wrong - can we handle this better?
         await clearPassword();
-        setDialog("passwordForSync");
+        dispatch({ type: "NEED_PASSWORD", purpose: "sync" });
       }
     } else {
-      // No password was saved => ask for it.
-      setDialog("passwordForSync");
+      dispatch({ type: "NEED_PASSWORD", purpose: "sync" });
     }
   };
 
   const handleAttemptRestore = () => {
-    // Restoring is destructive => show confirmation dialog first.
-    setDialog("confirmRestore");
+    dispatch({ type: "START_RESTORE" });
   };
 
-  // Handler for the "confirmRestore" dialog.
-  // Tries to use a saved password first before asking the user for one.
   const handleConfirmRestore = async () => {
-    setDialog("none");
-
     const savedPassword = await getPassword();
-
     if (savedPassword) {
+      dispatch({ type: "CONFIRM_RESTORE" });
+
       try {
         const restoredData = await restoreFromDrive(savedPassword);
         if (restoredData) {
           onDataRestored(restoredData);
+          dispatch({
+            type: "OPERATION_SUCCESS",
+            operation: "restore",
+            message: "Restored successfully",
+          });
         } else {
-          // This case can mean decryption failure.
-          // TODO: How to differentiate between different failures?
           await clearPassword();
-          setDialog("passwordForRestore");
+          dispatch({ type: "NEED_PASSWORD", purpose: "restore" });
         }
       } catch {
         await clearPassword();
-        setDialog("passwordForRestore");
+        dispatch({ type: "NEED_PASSWORD", purpose: "restore" });
       }
+    } else {
+      dispatch({ type: "NEED_PASSWORD", purpose: "restore" });
     }
   };
 
-  // This handler is for the "Sync" password dialog.
-  // On success, it triggers the "Save Password" flow.
   const handleSyncWithPassword = async (password: string) => {
+    dispatch({ type: "PASSWORD_PROVIDED", password, purpose: "sync" });
     try {
       const success = await syncToDrive(password, currentBars);
       if (success) {
-        setDialog("none");
-        setTempPassword(password);
-        setDialog("confirmSavePassword");
+        dispatch({ type: "OFFER_SAVE_PASSWORD", password });
+      } else {
+        dispatch({ type: "OPERATION_FAILED", message: "Sync failed" });
       }
     } catch {
-      // Let the sync hook handle the error message, just close the dialog
-      setDialog("none");
+      dispatch({ type: "OPERATION_FAILED", message: "Sync failed" });
     }
   };
 
-  // This handler is for the "Restore" password dialog.
-  // On success, it triggers the "Save Password" flow.
   const handleRestoreWithPassword = async (password: string) => {
+    dispatch({ type: "PASSWORD_PROVIDED", password, purpose: "restore" });
     try {
       const restoredData = await restoreFromDrive(password);
       if (restoredData) {
         onDataRestored(restoredData);
-        setDialog("none");
-        setTempPassword(password);
-        setDialog("confirmSavePassword");
+        dispatch({ type: "OFFER_SAVE_PASSWORD", password });
+      } else {
+        dispatch({ type: "OPERATION_FAILED", message: "Restore failed" });
       }
     } catch {
-      // Let the sync hook handle the error message, just close the dialog
-      setDialog("none");
+      dispatch({ type: "OPERATION_FAILED", message: "Restore failed" });
     }
   };
 
-  // This handler is for the "Save Password" dialog's confirm button.
   const handleConfirmSavePassword = async () => {
-    if (tempPassword) {
-      await savePassword(tempPassword);
+    if (state.type === "SAVE_PASSWORD") {
+      await savePassword(state.password);
     }
-    setDialog("none");
-    setTempPassword(null);
+    dispatch({ type: "SAVE_PASSWORD_CONFIRMED" });
   };
 
-  // This handler is for the "Save Password" dialog's cancel button.
   const handleCancelSavePassword = () => {
-    setDialog("none");
-    setTempPassword(null);
+    dispatch({ type: "SAVE_PASSWORD_CANCELLED" });
   };
 
   const handleSignOut = async () => {
     await signOut();
     await clearPassword();
     clearLastSynced();
+    dispatch({ type: "SIGN_OUT" });
   };
+
+  if (!open) {
+    return null;
+  }
 
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-      onClick={!isSyncing ? onClose : undefined}
+      onClick={canClose ? onClose : undefined}
     >
       <div
         className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
@@ -181,8 +177,8 @@ export default function SettingsModal({
           <h2 className="text-xl font-bold">Settings</h2>
           <button
             type="button"
-            onClick={!isSyncing ? onClose : undefined}
-            disabled={isSyncing}
+            onClick={canClose ? onClose : undefined}
+            disabled={!canClose}
             className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
           >
             <CloseIcon />
@@ -191,7 +187,7 @@ export default function SettingsModal({
 
         <div className="space-y-6">
           <AuthenticationSection
-            isSyncing={isSyncing}
+            isSyncing={isBusy}
             authIsLoading={authIsLoading}
             isAuthenticated={isAuthenticated}
             user={user}
@@ -201,16 +197,16 @@ export default function SettingsModal({
 
           {isAuthenticated && (
             <SyncSection
-              isSyncing={isSyncing}
+              isSyncing={isBusy}
               lastSynced={lastSynced}
               onSync={() => handleAttemptSync()}
               onRestore={() => handleAttemptRestore()}
             />
           )}
 
-          {combinedError && (
+          {authError && (
             <div className="bg-red-900/50 border border-red-500 text-red-300 p-3 rounded-md flex justify-between items-center">
-              <p>Error: {combinedError}</p>
+              <p>Error: {authError}</p>
               <button
                 onClick={handleDismissError}
                 className="text-sm underline"
@@ -224,36 +220,62 @@ export default function SettingsModal({
 
       {/* Dialogs */}
       <SyncingDialog
-        isOpen={isSyncing || showSuccess}
-        isSuccess={showSuccess}
+        isOpen={state.type === "SYNCING"}
+        message={
+          state.type === "SYNCING"
+            ? state.operation === "sync"
+              ? "Syncing with Google Drive..."
+              : "Restoring from Google Drive..."
+            : undefined
+        }
+      />
+
+      <OperationSuccessDialog
+        isOpen={state.type === "SUCCESS"}
+        title={
+          state.type === "SUCCESS"
+            ? state.operation === "sync"
+              ? "Sync successful"
+              : "Restore successful"
+            : undefined
+        }
+        message={state.type === "SUCCESS" ? state.message : ""}
+        onClose={() => dispatch({ type: "BACK_TO_IDLE" })}
+      />
+
+      <OperationErrorDialog
+        isOpen={state.type === "ERROR"}
+        message={state.type === "ERROR" ? state.message : ""}
+        code={state.type === "ERROR" ? state.code : undefined}
+        onClose={() => dispatch({ type: "BACK_TO_IDLE" })}
       />
 
       <ConfirmationDialog
-        isOpen={dialog === "confirmRestore"}
-        onCancel={() => setDialog("none")}
-        onConfirm={handleConfirmRestore}
+        isOpen={state.type === "CONFIRM_RESTORE"}
+        onCancel={() => dispatch({ type: "BACK_TO_IDLE" })}
+        onConfirm={handleConfirmRestore} // Need to handle user input timing.
         title="Restore from Google Drive?"
         message="This will overwrite your current local data. This action cannot be undone."
       />
 
       <PasswordDialog
-        isOpen={dialog === "passwordForSync"}
-        onCancel={() => setDialog("none")}
-        onConfirm={handleSyncWithPassword}
+        isOpen={state.type === "PASSWORD_SYNC"}
+        onCancel={() => dispatch({ type: "BACK_TO_IDLE" })}
+        onConfirm={handleSyncWithPassword} // Probably need a dispatch here too.
         title="Enter Encryption Password"
         message="Please enter the password to encrypt your data for Google Drive."
       />
 
       <PasswordDialog
-        isOpen={dialog === "passwordForRestore"}
-        onCancel={() => setDialog("none")}
-        onConfirm={handleRestoreWithPassword}
+        isOpen={state.type === "PASSWORD_RESTORE"}
+        onCancel={() => dispatch({ type: "BACK_TO_IDLE" })}
+        onConfirm={handleRestoreWithPassword} // Probably need a dispatch here too.
         title="Enter Decryption Password"
         message="Please enter the password to decrypt your data from Google Drive."
       />
 
       <ConfirmationDialog
-        isOpen={dialog === "confirmSavePassword"}
+        isOpen={state.type === "SAVE_PASSWORD"}
         onConfirm={handleConfirmSavePassword}
         onCancel={handleCancelSavePassword}
         title="Save Password?"

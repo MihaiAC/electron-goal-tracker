@@ -1,4 +1,5 @@
 import { useReducer } from "react";
+import { useMinDurationDispatch } from "../hooks/useMinDurationDispatch";
 
 // One state for each screen/modal the user sees
 type SettingsState =
@@ -104,22 +105,31 @@ function settingsReducer(
 }
 
 // Simple helpers
-const isBusy = (state: SettingsState) => state.type === "SYNCING";
-const canClose = (state: SettingsState) => !isBusy(state);
+const MIN_SYNCING_MS = 700;
 
-// Custom hook
 function useSettingsState(isAuthenticated: boolean) {
   const initialState: SettingsState = isAuthenticated
     ? { type: "SIGNED_IN" }
     : { type: "SIGNED_OUT" };
 
-  const [state, dispatch] = useReducer(settingsReducer, initialState);
+  const [state, baseDispatch] = useReducer(settingsReducer, initialState);
+
+  // Wrap our baseDispatch so loader shows for at least 700ms.
+  const dispatch = useMinDurationDispatch(baseDispatch, MIN_SYNCING_MS);
+
+  const isBusy =
+    state.type === "SYNCING" ||
+    state.type === "PASSWORD_SYNC" ||
+    state.type === "PASSWORD_RESTORE" ||
+    state.type === "SAVE_PASSWORD";
+
+  const canClose = !isBusy;
 
   return {
     state,
     dispatch,
-    isBusy: isBusy(state),
-    canClose: canClose(state),
+    isBusy,
+    canClose,
   };
 }
 
