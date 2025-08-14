@@ -172,5 +172,4 @@ dist/*
 dist/preload.js.map
 *.map
 
-# Gemini rules.
-GEMINI.md
+./.env.local
