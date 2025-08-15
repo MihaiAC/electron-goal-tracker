@@ -1,17 +1,25 @@
-import { app, BrowserWindow, ipcMain, safeStorage } from "electron";
+import { app, BrowserWindow, ipcMain, safeStorage, shell } from "electron";
 import path from "path";
 import fs from "fs";
 import { AppData } from "./types/shared";
 import Store from "electron-store";
+import pkceChallenge from "pkce-challenge";
+import { createServer } from "http";
+import { AddressInfo } from "net";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // Global reference to window to prevent GC (?).
 let mainWindow: BrowserWindow | null = null;
 
 // Key for storing the encrypted password in electron-store.
 const SYNC_PASSWORD_KEY = "syncPassword" as const;
+const OAUTH_REFRESH_TOKEN_KEY = "oauthRefreshToken" as const;
 
 interface StoreSchema {
   [SYNC_PASSWORD_KEY]: string;
+  [OAUTH_REFRESH_TOKEN_KEY]?: string;
 }
 
 // Initialise electron-store.
@@ -63,6 +71,160 @@ function setupPasswordIpc() {
 
   ipcMain.handle("clear-password", () => {
     store.delete(SYNC_PASSWORD_KEY);
+  });
+}
+
+function setupAuthIpc() {
+  ipcMain.handle("auth-start", async () => {
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+
+    if (!clientId) {
+      throw new Error("Missing GOOGLE_AUTH_CLIENT_ID in .env");
+    }
+
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error("Safe storage is not available on this system.");
+    }
+
+    // Create PKCE verifier/challenge.
+    const { code_verifier, code_challenge } = await pkceChallenge();
+
+    // Start loopback server for redirect capture.
+    const server = createServer();
+    const codePromise: Promise<string> = new Promise((resolve, reject) => {
+      // Close the server on timeout.
+      const timeout = setTimeout(() => {
+        try {
+          server.close();
+        } catch {}
+        reject(new Error("OAuth timed out."));
+      }, 120_000);
+
+      server.on("request", (req, res) => {
+        try {
+          if (!req.url) {
+            return;
+          }
+
+          const url = new URL(req.url, "http://127.0.0.1");
+          if (url.pathname !== "/callback") {
+            return;
+          }
+
+          const code = url.searchParams.get("code");
+          const err = url.searchParams.get("error");
+
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(
+            "<html><body><p>Authentication complete. You can close this window.</p><script>window.close();</script></body></html>"
+          );
+
+          clearTimeout(timeout);
+          try {
+            server.close();
+          } catch {}
+
+          if (err) {
+            return reject(new Error(String(err)));
+          }
+
+          if (!code) {
+            return reject(new Error("Missing authorization code"));
+          }
+
+          resolve(code);
+        } catch (e) {
+          clearTimeout(timeout);
+          try {
+            server.close();
+          } catch {}
+          reject(e);
+        }
+      });
+    });
+
+    await new Promise<void>((resolve) => {
+      server.listen(0, "127.0.0.1", () => resolve());
+    });
+
+    const address = server.address() as AddressInfo;
+    const redirectUri = `http://127.0.0.1:${address.port}/callback`;
+
+    // Launch consent URL in system browser
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.set("client_id", clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("access_type", "offline");
+    authUrl.searchParams.set(
+      "scope",
+      "https://www.googleapis.com/auth/drive.appdata"
+    );
+    authUrl.searchParams.set("include_granted_scopes", "true");
+    authUrl.searchParams.set("prompt", "consent");
+    authUrl.searchParams.set("code_challenge", code_challenge);
+    authUrl.searchParams.set("code_challenge_method", "S256");
+
+    await shell.openExternal(authUrl.toString());
+
+    // Wait for code and exchange for tokens
+    const code = await codePromise;
+
+    const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        code,
+        code_verifier: code_verifier,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+    if (!tokenResp.ok) {
+      const text = await tokenResp.text();
+      throw new Error(`Token exchange failed: ${tokenResp.status} ${text}`);
+    }
+    const tokens = (await tokenResp.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      token_type?: string;
+      id_token?: string;
+    };
+
+    const refresh = tokens.refresh_token;
+    if (!refresh) {
+      // Some accounts may not return refresh_token if consent was previously granted without prompt=consent
+      // In that case we keep existing one if present, else error
+      const encExisting = store.get(OAUTH_REFRESH_TOKEN_KEY);
+      if (!encExisting || typeof encExisting !== "string") {
+        throw new Error("No refresh_token returned; please try again.");
+      }
+      return; // Keep existing session
+    }
+
+    const encrypted = safeStorage.encryptString(refresh);
+    store.set(OAUTH_REFRESH_TOKEN_KEY, encrypted.toString("base64"));
+  });
+
+  ipcMain.handle("auth-sign-out", () => {
+    store.delete(OAUTH_REFRESH_TOKEN_KEY);
+  });
+
+  ipcMain.handle("auth-status", () => {
+    try {
+      const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
+      if (!enc || typeof enc !== "string") {
+        return false;
+      }
+
+      // Throws if corrupt.
+      safeStorage.decryptString(Buffer.from(enc, "base64"));
+      return true;
+    } catch {
+      return false;
+    }
   });
 }
 
@@ -150,6 +312,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   setupPasswordIpc();
+  setupAuthIpc();
   createWindow();
 });
 

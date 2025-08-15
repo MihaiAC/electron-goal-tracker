@@ -27,6 +27,11 @@ const api: IElectronAPI = {
     ipcRenderer.invoke("save-password", password),
   getPassword: () => ipcRenderer.invoke("get-password"),
   clearPassword: () => ipcRenderer.invoke("clear-password"),
+
+  // OAuth for Google Drive
+  startGoogleAuth: () => ipcRenderer.invoke("auth-start"),
+  getAuthStatus: () => ipcRenderer.invoke("auth-status"),
+  authSignOut: () => ipcRenderer.invoke("auth-sign-out"),
 };
 
 // Expose the API to the renderer process

@@ -29,7 +29,7 @@ export default function AuthenticationSection({
         </div>
       ) : isAuthenticated ? (
         <div className="flex items-center justify-between">
-          <p>Signed in as {user?.email}</p>
+          <p>Signed in{user?.email ? ` as ${user.email}` : ""}</p>
           <Button
             onClick={onSignOut}
             disabled={isSyncing}
