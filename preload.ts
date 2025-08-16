@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { IElectronAPI } from "./types/electron";
+import { AuthStatus } from "./types/shared";
 
 // Define the API we are exposing
 const api: IElectronAPI = {
@@ -30,7 +31,7 @@ const api: IElectronAPI = {
 
   // OAuth for Google Drive
   startGoogleAuth: () => ipcRenderer.invoke("auth-start"),
-  getAuthStatus: () => ipcRenderer.invoke("auth-status"),
+  getAuthStatus: () => ipcRenderer.invoke("auth-status") as Promise<AuthStatus>,
   authSignOut: () => ipcRenderer.invoke("auth-sign-out"),
 };
 

@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, safeStorage, shell } from "electron";
 import path from "path";
 import fs from "fs";
-import { AppData } from "./types/shared";
+import { AppData, OAuthUser } from "./types/shared";
 import Store from "electron-store";
 import pkceChallenge from "pkce-challenge";
 import { createServer } from "http";
@@ -16,14 +16,27 @@ let mainWindow: BrowserWindow | null = null;
 // Key for storing the encrypted password in electron-store.
 const SYNC_PASSWORD_KEY = "syncPassword" as const;
 const OAUTH_REFRESH_TOKEN_KEY = "oauthRefreshToken" as const;
+const OAUTH_USER_INFO_KEY = "oauthUser" as const;
 
 interface StoreSchema {
   [SYNC_PASSWORD_KEY]: string;
   [OAUTH_REFRESH_TOKEN_KEY]?: string;
+  oauthUser?: OAuthUser;
 }
 
 // Initialise electron-store.
 const store = new Store<StoreSchema>();
+
+function decodeJwtPayload(idToken: string): any {
+  const parts = idToken.split(".");
+
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const payload = Buffer.from(parts[1], "base64").toString("utf8");
+  return JSON.parse(payload);
+}
 
 function setupPasswordIpc() {
   // Save the password securely.
@@ -75,6 +88,7 @@ function setupPasswordIpc() {
 }
 
 function setupAuthIpc() {
+  // TODO: This is pretty hard to follow, break it down into multiple functions.
   ipcMain.handle("auth-start", async () => {
     const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
 
@@ -181,49 +195,69 @@ function setupAuthIpc() {
         grant_type: "authorization_code",
       }),
     });
+
     if (!tokenResp.ok) {
       const text = await tokenResp.text();
       throw new Error(`Token exchange failed: ${tokenResp.status} ${text}`);
     }
+
     const tokens = (await tokenResp.json()) as {
       access_token?: string;
       refresh_token?: string;
-      expires_in?: number;
-      token_type?: string;
       id_token?: string;
     };
 
     const refresh = tokens.refresh_token;
-    if (!refresh) {
-      // Some accounts may not return refresh_token if consent was previously granted without prompt=consent
-      // In that case we keep existing one if present, else error
+    if (refresh) {
+      const encrypted = safeStorage.encryptString(refresh);
+      store.set(OAUTH_REFRESH_TOKEN_KEY, encrypted.toString("base64"));
+    } else {
       const encExisting = store.get(OAUTH_REFRESH_TOKEN_KEY);
       if (!encExisting || typeof encExisting !== "string") {
-        throw new Error("No refresh_token returned; please try again.");
+        throw new Error("No refresh_token returned. Please try again.");
       }
-      return; // Keep existing session
     }
 
-    const encrypted = safeStorage.encryptString(refresh);
-    store.set(OAUTH_REFRESH_TOKEN_KEY, encrypted.toString("base64"));
+    // Decode and store minimal user info.
+    if (tokens.id_token) {
+      try {
+        const payload = decodeJwtPayload(tokens.id_token);
+        const user: OAuthUser = {
+          email: payload?.email,
+          name: payload?.name,
+          picture: payload?.picture,
+        };
+
+        store.set(OAUTH_USER_INFO_KEY, user);
+      } catch {
+        store.delete(OAUTH_USER_INFO_KEY);
+      }
+    } else {
+      store.delete(OAUTH_USER_INFO_KEY);
+    }
   });
 
   ipcMain.handle("auth-sign-out", () => {
     store.delete(OAUTH_REFRESH_TOKEN_KEY);
+    store.delete(OAUTH_USER_INFO_KEY);
   });
 
   ipcMain.handle("auth-status", () => {
     try {
       const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
       if (!enc || typeof enc !== "string") {
-        return false;
+        return {
+          isAuthenticated: false,
+          user: null as OAuthUser | null,
+        };
       }
 
       // Throws if corrupt.
       safeStorage.decryptString(Buffer.from(enc, "base64"));
-      return true;
+      const user = store.get(OAUTH_USER_INFO_KEY) ?? null;
+      return { isAuthenticated: true, user };
     } catch {
-      return false;
+      return { isAuthenticated: false, user: null as OAuthUser | null };
     }
   });
 }

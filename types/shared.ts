@@ -23,3 +23,14 @@ export interface SaveResult {
   success: boolean;
   path: string;
 }
+
+export interface OAuthUser {
+  email?: string;
+  name?: string;
+  picture?: string;
+}
+
+export interface AuthStatus {
+  isAuthenticated: boolean;
+  user: OAuthUser | null;
+}

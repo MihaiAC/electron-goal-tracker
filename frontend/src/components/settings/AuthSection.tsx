@@ -1,4 +1,4 @@
-import type { GoogleUser } from "../../hooks/useGoogleAuth";
+import type { OAuthUser } from "../../../../types/shared";
 import { SpinnerIcon } from "../Icons";
 import { Button } from "../Button";
 
@@ -6,7 +6,7 @@ interface AuthenticationSectionProps {
   isSyncing: boolean;
   authIsLoading: boolean;
   isAuthenticated: boolean;
-  user: GoogleUser | null;
+  user: OAuthUser | null;
   onSignIn: () => void;
   onSignOut: () => void;
 }

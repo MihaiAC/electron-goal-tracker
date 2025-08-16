@@ -1,14 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-
-// Mock Google User - should get it from the API.
-export interface GoogleUser {
-  email: string;
-  name: string;
-  picture?: string;
-}
+import type { OAuthUser } from "../../../types/shared";
 
 export function useGoogleAuth() {
-  const [user, setUser] = useState<GoogleUser | null>(null);
+  const [user, setUser] = useState<OAuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,11 +11,8 @@ export function useGoogleAuth() {
     setIsLoading(true);
     try {
       const status = await window.api.getAuthStatus();
-      const authed = !!status;
-      setIsAuthenticated(authed);
-      if (!authed) {
-        setUser(null);
-      }
+      setIsAuthenticated(Boolean(status?.isAuthenticated));
+      setUser(status?.user ?? null);
     } catch (e) {
       console.error(e);
       setError("Failed to check authentication status");

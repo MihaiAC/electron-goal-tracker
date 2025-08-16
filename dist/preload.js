@@ -23,6 +23,10 @@ const api = {
     savePassword: (password) => electron_1.ipcRenderer.invoke("save-password", password),
     getPassword: () => electron_1.ipcRenderer.invoke("get-password"),
     clearPassword: () => electron_1.ipcRenderer.invoke("clear-password"),
+    // OAuth for Google Drive
+    startGoogleAuth: () => electron_1.ipcRenderer.invoke("auth-start"),
+    getAuthStatus: () => electron_1.ipcRenderer.invoke("auth-status"),
+    authSignOut: () => electron_1.ipcRenderer.invoke("auth-sign-out"),
 };
 // Expose the API to the renderer process
 if (process.contextIsolated) {

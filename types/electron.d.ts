@@ -1,4 +1,4 @@
-import { AppData, SaveResult } from "./shared";
+import { AppData, AuthStatus, SaveResult } from "./shared";
 
 export interface IElectronAPI {
   // Window controls.
@@ -16,9 +16,9 @@ export interface IElectronAPI {
   getPassword: () => Promise<string | null>;
   clearPassword: () => Promise<void>;
 
-  // OAuth.
+  // OAuth
   startGoogleAuth: () => Promise<void>;
-  getAuthStatus: () => Promise<boolean>;
+  getAuthStatus: () => Promise<AuthStatus>;
   authSignOut: () => Promise<void>;
 }
 
