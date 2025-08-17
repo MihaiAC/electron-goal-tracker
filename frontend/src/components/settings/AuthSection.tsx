@@ -8,6 +8,7 @@ interface AuthenticationSectionProps {
   isAuthenticated: boolean;
   user: OAuthUser | null;
   onSignIn: () => void;
+  onCancelSignIn: () => void;
   onSignOut: () => void;
 }
 
@@ -17,15 +18,24 @@ export default function AuthenticationSection({
   isAuthenticated,
   user,
   onSignIn,
+  onCancelSignIn,
   onSignOut,
 }: AuthenticationSectionProps) {
   return (
     <section>
       <h3 className="text-lg font-semibold mb-3">Account</h3>
       {authIsLoading ? (
-        <div className="flex items-center space-x-2 text-gray-400">
-          <SpinnerIcon />
-          <span>Checking authentication status...</span>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-2 text-gray-400">
+            <SpinnerIcon />
+            <span>Waiting for Google sign-in...</span>
+          </div>
+          <Button
+            onClick={onCancelSignIn}
+            tailwindColors="bg-gray-600 hover:bg-gray-700"
+          >
+            Cancel
+          </Button>
         </div>
       ) : isAuthenticated ? (
         <div className="flex items-center justify-between">

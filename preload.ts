@@ -31,6 +31,7 @@ const api: IElectronAPI = {
 
   // OAuth for Google Drive
   startGoogleAuth: () => ipcRenderer.invoke("auth-start"),
+  cancelGoogleAuth: () => ipcRenderer.invoke("auth-cancel"),
   getAuthStatus: () => ipcRenderer.invoke("auth-status") as Promise<AuthStatus>,
   authSignOut: () => ipcRenderer.invoke("auth-sign-out"),
 };

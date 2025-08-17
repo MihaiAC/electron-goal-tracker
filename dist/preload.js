@@ -25,6 +25,7 @@ const api = {
     clearPassword: () => electron_1.ipcRenderer.invoke("clear-password"),
     // OAuth for Google Drive
     startGoogleAuth: () => electron_1.ipcRenderer.invoke("auth-start"),
+    cancelGoogleAuth: () => electron_1.ipcRenderer.invoke("auth-cancel"),
     getAuthStatus: () => electron_1.ipcRenderer.invoke("auth-status"),
     authSignOut: () => electron_1.ipcRenderer.invoke("auth-sign-out"),
 };

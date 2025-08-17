@@ -8,8 +8,8 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const electron_store_1 = __importDefault(require("electron-store"));
 const pkce_challenge_1 = __importDefault(require("pkce-challenge"));
-const http_1 = require("http");
 const dotenv_1 = __importDefault(require("dotenv"));
+const auth_helpers_1 = require("./auth-helpers");
 dotenv_1.default.config();
 // Global reference to window to prevent GC (?).
 let mainWindow = null;
@@ -19,14 +19,6 @@ const OAUTH_REFRESH_TOKEN_KEY = "oauthRefreshToken";
 const OAUTH_USER_INFO_KEY = "oauthUser";
 // Initialise electron-store.
 const store = new electron_store_1.default();
-function decodeJwtPayload(idToken) {
-    const parts = idToken.split(".");
-    if (parts.length !== 3) {
-        return null;
-    }
-    const payload = Buffer.from(parts[1], "base64").toString("utf8");
-    return JSON.parse(payload);
-}
 function setupPasswordIpc() {
     // Save the password securely.
     electron_1.ipcMain.handle("save-password", (_, password) => {
@@ -66,100 +58,23 @@ function setupPasswordIpc() {
         store.delete(SYNC_PASSWORD_KEY);
     });
 }
+// TODO: Nicer screen for authentication success.
+// TODO: Can the URL be cleaned up a little bit?
 function setupAuthIpc() {
-    // TODO: This is pretty hard to follow, break it down into multiple functions.
-    electron_1.ipcMain.handle("auth-start", async () => {
+    // Local controller to cancel an in-flight OAuth attempt.
+    let authController = null;
+    const ensurePreconditions = () => {
         const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+        const oauthClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
         if (!clientId) {
-            throw new Error("Missing GOOGLE_AUTH_CLIENT_ID in .env");
+            throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
         }
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
             throw new Error("Safe storage is not available on this system.");
         }
-        // Create PKCE verifier/challenge.
-        const { code_verifier, code_challenge } = await (0, pkce_challenge_1.default)();
-        // Start loopback server for redirect capture.
-        const server = (0, http_1.createServer)();
-        const codePromise = new Promise((resolve, reject) => {
-            // Close the server on timeout.
-            const timeout = setTimeout(() => {
-                try {
-                    server.close();
-                }
-                catch { }
-                reject(new Error("OAuth timed out."));
-            }, 120_000);
-            server.on("request", (req, res) => {
-                try {
-                    if (!req.url) {
-                        return;
-                    }
-                    const url = new URL(req.url, "http://127.0.0.1");
-                    if (url.pathname !== "/callback") {
-                        return;
-                    }
-                    const code = url.searchParams.get("code");
-                    const err = url.searchParams.get("error");
-                    res.writeHead(200, { "Content-Type": "text/html" });
-                    res.end("<html><body><p>Authentication complete. You can close this window.</p><script>window.close();</script></body></html>");
-                    clearTimeout(timeout);
-                    try {
-                        server.close();
-                    }
-                    catch { }
-                    if (err) {
-                        return reject(new Error(String(err)));
-                    }
-                    if (!code) {
-                        return reject(new Error("Missing authorization code"));
-                    }
-                    resolve(code);
-                }
-                catch (e) {
-                    clearTimeout(timeout);
-                    try {
-                        server.close();
-                    }
-                    catch { }
-                    reject(e);
-                }
-            });
-        });
-        await new Promise((resolve) => {
-            server.listen(0, "127.0.0.1", () => resolve());
-        });
-        const address = server.address();
-        const redirectUri = `http://127.0.0.1:${address.port}/callback`;
-        // Launch consent URL in system browser
-        const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-        authUrl.searchParams.set("client_id", clientId);
-        authUrl.searchParams.set("redirect_uri", redirectUri);
-        authUrl.searchParams.set("response_type", "code");
-        authUrl.searchParams.set("access_type", "offline");
-        authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/drive.appdata");
-        authUrl.searchParams.set("include_granted_scopes", "true");
-        authUrl.searchParams.set("prompt", "consent");
-        authUrl.searchParams.set("code_challenge", code_challenge);
-        authUrl.searchParams.set("code_challenge_method", "S256");
-        await electron_1.shell.openExternal(authUrl.toString());
-        // Wait for code and exchange for tokens
-        const code = await codePromise;
-        const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-                client_id: clientId,
-                code,
-                code_verifier: code_verifier,
-                redirect_uri: redirectUri,
-                grant_type: "authorization_code",
-            }),
-        });
-        if (!tokenResp.ok) {
-            const text = await tokenResp.text();
-            throw new Error(`Token exchange failed: ${tokenResp.status} ${text}`);
-        }
-        const tokens = (await tokenResp.json());
+        return { clientId, oauthClientSecret };
+    };
+    const storeTokensAndUser = (tokens) => {
         const refresh = tokens.refresh_token;
         if (refresh) {
             const encrypted = electron_1.safeStorage.encryptString(refresh);
@@ -171,10 +86,9 @@ function setupAuthIpc() {
                 throw new Error("No refresh_token returned. Please try again.");
             }
         }
-        // Decode and store minimal user info.
         if (tokens.id_token) {
             try {
-                const payload = decodeJwtPayload(tokens.id_token);
+                const payload = (0, auth_helpers_1.decodeJwtPayload)(tokens.id_token);
                 const user = {
                     email: payload?.email,
                     name: payload?.name,
@@ -189,6 +103,46 @@ function setupAuthIpc() {
         else {
             store.delete(OAUTH_USER_INFO_KEY);
         }
+    };
+    electron_1.ipcMain.handle("auth-start", async () => {
+        const { clientId, oauthClientSecret } = ensurePreconditions();
+        // PKCE
+        const { code_verifier, code_challenge } = await (0, pkce_challenge_1.default)();
+        // Abort previous attempt, create fresh controller
+        if (authController) {
+            authController.abort();
+        }
+        authController = new AbortController();
+        const signal = authController.signal;
+        // Loopback server + auth URL
+        const { server, redirectUri } = await (0, auth_helpers_1.startLoopbackRedirectServer)();
+        const url = (0, auth_helpers_1.buildAuthUrl)(clientId, redirectUri, code_challenge);
+        await electron_1.shell.openExternal(url);
+        // Wait for code (abortable, with timeout)
+        let code;
+        try {
+            code = await (0, auth_helpers_1.waitForAuthorizationCode)(server, signal);
+        }
+        finally {
+            try {
+                server.close();
+            }
+            catch { }
+        }
+        // Exchange tokens and store
+        const tokens = await (0, auth_helpers_1.exchangeAuthorizationCodeForTokens)({
+            clientId,
+            authorizationCode: code,
+            pkceCodeVerifier: code_verifier,
+            redirectUri,
+            clientSecret: oauthClientSecret,
+        });
+        storeTokensAndUser(tokens);
+        authController = null;
+    });
+    electron_1.ipcMain.handle("auth-cancel", () => {
+        authController?.abort();
+        authController = null;
     });
     electron_1.ipcMain.handle("auth-sign-out", () => {
         store.delete(OAUTH_REFRESH_TOKEN_KEY);
@@ -198,10 +152,7 @@ function setupAuthIpc() {
         try {
             const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
             if (!enc || typeof enc !== "string") {
-                return {
-                    isAuthenticated: false,
-                    user: null,
-                };
+                return { isAuthenticated: false, user: null };
             }
             // Throws if corrupt.
             electron_1.safeStorage.decryptString(Buffer.from(enc, "base64"));

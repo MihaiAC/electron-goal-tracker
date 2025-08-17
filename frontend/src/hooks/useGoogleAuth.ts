@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { OAuthUser } from "../../../types/shared";
 
 export function useGoogleAuth() {
@@ -6,9 +6,14 @@ export function useGoogleAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const signInCanceledByUser = useRef(false);
 
   const refreshStatus = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
+
+    signInCanceledByUser.current = false;
+
     try {
       const status = await window.api.getAuthStatus();
       setIsAuthenticated(Boolean(status?.isAuthenticated));
@@ -30,11 +35,28 @@ export function useGoogleAuth() {
   const signIn = async () => {
     setIsLoading(true);
     setError(null);
+    signInCanceledByUser.current = false;
+
     try {
       await window.api.startGoogleAuth();
-      await refreshStatus();
+      if (!signInCanceledByUser.current) {
+        await refreshStatus();
+      }
     } catch (e) {
-      setError("Failed to sign in.");
+      if (!signInCanceledByUser.current) {
+        setError("Failed to sign in.");
+        console.error(e);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cancelSignIn = async () => {
+    signInCanceledByUser.current = true;
+    try {
+      await window.api.cancelGoogleAuth();
+    } catch (e) {
       console.error(e);
     } finally {
       setIsLoading(false);
@@ -58,6 +80,7 @@ export function useGoogleAuth() {
     isLoading,
     error,
     signIn,
+    cancelSignIn,
     signOut,
     clearError,
   };

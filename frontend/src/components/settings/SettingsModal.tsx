@@ -35,6 +35,7 @@ export default function SettingsModal({
     signIn,
     signOut,
     clearError: clearAuthError,
+    cancelSignIn,
   } = useGoogleAuth();
 
   const { lastSynced, syncToDrive, restoreFromDrive, clearLastSynced } =
@@ -54,7 +55,9 @@ export default function SettingsModal({
   }, [isAuthenticated, dispatch]);
 
   const handleDismissError = () => {
-    if (authError) clearAuthError();
+    if (authError) {
+      clearAuthError();
+    }
   };
 
   const handleAttemptSync = async () => {
@@ -192,6 +195,7 @@ export default function SettingsModal({
             isAuthenticated={isAuthenticated}
             user={user}
             onSignIn={signIn}
+            onCancelSignIn={cancelSignIn}
             onSignOut={handleSignOut}
           />
 

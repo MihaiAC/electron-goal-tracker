@@ -30,6 +30,12 @@ export interface OAuthUser {
   picture?: string;
 }
 
+export type OAuthTokens = {
+  access_token?: string;
+  refresh_token?: string;
+  id_token?: string;
+};
+
 export interface AuthStatus {
   isAuthenticated: boolean;
   user: OAuthUser | null;

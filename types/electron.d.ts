@@ -18,6 +18,7 @@ export interface IElectronAPI {
 
   // OAuth
   startGoogleAuth: () => Promise<void>;
+  cancelGoogleAuth: () => Promise<void>;
   getAuthStatus: () => Promise<AuthStatus>;
   authSignOut: () => Promise<void>;
 }
