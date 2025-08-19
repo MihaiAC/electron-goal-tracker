@@ -1,7 +1,7 @@
 // auth-helpers.ts
 import { createServer, Server } from "http";
 import type { AddressInfo } from "net";
-import type { OAuthTokens } from "./types/shared";
+import type { OAuthTokens } from "../types/shared";
 
 /** App scopes: file-scoped Drive access + minimal identity for email. */
 export const OAUTH_SCOPES = [
@@ -217,9 +217,8 @@ export async function exchangeAuthorizationCodeForTokens(params: {
         );
       }
       detail = JSON.stringify(json);
-    } catch {
-      // keep original detail text
-    }
+    } catch {}
+
     throw new Error(`Token exchange failed: ${tokenResp.status} ${detail}`);
   }
 
@@ -237,4 +236,35 @@ export function decodeJwtPayload(idToken: string): any {
   const payload = Buffer.from(parts[1], "base64").toString("utf8");
 
   return JSON.parse(payload);
+}
+
+export async function refreshAccessToken(
+  clientId: string,
+  refreshToken: string,
+  clientSecret?: string,
+  signal?: AbortSignal
+): Promise<OAuthTokens> {
+  const body = new URLSearchParams({
+    client_id: clientId,
+    refresh_token: refreshToken,
+    grant_type: "refresh_token",
+  });
+
+  if (clientSecret) {
+    body.set("client_secret", clientSecret);
+  }
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+    signal,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Refreshing token failed: ${response.status} ${text}`);
+  }
+
+  return (await response.json()) as OAuthTokens;
 }

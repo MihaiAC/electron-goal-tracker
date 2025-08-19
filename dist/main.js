@@ -9,7 +9,8 @@ const fs_1 = __importDefault(require("fs"));
 const electron_store_1 = __importDefault(require("electron-store"));
 const pkce_challenge_1 = __importDefault(require("pkce-challenge"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const auth_helpers_1 = require("./auth-helpers");
+const auth_1 = require("./utils/auth");
+const drive_1 = require("./utils/drive");
 dotenv_1.default.config();
 // Global reference to window to prevent GC (?).
 let mainWindow = null;
@@ -65,7 +66,11 @@ function setupAuthIpc() {
     let authController = null;
     const ensurePreconditions = () => {
         const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-        const oauthClientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+        const oauthClientSecretRaw = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+        const oauthClientSecret = typeof oauthClientSecretRaw === "string" &&
+            oauthClientSecretRaw.trim().length > 0
+            ? oauthClientSecretRaw.trim()
+            : undefined;
         if (!clientId) {
             throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
         }
@@ -88,7 +93,7 @@ function setupAuthIpc() {
         }
         if (tokens.id_token) {
             try {
-                const payload = (0, auth_helpers_1.decodeJwtPayload)(tokens.id_token);
+                const payload = (0, auth_1.decodeJwtPayload)(tokens.id_token);
                 const user = {
                     email: payload?.email,
                     name: payload?.name,
@@ -115,13 +120,13 @@ function setupAuthIpc() {
         authController = new AbortController();
         const signal = authController.signal;
         // Loopback server + auth URL
-        const { server, redirectUri } = await (0, auth_helpers_1.startLoopbackRedirectServer)();
-        const url = (0, auth_helpers_1.buildAuthUrl)(clientId, redirectUri, code_challenge);
+        const { server, redirectUri } = await (0, auth_1.startLoopbackRedirectServer)();
+        const url = (0, auth_1.buildAuthUrl)(clientId, redirectUri, code_challenge);
         await electron_1.shell.openExternal(url);
         // Wait for code (abortable, with timeout)
         let code;
         try {
-            code = await (0, auth_helpers_1.waitForAuthorizationCode)(server, signal);
+            code = await (0, auth_1.waitForAuthorizationCode)(server, signal);
         }
         finally {
             try {
@@ -130,7 +135,8 @@ function setupAuthIpc() {
             catch { }
         }
         // Exchange tokens and store
-        const tokens = await (0, auth_helpers_1.exchangeAuthorizationCodeForTokens)({
+        console.info(`[auth] Token exchange will include client_secret: ${oauthClientSecret ? "yes" : "no"}`);
+        const tokens = await (0, auth_1.exchangeAuthorizationCodeForTokens)({
             clientId,
             authorizationCode: code,
             pkceCodeVerifier: code_verifier,
@@ -162,6 +168,100 @@ function setupAuthIpc() {
         catch {
             return { isAuthenticated: false, user: null };
         }
+    });
+}
+function setupDriveIpc() {
+    let driveSyncController = null;
+    let driveRestoreController = null;
+    const getDecryptedRefreshToken = () => {
+        // TODO: Rather than repeating this stupid thing everywhere, just check on boot
+        // and stop the application if encryption is not available.
+        if (!electron_1.safeStorage.isEncryptionAvailable()) {
+            throw new Error("Safe storage is not available on this system.");
+        }
+        const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
+        if (!enc || typeof enc !== "string") {
+            throw new Error("Not authenticated.");
+        }
+        return electron_1.safeStorage.decryptString(Buffer.from(enc, "base64"));
+    };
+    const getAccessToken = async (signal) => {
+        const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+        if (!clientId) {
+            throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
+        }
+        const raw = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+        // TODO: This could be a util function.
+        const oauthClientSecret = typeof raw === "string" && raw.trim().length > 0 ? raw.trim() : undefined;
+        const refreshToken = getDecryptedRefreshToken();
+        const refreshed = await (0, auth_1.refreshAccessToken)(clientId, refreshToken, oauthClientSecret, signal);
+        const accessToken = refreshed.access_token;
+        if (!accessToken) {
+            throw new Error("Failed to obtain access token.");
+        }
+        return accessToken;
+    };
+    electron_1.ipcMain.handle("drive-sync", async (_event, args) => {
+        // Guard against user spamming actions.
+        if (driveSyncController) {
+            driveSyncController.abort();
+        }
+        driveSyncController = new AbortController();
+        const signal = driveSyncController.signal;
+        const accessToken = await getAccessToken(signal);
+        const { fileName, content, contentType } = args;
+        const existingId = await (0, drive_1.findAppDataFileIdByName)(accessToken, fileName, signal);
+        let createdNewFileId = null;
+        let targetFileId;
+        if (existingId) {
+            targetFileId = existingId;
+        }
+        else {
+            createdNewFileId = await (0, drive_1.createAppDataFile)(accessToken, fileName, signal);
+            targetFileId = createdNewFileId;
+        }
+        try {
+            await (0, drive_1.updateAppDataFileContent)(accessToken, targetFileId, content, contentType, signal);
+        }
+        catch (error) {
+            if (createdNewFileId) {
+                try {
+                    await (0, drive_1.deleteAppDataFile)(accessToken, createdNewFileId, signal);
+                }
+                catch { }
+            }
+            throw error;
+        }
+        finally {
+            driveSyncController = null;
+        }
+    });
+    electron_1.ipcMain.handle("drive-restore", async (_event, args) => {
+        if (driveRestoreController) {
+            driveRestoreController.abort();
+        }
+        driveRestoreController = new AbortController();
+        const signal = driveRestoreController.signal;
+        const accessToken = await getAccessToken(signal);
+        const { fileName } = args;
+        const fileId = await (0, drive_1.findAppDataFileIdByName)(accessToken, fileName, signal);
+        if (!fileId) {
+            driveRestoreController = null;
+            throw new Error("No backup found in Drive.");
+        }
+        const bytes = await (0, drive_1.downloadAppDataFileContent)(accessToken, fileId, signal);
+        driveRestoreController = null;
+        return bytes;
+    });
+    electron_1.ipcMain.handle("drive-cancel", () => {
+        if (driveSyncController) {
+            driveSyncController.abort();
+        }
+        if (driveRestoreController) {
+            driveRestoreController.abort();
+        }
+        driveSyncController = null;
+        driveRestoreController = null;
     });
 }
 // Listener to handle saving progress bar data.
@@ -243,6 +343,7 @@ function createWindow() {
 electron_1.app.whenReady().then(() => {
     setupPasswordIpc();
     setupAuthIpc();
+    setupDriveIpc();
     createWindow();
 });
 electron_1.app.on("window-all-closed", () => {

@@ -1,5 +1,9 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IElectronAPI } from "./types/electron";
+import {
+  DriveRestoreParameters,
+  DriveSyncParameters,
+  IElectronAPI,
+} from "./types/electron";
 import { AuthStatus } from "./types/shared";
 
 // Define the API we are exposing
@@ -34,6 +38,13 @@ const api: IElectronAPI = {
   cancelGoogleAuth: () => ipcRenderer.invoke("auth-cancel"),
   getAuthStatus: () => ipcRenderer.invoke("auth-status") as Promise<AuthStatus>,
   authSignOut: () => ipcRenderer.invoke("auth-sign-out"),
+
+  // GDrive syncing operations
+  driveSync: (params: DriveSyncParameters) =>
+    ipcRenderer.invoke("drive-sync", params),
+  driveRestore: (params: DriveRestoreParameters) =>
+    ipcRenderer.invoke("drive-restore", params),
+  driveCancel: () => ipcRenderer.invoke("drive-cancel"),
 };
 
 // Expose the API to the renderer process

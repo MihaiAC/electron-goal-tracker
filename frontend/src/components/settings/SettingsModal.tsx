@@ -38,8 +38,13 @@ export default function SettingsModal({
     cancelSignIn,
   } = useGoogleAuth();
 
-  const { lastSynced, syncToDrive, restoreFromDrive, clearLastSynced } =
-    useGoogleDriveSync();
+  const {
+    lastSynced,
+    syncToDrive,
+    restoreFromDrive,
+    clearLastSynced,
+    cancelDriveOperation,
+  } = useGoogleDriveSync();
 
   const { getPassword, savePassword, clearPassword } = usePassword();
 
@@ -65,17 +70,13 @@ export default function SettingsModal({
     if (savedPassword) {
       try {
         dispatch({ type: "START_SYNC" });
-        const success = await syncToDrive(savedPassword, currentBars);
-        if (success) {
-          dispatch({
-            type: "OPERATION_SUCCESS",
-            operation: "sync",
-            message: "Synced successfully",
-          });
-        } else {
-          await clearPassword();
-          dispatch({ type: "NEED_PASSWORD", purpose: "sync" });
-        }
+        // TODO: Why aren't we returning a bool from syncToDrive anymore? Seemed like an OK idea?
+        await syncToDrive(savedPassword, currentBars);
+        dispatch({
+          type: "OPERATION_SUCCESS",
+          operation: "sync",
+          message: "Synced successfully",
+        });
       } catch {
         await clearPassword();
         dispatch({ type: "NEED_PASSWORD", purpose: "sync" });
@@ -119,12 +120,8 @@ export default function SettingsModal({
   const handleSyncWithPassword = async (password: string) => {
     dispatch({ type: "PASSWORD_PROVIDED", password, purpose: "sync" });
     try {
-      const success = await syncToDrive(password, currentBars);
-      if (success) {
-        dispatch({ type: "OFFER_SAVE_PASSWORD", password });
-      } else {
-        dispatch({ type: "OPERATION_FAILED", message: "Sync failed" });
-      }
+      await syncToDrive(password, currentBars);
+      dispatch({ type: "OFFER_SAVE_PASSWORD", password });
     } catch {
       dispatch({ type: "OPERATION_FAILED", message: "Sync failed" });
     }
@@ -232,6 +229,7 @@ export default function SettingsModal({
               : "Restoring from Google Drive..."
             : undefined
         }
+        onCancel={cancelDriveOperation}
       />
 
       <OperationSuccessDialog

@@ -11,7 +11,16 @@ import {
   buildAuthUrl,
   exchangeAuthorizationCodeForTokens,
   decodeJwtPayload,
-} from "./auth-helpers";
+  refreshAccessToken,
+} from "./utils/auth";
+
+import {
+  findAppDataFileIdByName,
+  createAppDataFile,
+  updateAppDataFileContent,
+  downloadAppDataFileContent,
+  deleteAppDataFile,
+} from "./utils/drive";
 
 dotenv.config();
 
@@ -213,6 +222,159 @@ function setupAuthIpc() {
   });
 }
 
+function setupDriveIpc() {
+  let driveSyncController: AbortController | null = null;
+  let driveRestoreController: AbortController | null = null;
+
+  const getDecryptedRefreshToken = (): string => {
+    // TODO: Rather than repeating this stupid thing everywhere, just check on boot
+    // and stop the application if encryption is not available.
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error("Safe storage is not available on this system.");
+    }
+
+    const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
+    if (!enc || typeof enc !== "string") {
+      throw new Error("Not authenticated.");
+    }
+    return safeStorage.decryptString(Buffer.from(enc, "base64"));
+  };
+
+  const getAccessToken = async (signal?: AbortSignal): Promise<string> => {
+    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+
+    if (!clientId) {
+      throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
+    }
+
+    const raw = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+    // TODO: This could be a util function.
+    const oauthClientSecret =
+      typeof raw === "string" && raw.trim().length > 0 ? raw.trim() : undefined;
+    const refreshToken = getDecryptedRefreshToken();
+
+    const refreshed = await refreshAccessToken(
+      clientId,
+      refreshToken,
+      oauthClientSecret,
+      signal
+    );
+
+    const accessToken = refreshed.access_token;
+    if (!accessToken) {
+      throw new Error("Failed to obtain access token.");
+    }
+
+    return accessToken;
+  };
+
+  ipcMain.handle(
+    "drive-sync",
+    async (
+      _event,
+      args: { fileName: string; content: Uint8Array; contentType?: string }
+    ) => {
+      // Guard against user spamming actions.
+      if (driveSyncController) {
+        driveSyncController.abort();
+      }
+
+      driveSyncController = new AbortController();
+      const signal = driveSyncController.signal;
+
+      const accessToken = await getAccessToken(signal);
+      const { fileName, content, contentType } = args;
+
+      const existingId = await findAppDataFileIdByName(
+        accessToken,
+        fileName,
+        signal
+      );
+
+      let createdNewFileId: string | null = null;
+      let targetFileId: string;
+
+      if (existingId) {
+        targetFileId = existingId;
+      } else {
+        createdNewFileId = await createAppDataFile(
+          accessToken,
+          fileName,
+          signal
+        );
+        targetFileId = createdNewFileId;
+      }
+
+      try {
+        await updateAppDataFileContent(
+          accessToken,
+          targetFileId,
+          content,
+          contentType,
+          signal
+        );
+      } catch (error) {
+        if (createdNewFileId) {
+          try {
+            await deleteAppDataFile(accessToken, createdNewFileId, signal);
+          } catch {}
+        }
+        throw error;
+      } finally {
+        driveSyncController = null;
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "drive-restore",
+    async (_event, args: { fileName: string }) => {
+      if (driveRestoreController) {
+        driveRestoreController.abort();
+      }
+
+      driveRestoreController = new AbortController();
+      const signal = driveRestoreController.signal;
+
+      const accessToken = await getAccessToken(signal);
+      const { fileName } = args;
+
+      const fileId = await findAppDataFileIdByName(
+        accessToken,
+        fileName,
+        signal
+      );
+
+      if (!fileId) {
+        driveRestoreController = null;
+        throw new Error("No backup found in Drive.");
+      }
+
+      const bytes = await downloadAppDataFileContent(
+        accessToken,
+        fileId,
+        signal
+      );
+
+      driveRestoreController = null;
+      return bytes;
+    }
+  );
+
+  ipcMain.handle("drive-cancel", () => {
+    if (driveSyncController) {
+      driveSyncController.abort();
+    }
+
+    if (driveRestoreController) {
+      driveRestoreController.abort();
+    }
+
+    driveSyncController = null;
+    driveRestoreController = null;
+  });
+}
+
 // Listener to handle saving progress bar data.
 // TODO: Group-up related handlers, as above.
 ipcMain.handle("save-data", async (_event, data) => {
@@ -298,6 +460,7 @@ function createWindow() {
 app.whenReady().then(() => {
   setupPasswordIpc();
   setupAuthIpc();
+  setupDriveIpc();
   createWindow();
 });
 

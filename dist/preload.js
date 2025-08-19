@@ -28,6 +28,10 @@ const api = {
     cancelGoogleAuth: () => electron_1.ipcRenderer.invoke("auth-cancel"),
     getAuthStatus: () => electron_1.ipcRenderer.invoke("auth-status"),
     authSignOut: () => electron_1.ipcRenderer.invoke("auth-sign-out"),
+    // GDrive syncing operations
+    driveSync: (params) => electron_1.ipcRenderer.invoke("drive-sync", params),
+    driveRestore: (params) => electron_1.ipcRenderer.invoke("drive-restore", params),
+    driveCancel: () => electron_1.ipcRenderer.invoke("drive-cancel"),
 };
 // Expose the API to the renderer process
 if (process.contextIsolated) {

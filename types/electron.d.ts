@@ -1,5 +1,16 @@
 import { AppData, AuthStatus, SaveResult } from "./shared";
 
+// Parameters for Google Drive IPC methods
+export type DriveSyncParameters = {
+  fileName: string;
+  content: Uint8Array;
+  contentType?: string;
+};
+
+export type DriveRestoreParameters = {
+  fileName: string;
+};
+
 export interface IElectronAPI {
   // Window controls.
   minimize: () => void;
@@ -21,6 +32,11 @@ export interface IElectronAPI {
   cancelGoogleAuth: () => Promise<void>;
   getAuthStatus: () => Promise<AuthStatus>;
   authSignOut: () => Promise<void>;
+
+  // Google Drive sync/restore (appDataFolder)
+  driveSync: (params: DriveSyncParameters) => Promise<void>;
+  driveRestore: (params: DriveRestoreParameters) => Promise<Uint8Array>;
+  driveCancel: () => Promise<void>;
 }
 
 interface Window {
