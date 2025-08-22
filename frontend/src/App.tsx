@@ -24,7 +24,7 @@ import type { ProgressBarData } from "../../types/shared";
 import type { SaveStatus } from "./types";
 import { SuccessModal } from "./components/SuccessModal";
 import { Button } from "./components/Button";
-import SettingsModal from "./components/settings/SettingsModal";
+import SyncModal from "./components/sync/SyncModal";
 import { SettingsIcon } from "./components/Icons";
 
 function App() {
@@ -251,7 +251,7 @@ function App() {
       </div>
 
       {/* Modals */}
-      <SettingsModal
+      <SyncModal
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onDataRestored={handleRestoreData}

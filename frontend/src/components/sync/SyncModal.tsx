@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import type { ProgressBarData } from "../../../../types/shared";
+import { ErrorCodes } from "../../../../types/shared";
+import { isErrorWrapper } from "../../utils/errorMapping";
 import { useGoogleAuth } from "../../hooks/useGoogleAuth";
 import { usePassword } from "../../hooks/usePassword";
 import { useGoogleDriveSync } from "../../hooks/useGoogleDriveSync";
@@ -9,24 +11,24 @@ import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import PasswordDialog from "../dialogs/PasswordDialog";
 import AuthenticationSection from "./AuthSection";
 import SyncSection from "./SyncSection";
-import { useSettingsState } from "../../hooks/useSettingsState";
+import { useSettingsState } from "../../hooks/useSyncState";
 import OperationSuccessDialog from "../dialogs/OperationSuccessDialog";
 import OperationErrorDialog from "../dialogs/OperationErrorDialog";
+import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
 
-interface SettingsModalProps {
+interface SyncModalProps {
   open: boolean;
   currentBars: ProgressBarData[];
   onClose: () => void;
   onDataRestored: (bars: ProgressBarData[]) => void;
 }
 
-// TODO: Sync dialog -> flashes then disappears. Need to add a minimum time for it to be showing + success visual effect.
-export default function SettingsModal({
+export default function SyncModal({
   open,
   onClose,
   currentBars,
   onDataRestored,
-}: SettingsModalProps) {
+}: SyncModalProps) {
   const {
     user,
     isAuthenticated,
@@ -70,16 +72,31 @@ export default function SettingsModal({
     if (savedPassword) {
       try {
         dispatch({ type: "START_SYNC" });
-        // TODO: Why aren't we returning a bool from syncToDrive anymore? Seemed like an OK idea?
         await syncToDrive(savedPassword, currentBars);
         dispatch({
           type: "OPERATION_SUCCESS",
           operation: "sync",
           message: "Synced successfully",
         });
-      } catch {
-        await clearPassword();
-        dispatch({ type: "NEED_PASSWORD", purpose: "sync" });
+      } catch (error) {
+        if (isErrorWrapper(error)) {
+          if (error.code === ErrorCodes.Canceled) {
+            dispatch({ type: "BACK_TO_IDLE" });
+          } else {
+            dispatch({
+              type: "OPERATION_FAILED",
+              message: getUserFriendlyErrorMessage(error.code, "sync"),
+              code: error.code,
+              status: error.status,
+            });
+          }
+        } else {
+          dispatch({
+            type: "OPERATION_FAILED",
+            message: getUserFriendlyErrorMessage(ErrorCodes.Unknown, "sync"),
+            code: ErrorCodes.Unknown,
+          });
+        }
       }
     } else {
       dispatch({ type: "NEED_PASSWORD", purpose: "sync" });
@@ -108,9 +125,28 @@ export default function SettingsModal({
           await clearPassword();
           dispatch({ type: "NEED_PASSWORD", purpose: "restore" });
         }
-      } catch {
-        await clearPassword();
-        dispatch({ type: "NEED_PASSWORD", purpose: "restore" });
+      } catch (error) {
+        if (isErrorWrapper(error)) {
+          if (error.code === ErrorCodes.Canceled) {
+            dispatch({ type: "BACK_TO_IDLE" });
+          } else if (error.code === ErrorCodes.Crypto) {
+            await clearPassword();
+            dispatch({ type: "NEED_PASSWORD", purpose: "restore" });
+          } else {
+            dispatch({
+              type: "OPERATION_FAILED",
+              message: getUserFriendlyErrorMessage(error.code, "restore"),
+              code: error.code,
+              status: error.status,
+            });
+          }
+        } else {
+          dispatch({
+            type: "OPERATION_FAILED",
+            message: getUserFriendlyErrorMessage(ErrorCodes.Unknown, "restore"),
+            code: ErrorCodes.Unknown,
+          });
+        }
       }
     } else {
       dispatch({ type: "NEED_PASSWORD", purpose: "restore" });
@@ -122,8 +158,25 @@ export default function SettingsModal({
     try {
       await syncToDrive(password, currentBars);
       dispatch({ type: "OFFER_SAVE_PASSWORD", password });
-    } catch {
-      dispatch({ type: "OPERATION_FAILED", message: "Sync failed" });
+    } catch (error) {
+      if (isErrorWrapper(error)) {
+        if (error.code === ErrorCodes.Canceled) {
+          dispatch({ type: "BACK_TO_IDLE" });
+        } else {
+          dispatch({
+            type: "OPERATION_FAILED",
+            message: getUserFriendlyErrorMessage(error.code, "sync"),
+            code: error.code,
+            status: error.status,
+          });
+        }
+      } else {
+        dispatch({
+          type: "OPERATION_FAILED",
+          message: getUserFriendlyErrorMessage(ErrorCodes.Unknown, "sync"),
+          code: ErrorCodes.Unknown,
+        });
+      }
     }
   };
 
@@ -135,10 +188,31 @@ export default function SettingsModal({
         onDataRestored(restoredData);
         dispatch({ type: "OFFER_SAVE_PASSWORD", password });
       } else {
-        dispatch({ type: "OPERATION_FAILED", message: "Restore failed" });
+        dispatch({
+          type: "OPERATION_FAILED",
+          message: "Restore failed",
+          code: ErrorCodes.Unknown,
+        });
       }
-    } catch {
-      dispatch({ type: "OPERATION_FAILED", message: "Restore failed" });
+    } catch (error) {
+      if (isErrorWrapper(error)) {
+        if (error.code === ErrorCodes.Canceled) {
+          dispatch({ type: "BACK_TO_IDLE" });
+        } else {
+          dispatch({
+            type: "OPERATION_FAILED",
+            message: getUserFriendlyErrorMessage(error.code, "restore"),
+            code: error.code,
+            status: error.status,
+          });
+        }
+      } else {
+        dispatch({
+          type: "OPERATION_FAILED",
+          message: getUserFriendlyErrorMessage(ErrorCodes.Unknown, "restore"),
+          code: ErrorCodes.Unknown,
+        });
+      }
     }
   };
 

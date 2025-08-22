@@ -1,11 +1,11 @@
-import type { MainProcessErrorCode } from "../types/electron";
+import { ErrorCodes } from "../types/shared";
 
 export class MainProcessError extends Error {
-  public readonly code: MainProcessErrorCode;
+  public readonly code: string;
   public readonly status?: number;
 
   constructor(
-    code: MainProcessErrorCode,
+    code: string,
     message?: string,
     status?: number,
     options?: { cause?: unknown }
@@ -20,13 +20,13 @@ export class MainProcessError extends Error {
 
 export class CanceledError extends MainProcessError {
   constructor(message = "Operation canceled", options?: { cause?: unknown }) {
-    super("Canceled", message, undefined, options);
+    super(ErrorCodes.Canceled, message, undefined, options);
   }
 }
 
 export class NotAuthenticatedError extends MainProcessError {
   constructor(message = "Not authenticated", options?: { cause?: unknown }) {
-    super("NotAuthenticated", message, undefined, options);
+    super(ErrorCodes.NotAuthenticated, message, undefined, options);
   }
 }
 
@@ -35,7 +35,7 @@ export class OAuthConfigError extends MainProcessError {
     message = "OAuth configuration error",
     options?: { cause?: unknown }
   ) {
-    super("OAuthConfig", message, undefined, options);
+    super(ErrorCodes.OAuthConfig, message, undefined, options);
   }
 }
 
@@ -45,7 +45,7 @@ export class TokenRefreshFailedError extends MainProcessError {
     status?: number,
     options?: { cause?: unknown }
   ) {
-    super("TokenRefreshFailed", message, status, options);
+    super(ErrorCodes.TokenRefreshFailed, message, status, options);
   }
 }
 
@@ -55,19 +55,19 @@ export class DriveApiError extends MainProcessError {
     status?: number,
     options?: { cause?: unknown }
   ) {
-    super("DriveApi", message, status, options);
+    super(ErrorCodes.DriveApi, message, status, options);
   }
 }
 
 export class NetworkError extends MainProcessError {
   constructor(message = "Network error", options?: { cause?: unknown }) {
-    super("Network", message, undefined, options);
+    super(ErrorCodes.Network, message, undefined, options);
   }
 }
 
 export class NotFoundError extends MainProcessError {
   constructor(message = "Resource not found", options?: { cause?: unknown }) {
-    super("NotFound", message, undefined, options);
+    super(ErrorCodes.NotFound, message, undefined, options);
   }
 }
 
@@ -76,12 +76,18 @@ export class CryptoError extends MainProcessError {
     message = "Cryptography/storage error",
     options?: { cause?: unknown }
   ) {
-    super("Crypto" as MainProcessErrorCode, message, undefined, options);
+    super(ErrorCodes.Crypto, message, undefined, options);
+  }
+}
+
+export class SafeStorageError extends MainProcessError {
+  constructor(message = "Safe storage error", options?: { cause?: unknown }) {
+    super(ErrorCodes.SafeStorage, message, undefined, options);
   }
 }
 
 export class UnknownMainProcessError extends MainProcessError {
   constructor(message = "Unknown error", options?: { cause?: unknown }) {
-    super("Unknown", message, undefined, options);
+    super(ErrorCodes.Unknown, message, undefined, options);
   }
 }

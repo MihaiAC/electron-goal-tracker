@@ -1,6 +1,12 @@
 // TODO: Is there a better way to build requests? Maybe Axios? This is a bit too low level.
 // TODO: Is there a way to sneak in Tanstack?
 
+import {
+  CanceledError,
+  NetworkError,
+  DriveApiError,
+} from "./main-process-errors";
+
 /**
  * Return the ID of our save file.
  * @param accessToken JWT(?) token for querying GDrive's API.
@@ -30,16 +36,27 @@ export async function findAppDataFileIdByName(
   // Only return one file.
   url.searchParams.set("pageSize", "1");
 
-  const response = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal,
+    });
+  } catch (error) {
+    if (signal && signal.aborted) {
+      throw new CanceledError("Drive list aborted", { cause: error });
+    } else {
+      throw new NetworkError("Network error during Drive list", {
+        cause: error,
+      });
+    }
+  }
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(
-      `GDrive find file by ID failed: ${response.status} ${text}`
-    );
+    throw new DriveApiError("Drive list failed", response.status, {
+      cause: text,
+    });
   }
 
   const json = (await response.json()) as { files?: Array<{ id: string }> };
@@ -62,27 +79,40 @@ export async function createAppDataFile(
   const url = new URL("https://www.googleapis.com/drive/v3/files");
   url.searchParams.set("fields", "id");
 
-  const response = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json; charset=UTF-8",
-    },
-    body: JSON.stringify({ name: fileName, parents: ["appDataFolder"] }),
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json; charset=UTF-8",
+      },
+      body: JSON.stringify({ name: fileName, parents: ["appDataFolder"] }),
+      signal,
+    });
+  } catch (error) {
+    if (signal && signal.aborted) {
+      throw new CanceledError("Drive create aborted", { cause: error });
+    } else {
+      throw new NetworkError("Network error during Drive create", {
+        cause: error,
+      });
+    }
+  }
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`GDrive create file failed: ${response.status} ${text}`);
+    throw new DriveApiError("Drive create failed", response.status, {
+      cause: text,
+    });
   }
 
   const json = (await response.json()) as { id?: string };
   if (json.id && json.id.length > 0) {
     return json.id;
   } else {
-    throw new Error(
-      "GDrive create file failed: missing file ID in the response."
+    throw new DriveApiError(
+      "Drive create failed: missing file ID in the response."
     );
   }
 }
@@ -107,19 +137,32 @@ export async function updateAppDataFileContent(
   );
   url.searchParams.set("uploadType", "media");
 
-  const response = await fetch(url.toString(), {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": contentType || "application/octet-stream",
-    },
-    body: content,
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": contentType || "application/octet-stream",
+      },
+      body: content,
+      signal,
+    });
+  } catch (error) {
+    if (signal && signal.aborted) {
+      throw new CanceledError("Drive update aborted", { cause: error });
+    } else {
+      throw new NetworkError("Network error during Drive update", {
+        cause: error,
+      });
+    }
+  }
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Drive update failed: ${response.status} ${text}`);
+    throw new DriveApiError("Drive update failed", response.status, {
+      cause: text,
+    });
   }
 }
 
@@ -140,14 +183,27 @@ export async function downloadAppDataFileContent(
   );
   url.searchParams.set("alt", "media");
 
-  const response = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal,
+    });
+  } catch (error) {
+    if (signal && signal.aborted) {
+      throw new CanceledError("Drive download aborted", { cause: error });
+    } else {
+      throw new NetworkError("Network error during Drive download", {
+        cause: error,
+      });
+    }
+  }
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Drive download failed: ${response.status} ${text}`);
+    throw new DriveApiError("Drive download failed", response.status, {
+      cause: text,
+    });
   }
 
   const ab = await response.arrayBuffer();
@@ -169,14 +225,27 @@ export async function deleteAppDataFile(
     `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`
   );
 
-  const response = await fetch(url.toString(), {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${accessToken}` },
-    signal,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal,
+    });
+  } catch (error) {
+    if (signal && signal.aborted) {
+      throw new CanceledError("Drive delete aborted", { cause: error });
+    } else {
+      throw new NetworkError("Network error during Drive delete", {
+        cause: error,
+      });
+    }
+  }
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Drive delete failed: ${response.status} ${text}`);
+    throw new DriveApiError("Drive delete failed", response.status, {
+      cause: text,
+    });
   }
 }

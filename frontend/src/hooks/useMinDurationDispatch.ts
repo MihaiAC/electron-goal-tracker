@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import type { SettingsAction } from "./useSettingsState";
+import type { SettingsAction } from "./useSyncState";
 
 type DispatchFn = (action: SettingsAction) => void;
 

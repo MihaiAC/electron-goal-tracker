@@ -11,6 +11,20 @@ export type DriveRestoreParameters = {
   fileName: string;
 };
 
+// Error typing for main.
+export type MainProcessErrorCode = string;
+
+export type MainProcessError = {
+  code: MainProcessErrorCode;
+  message?: string;
+  status?: number;
+};
+
+// IPC result wrapper.
+export type IpcResult<T> =
+  | { ok: true; data?: T }
+  | { ok: false; error: MainProcessError };
+
 export interface IElectronAPI {
   // Window controls.
   minimize: () => void;

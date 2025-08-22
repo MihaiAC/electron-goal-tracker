@@ -1,3 +1,5 @@
+import { ErrorCodes } from "../../../types/shared";
+
 // Generate the key from the password + salt.
 const getKeyFromPasswordAndSalt = async (
   password: string,
@@ -30,7 +32,16 @@ const getKeyFromPasswordAndSalt = async (
   );
 };
 
-// Encrypt data with password.
+// Encrypt/decrypt error that uses the same code as main process errors.
+export class CryptoError extends Error {
+  readonly code: string = ErrorCodes.Crypto;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "CryptoError";
+  }
+}
+
 export async function encryptData(
   data: string,
   password: string
@@ -59,7 +70,7 @@ export async function encryptData(
     return JSON.stringify(bundle);
   } catch (error) {
     console.error("Encryption failed: ", error);
-    throw new Error("Failed to encrypt data");
+    throw new CryptoError("Failed to encrypt data");
   }
 }
 
@@ -97,10 +108,10 @@ export async function decryptData(
     return decoder.decode(encodedData);
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error("Failed to parse JSON bundle");
+      throw new CryptoError("Failed to parse JSON bundle");
     }
 
     console.error("Decryption failed: ", error);
-    throw new Error("Failed to decrypt data. Wrong password?");
+    throw new CryptoError("Failed to decrypt data. Wrong password?");
   }
 }

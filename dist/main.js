@@ -6,11 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
+const shared_1 = require("./types/shared");
 const electron_store_1 = __importDefault(require("electron-store"));
 const pkce_challenge_1 = __importDefault(require("pkce-challenge"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const auth_1 = require("./utils/auth");
 const drive_1 = require("./utils/drive");
+const main_process_errors_1 = require("./utils/main-process-errors");
 dotenv_1.default.config();
 // Global reference to window to prevent GC (?).
 let mainWindow = null;
@@ -20,11 +22,34 @@ const OAUTH_REFRESH_TOKEN_KEY = "oauthRefreshToken";
 const OAUTH_USER_INFO_KEY = "oauthUser";
 // Initialise electron-store.
 const store = new electron_store_1.default();
+// Wrapper to serialize typed errors across IPC
+function toIpcErrorWrapper(error) {
+    if (error instanceof main_process_errors_1.MainProcessError) {
+        return { code: error.code, message: error.message, status: error.status };
+    }
+    else if (error instanceof Error) {
+        return { code: shared_1.ErrorCodes.Unknown, message: error.message };
+    }
+    else {
+        return { code: shared_1.ErrorCodes.Unknown, message: String(error) };
+    }
+}
+function handleInvoke(channel, handler) {
+    electron_1.ipcMain.handle(channel, async (_event, ...args) => {
+        try {
+            const data = await handler(...args);
+            return { ok: true, data };
+        }
+        catch (error) {
+            return { ok: false, error: toIpcErrorWrapper(error) };
+        }
+    });
+}
 function setupPasswordIpc() {
     // Save the password securely.
-    electron_1.ipcMain.handle("save-password", (_, password) => {
+    handleInvoke("save-password", async (password) => {
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
-            throw new Error("Safe storage is not available on this system.");
+            throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
         try {
             const encryptedPassword = electron_1.safeStorage.encryptString(password);
@@ -32,13 +57,15 @@ function setupPasswordIpc() {
             store.set(SYNC_PASSWORD_KEY, encryptedPassword.toString("base64"));
         }
         catch (error) {
-            console.error("Failed to save error: ", error);
-            throw error;
+            console.error("[password] Failed to encrypt password for storage: ", error);
+            throw new main_process_errors_1.SafeStorageError("Failed to encrypt password for storage.", {
+                cause: error,
+            });
         }
     });
-    electron_1.ipcMain.handle("get-password", () => {
+    handleInvoke("get-password", async () => {
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
-            throw new Error("Safe storage is not available on this system.");
+            throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
         try {
             const encryptedPasswordBase64 = store.get(SYNC_PASSWORD_KEY);
@@ -55,7 +82,7 @@ function setupPasswordIpc() {
             return null;
         }
     });
-    electron_1.ipcMain.handle("clear-password", () => {
+    handleInvoke("clear-password", async () => {
         store.delete(SYNC_PASSWORD_KEY);
     });
 }
@@ -72,23 +99,34 @@ function setupAuthIpc() {
             ? oauthClientSecretRaw.trim()
             : undefined;
         if (!clientId) {
-            throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
+            throw new main_process_errors_1.OAuthConfigError("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
         }
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
-            throw new Error("Safe storage is not available on this system.");
+            throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
         return { clientId, oauthClientSecret };
     };
     const storeTokensAndUser = (tokens) => {
         const refresh = tokens.refresh_token;
         if (refresh) {
-            const encrypted = electron_1.safeStorage.encryptString(refresh);
-            store.set(OAUTH_REFRESH_TOKEN_KEY, encrypted.toString("base64"));
+            if (!electron_1.safeStorage.isEncryptionAvailable()) {
+                throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
+            }
+            try {
+                const encrypted = electron_1.safeStorage.encryptString(refresh);
+                store.set(OAUTH_REFRESH_TOKEN_KEY, encrypted.toString("base64"));
+            }
+            catch (error) {
+                console.error("[auth] Failed to encrypt refresh token: ", error);
+                throw new main_process_errors_1.SafeStorageError("Failed to encrypt refresh token.", {
+                    cause: error,
+                });
+            }
         }
         else {
             const encExisting = store.get(OAUTH_REFRESH_TOKEN_KEY);
             if (!encExisting || typeof encExisting !== "string") {
-                throw new Error("No refresh_token returned. Please try again.");
+                throw new main_process_errors_1.OAuthConfigError("No refresh_token returned. Please try again.");
             }
         }
         if (tokens.id_token) {
@@ -109,7 +147,7 @@ function setupAuthIpc() {
             store.delete(OAUTH_USER_INFO_KEY);
         }
     };
-    electron_1.ipcMain.handle("auth-start", async () => {
+    handleInvoke("auth-start", async () => {
         const { clientId, oauthClientSecret } = ensurePreconditions();
         // PKCE
         const { code_verifier, code_challenge } = await (0, pkce_challenge_1.default)();
@@ -146,15 +184,15 @@ function setupAuthIpc() {
         storeTokensAndUser(tokens);
         authController = null;
     });
-    electron_1.ipcMain.handle("auth-cancel", () => {
+    handleInvoke("auth-cancel", async () => {
         authController?.abort();
         authController = null;
     });
-    electron_1.ipcMain.handle("auth-sign-out", () => {
+    handleInvoke("auth-sign-out", async () => {
         store.delete(OAUTH_REFRESH_TOKEN_KEY);
         store.delete(OAUTH_USER_INFO_KEY);
     });
-    electron_1.ipcMain.handle("auth-status", () => {
+    handleInvoke("auth-status", async () => {
         try {
             const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
             if (!enc || typeof enc !== "string") {
@@ -177,18 +215,26 @@ function setupDriveIpc() {
         // TODO: Rather than repeating this stupid thing everywhere, just check on boot
         // and stop the application if encryption is not available.
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
-            throw new Error("Safe storage is not available on this system.");
+            throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
         const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
         if (!enc || typeof enc !== "string") {
-            throw new Error("Not authenticated.");
+            throw new main_process_errors_1.NotAuthenticatedError("Not authenticated.");
         }
-        return electron_1.safeStorage.decryptString(Buffer.from(enc, "base64"));
+        try {
+            return electron_1.safeStorage.decryptString(Buffer.from(enc, "base64"));
+        }
+        catch (error) {
+            console.error("[auth] Failed to decrypt refresh token: ", error);
+            throw new main_process_errors_1.SafeStorageError("Failed to decrypt refresh token.", {
+                cause: error,
+            });
+        }
     };
     const getAccessToken = async (signal) => {
         const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
         if (!clientId) {
-            throw new Error("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
+            throw new main_process_errors_1.OAuthConfigError("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
         }
         const raw = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
         // TODO: This could be a util function.
@@ -197,11 +243,11 @@ function setupDriveIpc() {
         const refreshed = await (0, auth_1.refreshAccessToken)(clientId, refreshToken, oauthClientSecret, signal);
         const accessToken = refreshed.access_token;
         if (!accessToken) {
-            throw new Error("Failed to obtain access token.");
+            throw new main_process_errors_1.TokenRefreshFailedError("Failed to obtain access token.");
         }
         return accessToken;
     };
-    electron_1.ipcMain.handle("drive-sync", async (_event, args) => {
+    handleInvoke("drive-sync", async (args) => {
         // Guard against user spamming actions.
         if (driveSyncController) {
             driveSyncController.abort();
@@ -236,7 +282,7 @@ function setupDriveIpc() {
             driveSyncController = null;
         }
     });
-    electron_1.ipcMain.handle("drive-restore", async (_event, args) => {
+    handleInvoke("drive-restore", async (args) => {
         if (driveRestoreController) {
             driveRestoreController.abort();
         }
@@ -247,13 +293,13 @@ function setupDriveIpc() {
         const fileId = await (0, drive_1.findAppDataFileIdByName)(accessToken, fileName, signal);
         if (!fileId) {
             driveRestoreController = null;
-            throw new Error("No backup found in Drive.");
+            throw new main_process_errors_1.NotFoundError("No backup found in Drive.");
         }
         const bytes = await (0, drive_1.downloadAppDataFileContent)(accessToken, fileId, signal);
         driveRestoreController = null;
         return bytes;
     });
-    electron_1.ipcMain.handle("drive-cancel", () => {
+    handleInvoke("drive-cancel", async () => {
         if (driveSyncController) {
             driveSyncController.abort();
         }
@@ -266,13 +312,13 @@ function setupDriveIpc() {
 }
 // Listener to handle saving progress bar data.
 // TODO: Group-up related handlers, as above.
-electron_1.ipcMain.handle("save-data", async (_event, data) => {
+handleInvoke("save-data", async (data) => {
     const filePath = path_1.default.join(electron_1.app.getPath("userData"), "my-data.json");
     fs_1.default.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
     return { success: true, path: filePath };
 });
 // Handle loading bar data from local storage on app start.
-electron_1.ipcMain.handle("load-data", async () => {
+handleInvoke("load-data", async () => {
     const filePath = path_1.default.join(electron_1.app.getPath("userData"), "my-data.json");
     try {
         if (fs_1.default.existsSync(filePath)) {

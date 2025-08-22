@@ -3,11 +3,18 @@ import { useMinDurationDispatch } from "./useMinDurationDispatch";
 
 // One state for each screen/modal the user sees
 type SettingsState =
+  // Idle states.
   | { type: "SIGNED_OUT" }
   | { type: "SIGNED_IN" }
+
+  // Transitory state.
   | { type: "SYNCING"; operation: "sync" | "restore" }
-  | { type: "SUCCESS"; operation: "sync" | "restore"; message: string }
-  | { type: "ERROR"; message: string; code?: string }
+
+  // Outcome states.
+  | { type: "SUCCESS"; operation: "sync" | "restore"; message: string } // pre-idle
+  | { type: "ERROR"; message: string; code?: string; status?: number } // pre- action required
+
+  // User choice required.
   | { type: "CONFIRM_RESTORE" }
   | { type: "PASSWORD_SYNC" }
   | { type: "PASSWORD_RESTORE" }
@@ -29,7 +36,12 @@ type SettingsAction =
       operation: "sync" | "restore";
       message: string;
     }
-  | { type: "OPERATION_FAILED"; message: string; code?: string }
+  | {
+      type: "OPERATION_FAILED";
+      message: string;
+      code?: string;
+      status?: number;
+    }
 
   // Password saving
   | { type: "OFFER_SAVE_PASSWORD"; password: string }
@@ -83,6 +95,7 @@ function settingsReducer(
         type: "ERROR",
         message: action.message,
         code: action.code,
+        status: action.status,
       };
 
     // Password saving
@@ -107,7 +120,7 @@ function settingsReducer(
 // Simple helpers
 const MIN_SYNCING_MS = 700;
 
-function useSettingsState(isAuthenticated: boolean) {
+function useSyncStateMachine(isAuthenticated: boolean) {
   const initialState: SettingsState = isAuthenticated
     ? { type: "SIGNED_IN" }
     : { type: "SIGNED_OUT" };
@@ -133,4 +146,8 @@ function useSettingsState(isAuthenticated: boolean) {
   };
 }
 
-export { useSettingsState, type SettingsState, type SettingsAction };
+export {
+  useSyncStateMachine as useSettingsState,
+  type SettingsState,
+  type SettingsAction,
+};
