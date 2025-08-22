@@ -2,6 +2,10 @@
 import { createServer, Server } from "http";
 import type { AddressInfo } from "net";
 import type { OAuthTokens } from "../types/shared";
+import {
+  oauthCallbackSuccessHtml,
+  oauthCallbackErrorHtml,
+} from "./oauthSuccessPage";
 
 /** App scopes: file-scoped Drive access + minimal identity for email. */
 export const OAUTH_SCOPES = [
@@ -99,10 +103,11 @@ export function waitForAuthorizationCode(
         const err = url.searchParams.get("error");
 
         res.writeHead(200, { "Content-Type": "text/html" });
-        // TODO: This is a really inelegant way to do it. Any way to style this somehow?
-        res.end(
-          "<html><body><p>Authentication complete. You can close this window.</p><script>window.close();</script></body></html>"
-        );
+        if (err) {
+          res.end(oauthCallbackErrorHtml());
+        } else {
+          res.end(oauthCallbackSuccessHtml());
+        }
 
         clearTimeout(timeout);
         signal.removeEventListener("abort", onAbort);
