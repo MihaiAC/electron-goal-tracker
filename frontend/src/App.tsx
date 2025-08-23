@@ -24,6 +24,8 @@ import type { ProgressBarData } from "../../types/shared";
 import type { SaveStatus } from "./types";
 import { SuccessModal } from "./components/SuccessModal";
 import { Button } from "./components/Button";
+import SyncModal from "./components/sync/SyncModal";
+import { CloudIcon } from "./components/Icons";
 
 function App() {
   // Track save status for animations.
@@ -33,6 +35,9 @@ function App() {
   const [successModalBarId, setSuccessModalBarId] = useState<string | null>(
     null
   );
+
+  // State for settings menu.
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [bars, setBars] = useState<ProgressBarData[]>(() => {
     // Let's add a second bar for easier testing of drag-and-drop
@@ -137,6 +142,10 @@ function App() {
     setEditingBarId(null);
   };
 
+  const handleRestoreData = (restoredBars: ProgressBarData[]) => {
+    setBars(restoredBars);
+  };
+
   const addNewBar = () => {
     const newBar: ProgressBarData = {
       id: Date.now().toString(),
@@ -182,6 +191,8 @@ function App() {
   }, [bars]);
 
   // TODO: Too many things are happening here - modularise it.
+  // TODO: Maybe add state management library.
+  // TODO: Maybe add progress histories (or ++ extensions).
   return (
     <div className="app-container">
       <header className="titlebar">
@@ -229,8 +240,23 @@ function App() {
           </Button>
 
           <SaveButton status={saveStatus} onClick={handleSave} />
+
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="fixed bottom-6 right-6 w-12 h-12 text-slate-800 rounded-md bg-white flex items-center justify-center shadow-lg hover:bg-slate-800 hover:text-white transition-colors duration-200 border border-white"
+          >
+            <CloudIcon />
+          </button>
         </main>
       </div>
+
+      {/* Modals */}
+      <SyncModal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onDataRestored={handleRestoreData}
+        currentBars={bars}
+      />
 
       {editingBar && (
         <BarSettings

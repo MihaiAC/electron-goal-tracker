@@ -171,3 +171,5 @@ compile_commands.json
 dist/*
 dist/preload.js.map
 *.map
+
+./.env.local

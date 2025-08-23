@@ -1,5 +1,30 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IElectronAPI } from "./types/electron";
+import {
+  DriveRestoreParameters,
+  DriveSyncParameters,
+  IElectronAPI,
+} from "./types/electron";
+import { AuthStatus } from "./types/shared";
+import type { IpcResult } from "./types/electron";
+import type { AppData, SaveResult } from "./types/shared";
+
+// Helper: invoke IPC channel and unwrap the standard IpcResult envelope
+async function invokeAndUnwrap<T>(channel: string, ...args: any[]): Promise<T> {
+  const result = (await ipcRenderer.invoke(channel, ...args)) as IpcResult<T>;
+
+  if (!result || typeof result !== "object" || !("ok" in result)) {
+    // Back-compat: if main returned a raw value, just pass it through
+    return result as unknown as T;
+  }
+
+  if (result.ok) {
+    // Some handlers may not return data (void)
+    return (result.data as T) ?? (undefined as unknown as T);
+  }
+
+  // Error path: forward minimal error envelope { code, message, status }
+  throw result.error;
+}
 
 // Define the API we are exposing
 const api: IElectronAPI = {
@@ -21,8 +46,25 @@ const api: IElectronAPI = {
       ipcRenderer.removeAllListeners("window-maximized");
     };
   },
-  saveData: (data) => ipcRenderer.invoke("save-data", data),
-  loadData: () => ipcRenderer.invoke("load-data"),
+  saveData: (data: AppData) => invokeAndUnwrap<SaveResult>("save-data", data),
+  loadData: () => invokeAndUnwrap<AppData | null>("load-data"),
+  savePassword: (password: string) =>
+    invokeAndUnwrap<void>("save-password", password),
+  getPassword: () => invokeAndUnwrap<string | null>("get-password"),
+  clearPassword: () => invokeAndUnwrap<void>("clear-password"),
+
+  // OAuth for Google Drive
+  startGoogleAuth: () => invokeAndUnwrap<void>("auth-start"),
+  cancelGoogleAuth: () => invokeAndUnwrap<void>("auth-cancel"),
+  getAuthStatus: () => invokeAndUnwrap<AuthStatus>("auth-status"),
+  authSignOut: () => invokeAndUnwrap<void>("auth-sign-out"),
+
+  // GDrive syncing operations
+  driveSync: (params: DriveSyncParameters) =>
+    invokeAndUnwrap<void>("drive-sync", params),
+  driveRestore: (params: DriveRestoreParameters) =>
+    invokeAndUnwrap<Uint8Array>("drive-restore", params),
+  driveCancel: () => invokeAndUnwrap<void>("drive-cancel"),
 };
 
 // Expose the API to the renderer process

@@ -1,6 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
+// Helper: invoke IPC channel and unwrap the standard IpcResult envelope
+async function invokeAndUnwrap(channel, ...args) {
+    const result = (await electron_1.ipcRenderer.invoke(channel, ...args));
+    if (!result || typeof result !== "object" || !("ok" in result)) {
+        // Back-compat: if main returned a raw value, just pass it through
+        return result;
+    }
+    if (result.ok) {
+        // Some handlers may not return data (void)
+        return result.data ?? undefined;
+    }
+    // Error path: forward minimal error envelope { code, message, status }
+    throw result.error;
+}
 // Define the API we are exposing
 const api = {
     minimize: () => {
@@ -18,8 +32,20 @@ const api = {
             electron_1.ipcRenderer.removeAllListeners("window-maximized");
         };
     },
-    saveData: (data) => electron_1.ipcRenderer.invoke("save-data", data),
-    loadData: () => electron_1.ipcRenderer.invoke("load-data"),
+    saveData: (data) => invokeAndUnwrap("save-data", data),
+    loadData: () => invokeAndUnwrap("load-data"),
+    savePassword: (password) => invokeAndUnwrap("save-password", password),
+    getPassword: () => invokeAndUnwrap("get-password"),
+    clearPassword: () => invokeAndUnwrap("clear-password"),
+    // OAuth for Google Drive
+    startGoogleAuth: () => invokeAndUnwrap("auth-start"),
+    cancelGoogleAuth: () => invokeAndUnwrap("auth-cancel"),
+    getAuthStatus: () => invokeAndUnwrap("auth-status"),
+    authSignOut: () => invokeAndUnwrap("auth-sign-out"),
+    // GDrive syncing operations
+    driveSync: (params) => invokeAndUnwrap("drive-sync", params),
+    driveRestore: (params) => invokeAndUnwrap("drive-restore", params),
+    driveCancel: () => invokeAndUnwrap("drive-cancel"),
 };
 // Expose the API to the renderer process
 if (process.contextIsolated) {
