@@ -314,7 +314,32 @@ function setupDriveIpc() {
 // TODO: Group-up related handlers, as above.
 handleInvoke("save-data", async (data) => {
     const filePath = path_1.default.join(electron_1.app.getPath("userData"), "my-data.json");
-    fs_1.default.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+    // If lastSynced is not provided by the renderer, preserve the existing value
+    // from the current AppData on disk to avoid wiping it on ordinary saves.
+    let lastSyncedToPersist = null;
+    if (typeof data.lastSynced !== "undefined") {
+        lastSyncedToPersist = data.lastSynced ?? null;
+    }
+    else {
+        if (fs_1.default.existsSync(filePath)) {
+            try {
+                const existingJson = fs_1.default.readFileSync(filePath, "utf-8");
+                const existingAppData = JSON.parse(existingJson);
+                if (existingAppData &&
+                    typeof existingAppData.lastSynced !== "undefined") {
+                    lastSyncedToPersist = existingAppData.lastSynced ?? null;
+                }
+            }
+            catch (error) {
+                // Ignore parse errors; fall back to null.
+            }
+        }
+    }
+    const dataToSave = {
+        bars: Array.isArray(data.bars) ? data.bars : [],
+        lastSynced: lastSyncedToPersist,
+    };
+    fs_1.default.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
     return { success: true, path: filePath };
 });
 // Handle loading bar data from local storage on app start.
@@ -332,7 +357,7 @@ handleInvoke("load-data", async () => {
         // TODO: need proper logging.
         console.error("Error loading data: ", error);
     }
-    return { bars: [] };
+    return { bars: [], lastSynced: null };
 });
 // Handle window controls.
 electron_1.ipcMain.on("minimize-app", () => {

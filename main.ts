@@ -434,9 +434,37 @@ function setupDriveIpc() {
 
 // Listener to handle saving progress bar data.
 // TODO: Group-up related handlers, as above.
-handleInvoke("save-data", async (data) => {
+handleInvoke("save-data", async (data: AppData) => {
   const filePath = path.join(app.getPath("userData"), "my-data.json");
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+
+  // If lastSynced is not provided by the renderer, preserve the existing value
+  // from the current AppData on disk to avoid wiping it on ordinary saves.
+  let lastSyncedToPersist: string | null = null;
+  if (typeof data.lastSynced !== "undefined") {
+    lastSyncedToPersist = data.lastSynced ?? null;
+  } else {
+    if (fs.existsSync(filePath)) {
+      try {
+        const existingJson = fs.readFileSync(filePath, "utf-8");
+        const existingAppData = JSON.parse(existingJson) as AppData;
+        if (
+          existingAppData &&
+          typeof existingAppData.lastSynced !== "undefined"
+        ) {
+          lastSyncedToPersist = existingAppData.lastSynced ?? null;
+        }
+      } catch (error) {
+        // Ignore parse errors; fall back to null.
+      }
+    }
+  }
+
+  const dataToSave: AppData = {
+    bars: Array.isArray(data.bars) ? data.bars : [],
+    lastSynced: lastSyncedToPersist,
+  };
+
+  fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
   return { success: true, path: filePath };
 });
 
@@ -454,7 +482,7 @@ handleInvoke("load-data", async () => {
     console.error("Error loading data: ", error);
   }
 
-  return { bars: [] };
+  return { bars: [], lastSynced: null } as AppData;
 });
 
 // Handle window controls.

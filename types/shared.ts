@@ -17,6 +17,7 @@ export interface VersionedAppData {
 
 export interface AppData {
   bars: ProgressBarData[];
+  lastSynced?: string | null;
 }
 
 export interface SaveResult {
