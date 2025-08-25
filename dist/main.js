@@ -13,6 +13,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const auth_1 = require("./utils/auth");
 const drive_1 = require("./utils/drive");
 const main_process_errors_1 = require("./utils/main-process-errors");
+// TODO: Will need to split this into multiple files, I can't tell what's going on anymore.
 dotenv_1.default.config();
 // Global reference to window to prevent GC (?).
 let mainWindow = null;
@@ -310,6 +311,39 @@ function setupDriveIpc() {
         driveRestoreController = null;
     });
 }
+/** Canonical file names for .mp3 sounds per event. */
+const SOUND_FILE_NAMES = {
+    progressIncrement: "ui_increment.mp3",
+    progressDecrement: "ui_decrement.mp3",
+    progressComplete: "ui_complete.mp3",
+};
+/** Ensure a directory exists, creating parents as needed. */
+function ensureDirSync(dir) {
+    if (fs_1.default.existsSync(dir) === false) {
+        fs_1.default.mkdirSync(dir, { recursive: true });
+    }
+}
+/** Resolve the sounds folder under userData. */
+function getSoundsDir() {
+    return path_1.default.join(electron_1.app.getPath("userData"), "sounds");
+}
+// Save a user-uploaded .mp3 sound under a canonical filename for the event.
+handleInvoke("sounds-save", async (eventId, content) => {
+    const name = SOUND_FILE_NAMES[eventId];
+    if (typeof name !== "string") {
+        throw new main_process_errors_1.UnknownMainProcessError("Invalid sound event id");
+    }
+    const dir = getSoundsDir();
+    ensureDirSync(dir);
+    const filePath = path_1.default.join(dir, name);
+    try {
+        const buffer = Buffer.from(content);
+        fs_1.default.writeFileSync(filePath, buffer);
+    }
+    catch (error) {
+        throw new main_process_errors_1.UnknownMainProcessError(`Failed to save sound for ${String(eventId)}`);
+    }
+});
 // Listener to handle saving progress bar data.
 // TODO: Group-up related handlers, as above.
 handleInvoke("save-data", async (data) => {
@@ -335,9 +369,26 @@ handleInvoke("save-data", async (data) => {
             }
         }
     }
+    // If sounds is not provided, preserve existing sounds on disk.
+    let soundsToPersist = data.sounds;
+    if (typeof soundsToPersist === "undefined") {
+        if (fs_1.default.existsSync(filePath)) {
+            try {
+                const existingJson = fs_1.default.readFileSync(filePath, "utf-8");
+                const existingAppData = JSON.parse(existingJson);
+                if (existingAppData && typeof existingAppData.sounds !== "undefined") {
+                    soundsToPersist = existingAppData.sounds;
+                }
+            }
+            catch (error) {
+                // Ignore parse errors; fall back to undefined.
+            }
+        }
+    }
     const dataToSave = {
         bars: Array.isArray(data.bars) ? data.bars : [],
         lastSynced: lastSyncedToPersist,
+        sounds: soundsToPersist,
     };
     fs_1.default.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
     return { success: true, path: filePath };
@@ -357,7 +408,7 @@ handleInvoke("load-data", async () => {
         // TODO: need proper logging.
         console.error("Error loading data: ", error);
     }
-    return { bars: [], lastSynced: null };
+    return { bars: [], lastSynced: null, sounds: undefined };
 });
 // Handle window controls.
 electron_1.ipcMain.on("minimize-app", () => {

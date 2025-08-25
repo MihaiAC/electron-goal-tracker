@@ -8,7 +8,7 @@ import { AuthStatus } from "./types/shared";
 import type { IpcResult } from "./types/electron";
 import type { AppData, SaveResult } from "./types/shared";
 
-// Helper: invoke IPC channel and unwrap the standard IpcResult envelope
+// Helper: invoke IPC channel and unwrap the standard IpcResult wrapper
 async function invokeAndUnwrap<T>(channel: string, ...args: any[]): Promise<T> {
   const result = (await ipcRenderer.invoke(channel, ...args)) as IpcResult<T>;
 
@@ -22,7 +22,7 @@ async function invokeAndUnwrap<T>(channel: string, ...args: any[]): Promise<T> {
     return (result.data as T) ?? (undefined as unknown as T);
   }
 
-  // Error path: forward minimal error envelope { code, message, status }
+  // Error path: forward minimal error wrapper { code, message, status }
   throw result.error;
 }
 
@@ -65,6 +65,10 @@ const api: IElectronAPI = {
   driveRestore: (params: DriveRestoreParameters) =>
     invokeAndUnwrap<Uint8Array>("drive-restore", params),
   driveCancel: () => invokeAndUnwrap<void>("drive-cancel"),
+
+  /** Save a user-uploaded .mp3 sound under a canonical filename for the event. */
+  saveSoundForEvent: (eventId, content) =>
+    invokeAndUnwrap<void>("sounds-save", eventId, content),
 };
 
 // Expose the API to the renderer process

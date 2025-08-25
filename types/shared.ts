@@ -18,6 +18,7 @@ export interface VersionedAppData {
 export interface AppData {
   bars: ProgressBarData[];
   lastSynced?: string | null;
+  sounds?: SoundsData;
 }
 
 export interface SaveResult {
@@ -42,7 +43,7 @@ export interface AuthStatus {
   user: OAuthUser | null;
 }
 
-// Shared error codes (used by main <-> preload <-> renderer envelopes)
+// Shared error codes (used by main <-> preload <-> renderer wrappers)
 export const ErrorCodes = {
   Canceled: "Canceled",
   NotAuthenticated: "NotAuthenticated",
@@ -55,3 +56,21 @@ export const ErrorCodes = {
   SafeStorage: "SafeStorage",
   Unknown: "Unknown",
 } as const;
+
+/** Canonical UI sound events. */
+export type SoundEventId =
+  | "progressIncrement"
+  | "progressDecrement"
+  | "progressComplete";
+
+/**
+ * Preferences for UI sounds persisted in app data.
+ * eventFiles contain data: URLs for sandbox-safe playback and sync.
+ */
+export interface SoundsData {
+  preferences: {
+    masterVolume: number;
+    muteAll: boolean;
+    eventFiles: Record<SoundEventId, string>;
+  };
+}

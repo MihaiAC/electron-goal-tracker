@@ -1,4 +1,4 @@
-// Helpers for working with IPC error envelopes
+// Helpers for working with IPC error wrappers
 
 export interface ErrorWrapper {
   code: string;

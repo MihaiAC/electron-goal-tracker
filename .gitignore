@@ -173,3 +173,7 @@ dist/preload.js.map
 *.map
 
 ./.env.local
+
+# Ignore sounds folder - we won't back this up at all.
+# We will back up user preferences though.
+**/sounds/*

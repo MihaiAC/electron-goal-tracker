@@ -1,4 +1,4 @@
-import { AppData, AuthStatus, SaveResult } from "./shared";
+import { AppData, AuthStatus, SaveResult, SoundEventId } from "./shared";
 
 // Parameters for Google Drive IPC methods
 export type DriveSyncParameters = {
@@ -51,6 +51,12 @@ export interface IElectronAPI {
   driveSync: (params: DriveSyncParameters) => Promise<void>;
   driveRestore: (params: DriveRestoreParameters) => Promise<Uint8Array>;
   driveCancel: () => Promise<void>;
+
+  /** Save an uploaded .mp3 sound for the given event under a canonical filename. */
+  saveSoundForEvent: (
+    eventId: SoundEventId,
+    content: Uint8Array
+  ) => Promise<void>;
 }
 
 interface Window {

@@ -267,6 +267,11 @@ export class SoundManager {
       return ref;
     }
 
+    // Data URL (sandbox-safe)
+    if (ref.startsWith("data:")) {
+      return ref;
+    }
+
     // Absolute Linux path
     if (ref.startsWith("/")) {
       return this.linuxPathToFileUrl(ref);
@@ -324,4 +329,71 @@ export class SoundManager {
  */
 export function getSoundManager(): SoundManager {
   return SoundManager.getInstance();
+}
+
+// TODO: Not happy with those here. We should have a folder specifically for file operations,
+// with the same folder structure as frontend/src.
+/**
+ * Return the canonical filename for a sound event. Uses DEFAULT_SOUND_FILES mapping.
+ */
+export function canonicalFilenameForEvent(eventId: SoundEventId): string {
+  return DEFAULT_SOUND_FILES[eventId];
+}
+
+/**
+ * Read a File into a data URL string (e.g. "data:audio/mpeg;base64, ...").
+ * Sandbox-safe for playback and easy to persist/sync.
+ */
+export async function readFileAsDataUrl(file: File): Promise<string> {
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      reject(reader.error);
+    };
+
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        resolve(result);
+      } else {
+        reject(new Error("Failed to read file as data URL"));
+      }
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Convert a data URL (data:...;base64,...) into raw bytes.
+ */
+export function dataUrlToUint8Array(dataUrl: string): Uint8Array {
+  const commaIndex = dataUrl.indexOf(",");
+  if (commaIndex === -1) {
+    return new Uint8Array();
+  }
+
+  const base64Part = dataUrl.slice(commaIndex + 1);
+  const binaryString = atob(base64Part);
+  const length = binaryString.length;
+  const bytes = new Uint8Array(length);
+
+  for (let index = 0; index < length; index += 1) {
+    bytes[index] = binaryString.charCodeAt(index);
+  }
+
+  return bytes;
+}
+
+/**
+ * Convert raw bytes to a data URL with the given content type.
+ */
+export function bytesToDataUrl(bytes: Uint8Array, contentType: string): string {
+  let binaryString = "";
+  for (let index = 0; index < bytes.length; index += 1) {
+    binaryString += String.fromCharCode(bytes[index]);
+  }
+  const base64 = btoa(binaryString);
+  return `data:${contentType};base64,${base64}`;
 }
