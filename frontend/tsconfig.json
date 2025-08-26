@@ -4,7 +4,11 @@
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedParameters": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "references": [
     { "path": "./tsconfig.app.json" },

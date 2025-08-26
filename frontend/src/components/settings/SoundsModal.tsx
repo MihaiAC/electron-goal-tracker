@@ -6,12 +6,11 @@ import {
   readFileAsDataUrl,
 } from "../../sound/soundManager";
 import type { ProgressBarData, SoundEventId } from "../../../../types/shared";
+import { Slider } from "../ui/slider";
 
 // TODO
 /**
  * Things to fix:
- * - master volume changer doesn't work;
- * - master volume changer should work while the sound is playing;
  * - clicking let's go doesn't stop the success sound;
  * - Passing the progress bar data into this function should not be necessary.
  * - Play/Pause button is more like Play/Stop. Seek bar instead (?). Buttons also change shape.
@@ -223,7 +222,7 @@ export default function SoundsModal(props: SoundsModalProps) {
     }
   };
 
-  /** Toggle preview for a given event. */
+  /** Toggle preview for a given event (pause/resume behavior). */
   const togglePreview = (eventId: SoundEventId): void => {
     const sourceUrl = preferences.eventFiles[eventId];
 
@@ -231,8 +230,19 @@ export default function SoundsModal(props: SoundsModalProps) {
       return;
     }
 
-    if (playingEvent === eventId) {
-      pausePreview();
+    const audioElement = audioRef.current;
+    const isActiveEvent = playingEvent === eventId;
+
+    if (isActiveEvent) {
+      if (audioElement && audioElement.paused) {
+        try {
+          void audioElement.play();
+        } catch {
+          // Ignore playback errors
+        }
+      } else {
+        pausePreview();
+      }
     } else {
       playPreview(sourceUrl, eventId);
     }
@@ -280,7 +290,6 @@ export default function SoundsModal(props: SoundsModalProps) {
         // Ignore errors
       }
     }
-    setPlayingEvent(null);
   };
 
   /** Stop and reset preview, clearing element. */
@@ -386,11 +395,11 @@ export default function SoundsModal(props: SoundsModalProps) {
 
           {EVENT_ITEMS.map((item) => {
             const dataUrl = preferences.eventFiles[item.id];
-            const isPlaying = playingEvent === item.id;
-            const percent =
-              isPlaying && duration > 0
-                ? Math.min(100, (progress / duration) * 100)
-                : 0;
+            const isActiveEvent = playingEvent === item.id;
+            const isActuallyPlaying =
+              isActiveEvent && audioRef.current
+                ? audioRef.current.paused === false
+                : false;
             const inputId = `file-${item.id}`;
 
             return (
@@ -409,11 +418,11 @@ export default function SoundsModal(props: SoundsModalProps) {
                         dataUrl.length === 0 ||
                         busy
                       }
-                      className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center gap-1"
+                      className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center gap-1 w-24 justify-center"
                     >
-                      {isPlaying ? <PauseIcon /> : <PlayIcon />}
+                      {isActuallyPlaying ? <PauseIcon /> : <PlayIcon />}
                       <span className="text-sm">
-                        {isPlaying ? "Pause" : "Play"}
+                        {isActuallyPlaying ? "Pause" : "Play"}
                       </span>
                     </button>
 
@@ -439,12 +448,33 @@ export default function SoundsModal(props: SoundsModalProps) {
                   </div>
                 </div>
 
-                <div className="h-1 w-full bg-white/10 rounded">
-                  <div
-                    className="h-1 bg-lime-500 rounded"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
+                <Slider
+                  value={[isActiveEvent ? progress : 0]}
+                  max={isActiveEvent && duration > 0 ? duration : 1}
+                  min={0}
+                  step={0.01}
+                  onValueChange={(newValues) => {
+                    const nextRawValue = Array.isArray(newValues)
+                      ? (newValues[0] ?? 0)
+                      : 0;
+                    const clampedTime = Math.max(
+                      0,
+                      Math.min(nextRawValue, duration || 0)
+                    );
+                    const audioElement = audioRef.current;
+                    if (audioElement && isActiveEvent) {
+                      try {
+                        audioElement.currentTime = clampedTime;
+                        setProgress(clampedTime);
+                      } catch {
+                        // Ignore seek errors
+                      }
+                    }
+                  }}
+                  disabled={!isActiveEvent || duration <= 0}
+                  aria-label={`Seek ${item.label} preview`}
+                  className="w-full [&_.bg-primary]:bg-lime-500 [&_.border-primary]:border-lime-500"
+                />
 
                 <div className="mt-1 text-xs text-gray-400">
                   {typeof dataUrl === "string" && dataUrl.length > 0
