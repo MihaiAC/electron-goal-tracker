@@ -14,6 +14,7 @@ import type { ProgressBarData, SoundEventId } from "../../../../types/shared";
  * - master volume changer doesn't work;
  * - master volume changer should work while the sound is playing;
  * - clicking let's go doesn't stop the success sound;
+ * - Passing the progress bar data into this function should not be necessary.
  */
 
 /** UI metadata for supported sound events. */
@@ -366,7 +367,9 @@ export default function SoundsModal(props: SoundsModalProps) {
             const dataUrl = preferences.eventFiles[item.id];
             const isPlaying = playingEvent === item.id;
             const percent =
-              duration > 0 ? Math.min(100, (progress / duration) * 100) : 0;
+              isPlaying && duration > 0
+                ? Math.min(100, (progress / duration) * 100)
+                : 0;
             const inputId = `file-${item.id}`;
 
             return (
