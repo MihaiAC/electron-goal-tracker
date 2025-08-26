@@ -1,9 +1,10 @@
+import type { SoundEventId } from "../../../types/shared";
 import {
   DEFAULT_SOUND_PREFERENCES,
   DEFAULT_SOUND_FILES,
   DEFAULT_SOUNDS_FOLDER,
 } from "./soundEvents";
-import type { SoundEventId, SoundPreferences } from "./soundEvents";
+import type { SoundPreferences } from "./soundEvents";
 
 // TODO: Sync the sound files to GDrive as well.
 

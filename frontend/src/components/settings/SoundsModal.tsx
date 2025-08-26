@@ -5,8 +5,7 @@ import {
   canonicalFilenameForEvent,
   readFileAsDataUrl,
 } from "../../sound/soundManager";
-import type { ProgressBarData } from "../../../../types/shared";
-import type { SoundEventId } from "../../sound/soundEvents";
+import type { ProgressBarData, SoundEventId } from "../../../../types/shared";
 
 // TODO
 /**

@@ -2,14 +2,9 @@
  * UI sound events and preferences.
  * - Linux-focused: user selects an absolute sounds folder (default: /home/sounds).
  * - No bundled defaults. If folder/file is missing, sound simply won't play.
- *
  */
 
-export type SoundEventId =
-  | "buttonClick"
-  | "progressIncrement"
-  | "progressDecrement"
-  | "progressComplete";
+import type { SoundEventId } from "../../../types/shared";
 
 export interface SoundPreferences {
   /** Master volume 0..1 */
@@ -23,7 +18,6 @@ export interface SoundPreferences {
 }
 
 export const DEFAULT_SOUND_FILES: Record<SoundEventId, string> = {
-  buttonClick: "ui_click.mp3",
   progressIncrement: "ui_increment.mp3",
   progressDecrement: "ui_decrement.mp3",
   progressComplete: "ui_complete.mp3",
