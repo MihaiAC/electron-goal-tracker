@@ -10,11 +10,11 @@ import type { ProgressBarData, SoundEventId } from "../../../../types/shared";
 // TODO
 /**
  * Things to fix:
- * - progress bar plays for every sound, even though I play a single sound;
  * - master volume changer doesn't work;
  * - master volume changer should work while the sound is playing;
  * - clicking let's go doesn't stop the success sound;
  * - Passing the progress bar data into this function should not be necessary.
+ * - Play/Pause button is more like Play/Stop. Seek bar instead (?). Buttons also change shape.
  */
 
 /** UI metadata for supported sound events. */
@@ -245,7 +245,18 @@ export default function SoundsModal(props: SoundsModalProps) {
     try {
       const audioElement = new Audio(dataUrl);
       audioElement.preload = "auto";
-      audioElement.volume = 1.0; // Preview at full; respects master volume during actual playback
+      // Initialize preview volume from current master volume
+      let initialVolume = preferences.masterVolume;
+      if (Number.isFinite(initialVolume) === false) {
+        initialVolume = 1;
+      }
+      if (initialVolume < 0) {
+        initialVolume = 0;
+      } else if (initialVolume > 1) {
+        initialVolume = 1;
+      }
+
+      audioElement.volume = initialVolume;
       audioRef.current = audioElement;
       setPlayingEvent(eventId);
       setProgress(0);
@@ -303,6 +314,16 @@ export default function SoundsModal(props: SoundsModalProps) {
 
     setPreferences((prev) => ({ ...prev, masterVolume: nextVolume }));
     soundManager.setMasterVolume(nextVolume);
+
+    // Update preview element volume live while playing.
+    const currentAudioElement = audioRef.current;
+    if (currentAudioElement) {
+      try {
+        currentAudioElement.volume = nextVolume;
+      } catch {
+        // Ignore errors updating preview volume
+      }
+    }
 
     try {
       await window.api.saveData({
