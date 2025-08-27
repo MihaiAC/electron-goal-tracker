@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { createPortal } from "react-dom";
 import { CloseIcon, CloudIcon, VolumeIcon } from "../Icons";
 import React from "react";
 
@@ -17,11 +18,11 @@ export interface SettingsMenuProps {
 export default function SettingsMenu(props: SettingsMenuProps) {
   const { open, onClose, onOpenCloudSync, onOpenSounds } = props;
 
-  return (
-    <AnimatePresence>
+  return createPortal(
+    <AnimatePresence initial={false}>
       {open ? (
         <>
-          {/* Overlay */}
+          {/* Overlay (raised z-index, full viewport) */}
           <motion.div
             className="fixed inset-0 bg-black/40 z-40"
             initial={{ opacity: 0 }}
@@ -31,9 +32,9 @@ export default function SettingsMenu(props: SettingsMenuProps) {
             onClick={() => onClose()}
           />
 
-          {/* Drawer */}
+          {/* Drawer (topmost) */}
           <motion.aside
-            className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-gray-900 border-r border-white/10 z-50 shadow-2xl flex flex-col"
+            className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-gray-900 text-white border-r border-white/10 z-50 shadow-2xl flex flex-col"
             initial={{ x: -320 }}
             animate={{ x: 0 }}
             exit={{ x: -320 }}
@@ -88,6 +89,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
           </motion.aside>
         </>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

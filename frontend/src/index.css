@@ -15,7 +15,7 @@
   }
 
   .app-container {
-    @apply h-screen flex flex-col pt-8 text-white;
+    @apply h-screen flex flex-col pt-8 text-white bg-slate-900;
   }
 
   .content-container {

@@ -7,13 +7,13 @@ import {
 } from "../../sound/soundManager";
 import type { ProgressBarData, SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
+import { createPortal } from "react-dom";
 
 // TODO
 /**
  * Things to fix:
  * - clicking let's go doesn't stop the success sound;
  * - Passing the progress bar data into this function should not be necessary.
- * - Play/Pause button is more like Play/Stop. Seek bar instead (?). Buttons also change shape.
  */
 
 /** UI metadata for supported sound events. */
@@ -346,146 +346,150 @@ export default function SoundsModal(props: SoundsModalProps) {
     }
   };
 
-  return open ? (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40"
-      onClick={() => onClose()}
-    >
-      <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-xl"
-        onClick={(mouseEvent) => mouseEvent.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Sounds</h2>
-          <button
-            type="button"
-            onClick={() => onClose()}
-            className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
+  // Scroll locking is handled globally in SettingsRoot when modals/drawers are open.
+  return open
+    ? createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => onClose()}
+        >
+          <div
+            className="bg-gray-800 rounded-lg p-6 w-full max-w-xl"
+            onClick={(mouseEvent) => mouseEvent.stopPropagation()}
           >
-            <CloseIcon />
-          </button>
-        </div>
-
-        {errorMessage ? (
-          <div className="mb-4 bg-red-900/40 border border-red-500 text-red-300 p-3 rounded-md">
-            {errorMessage}
-          </div>
-        ) : null}
-
-        <div className="space-y-4">
-          <div className="border border-white/10 rounded-md p-3">
-            <label className="block text-sm font-medium mb-2">
-              Master volume
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={preferences.masterVolume}
-                onChange={handleMasterVolumeChange}
-                className="w-full"
-              />
-              <span className="text-sm tabular-nums">
-                {Math.round(preferences.masterVolume * 100)}%
-              </span>
-            </div>
-          </div>
-
-          {EVENT_ITEMS.map((item) => {
-            const dataUrl = preferences.eventFiles[item.id];
-            const isActiveEvent = playingEvent === item.id;
-            const isActuallyPlaying =
-              isActiveEvent && audioRef.current
-                ? audioRef.current.paused === false
-                : false;
-            const inputId = `file-${item.id}`;
-
-            return (
-              <div
-                key={item.id}
-                className="border border-white/10 rounded-md p-3"
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Sounds</h2>
+              <button
+                type="button"
+                onClick={() => onClose()}
+                className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium">{item.label}</div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => togglePreview(item.id)}
-                      disabled={
-                        typeof dataUrl !== "string" ||
-                        dataUrl.length === 0 ||
-                        busy
-                      }
-                      className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center gap-1 w-24 justify-center"
-                    >
-                      {isActuallyPlaying ? <PauseIcon /> : <PlayIcon />}
-                      <span className="text-sm">
-                        {isActuallyPlaying ? "Pause" : "Play"}
-                      </span>
-                    </button>
+                <CloseIcon />
+              </button>
+            </div>
 
-                    <label
-                      htmlFor={inputId}
-                      className="px-3 py-1 rounded-md bg-blue-500 hover:bg-blue-600 text-black cursor-pointer"
-                    >
-                      Upload .mp3
-                    </label>
-                    <input
-                      id={inputId}
-                      type="file"
-                      accept="audio/mpeg,.mp3"
-                      className="hidden"
-                      onChange={(changeEvent) =>
-                        handleFileChange(
-                          item.id,
-                          changeEvent.target.files?.[0] ?? null
-                        )
-                      }
-                      disabled={busy}
-                    />
-                  </div>
-                </div>
+            {errorMessage ? (
+              <div className="mb-4 bg-red-900/40 border border-red-500 text-red-300 p-3 rounded-md">
+                {errorMessage}
+              </div>
+            ) : null}
 
-                <Slider
-                  value={[isActiveEvent ? progress : 0]}
-                  max={isActiveEvent && duration > 0 ? duration : 1}
-                  min={0}
-                  step={0.01}
-                  onValueChange={(newValues) => {
-                    const nextRawValue = Array.isArray(newValues)
-                      ? (newValues[0] ?? 0)
-                      : 0;
-                    const clampedTime = Math.max(
-                      0,
-                      Math.min(nextRawValue, duration || 0)
-                    );
-                    const audioElement = audioRef.current;
-                    if (audioElement && isActiveEvent) {
-                      try {
-                        audioElement.currentTime = clampedTime;
-                        setProgress(clampedTime);
-                      } catch {
-                        // Ignore seek errors
-                      }
-                    }
-                  }}
-                  disabled={!isActiveEvent || duration <= 0}
-                  aria-label={`Seek ${item.label} preview`}
-                  className="w-full [&_.bg-primary]:bg-lime-500 [&_.border-primary]:border-lime-500"
-                />
-
-                <div className="mt-1 text-xs text-gray-400">
-                  {typeof dataUrl === "string" && dataUrl.length > 0
-                    ? "Custom sound selected"
-                    : "No sound selected"}
+            <div className="space-y-4">
+              <div className="border border-white/10 rounded-md p-3">
+                <label className="block text-sm font-medium mb-2">
+                  Master volume
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={preferences.masterVolume}
+                    onChange={handleMasterVolumeChange}
+                    className="w-full"
+                  />
+                  <span className="text-sm tabular-nums">
+                    {Math.round(preferences.masterVolume * 100)}%
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  ) : null;
+
+              {EVENT_ITEMS.map((item) => {
+                const dataUrl = preferences.eventFiles[item.id];
+                const isActiveEvent = playingEvent === item.id;
+                const isActuallyPlaying =
+                  isActiveEvent && audioRef.current
+                    ? audioRef.current.paused === false
+                    : false;
+                const inputId = `file-${item.id}`;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="border border-white/10 rounded-md p-3"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium">{item.label}</div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => togglePreview(item.id)}
+                          disabled={
+                            typeof dataUrl !== "string" ||
+                            dataUrl.length === 0 ||
+                            busy
+                          }
+                          className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center gap-1 w-24 justify-center"
+                        >
+                          {isActuallyPlaying ? <PauseIcon /> : <PlayIcon />}
+                          <span className="text-sm">
+                            {isActuallyPlaying ? "Pause" : "Play"}
+                          </span>
+                        </button>
+
+                        <label
+                          htmlFor={inputId}
+                          className="px-3 py-1 rounded-md bg-blue-500 hover:bg-blue-600 text-black cursor-pointer"
+                        >
+                          Upload .mp3
+                        </label>
+                        <input
+                          id={inputId}
+                          type="file"
+                          accept="audio/mpeg,.mp3"
+                          className="hidden"
+                          onChange={(changeEvent) =>
+                            handleFileChange(
+                              item.id,
+                              changeEvent.target.files?.[0] ?? null
+                            )
+                          }
+                          disabled={busy}
+                        />
+                      </div>
+                    </div>
+
+                    <Slider
+                      value={[isActiveEvent ? progress : 0]}
+                      max={isActiveEvent && duration > 0 ? duration : 1}
+                      min={0}
+                      step={0.01}
+                      onValueChange={(newValues) => {
+                        const nextRawValue = Array.isArray(newValues)
+                          ? (newValues[0] ?? 0)
+                          : 0;
+                        const clampedTime = Math.max(
+                          0,
+                          Math.min(nextRawValue, duration || 0)
+                        );
+                        const audioElement = audioRef.current;
+                        if (audioElement && isActiveEvent) {
+                          try {
+                            audioElement.currentTime = clampedTime;
+                            setProgress(clampedTime);
+                          } catch {
+                            // Ignore seek errors
+                          }
+                        }
+                      }}
+                      disabled={!isActiveEvent || duration <= 0}
+                      aria-label={`Seek ${item.label} preview`}
+                      className="w-full [&_.bg-primary]:bg-lime-500 [&_.border-primary]:border-lime-500"
+                    />
+
+                    <div className="mt-1 text-xs text-gray-400">
+                      {typeof dataUrl === "string" && dataUrl.length > 0
+                        ? "Custom sound selected"
+                        : "No sound selected"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )
+    : null;
 }
