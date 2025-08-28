@@ -20,12 +20,13 @@ import WindowControls from "./components/WindowControls";
 import BarSettings from "./components/BarSettings";
 import SortableProgressBar from "./components/SortableProgressBar";
 import SaveButton from "./components/SaveButton";
-import type { ProgressBarData } from "../../types/shared";
+import type { ProgressBarData, SoundEventId } from "../../types/shared";
 import type { SaveStatus } from "./types";
 import { SuccessModal } from "./components/SuccessModal";
 import { Button } from "./components/Button";
 import SettingsRoot from "./components/settings/SettingsRoot";
 import { useUiSounds } from "./hooks/useUiSounds";
+import { getSoundManager } from "./sound/soundManager";
 
 function App() {
   // Track save status for animations.
@@ -188,6 +189,51 @@ function App() {
   };
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
+
+  // Seed UI sounds from saved preferences on app startup so sounds work immediately.
+  useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const savedData = await window.api.loadData();
+        const savedPreferences = savedData?.sounds?.preferences;
+
+        if (isMounted) {
+          if (savedPreferences && typeof savedPreferences === "object") {
+            const soundManager = getSoundManager();
+
+            if (typeof savedPreferences.masterVolume === "number") {
+              soundManager.setMasterVolume(savedPreferences.masterVolume);
+            }
+
+            if (typeof savedPreferences.muteAll === "boolean") {
+              soundManager.setMuteAll(savedPreferences.muteAll);
+            }
+
+            const eventIds: SoundEventId[] = [
+              "progressIncrement",
+              "progressDecrement",
+              "progressComplete",
+            ];
+
+            for (const eventId of eventIds) {
+              const dataUrl = savedPreferences.eventFiles?.[eventId];
+              if (typeof dataUrl === "string" && dataUrl.length > 0) {
+                soundManager.setSoundFileForEvent(eventId, dataUrl);
+              }
+            }
+          }
+        }
+      } catch {
+        // Ignore errors; sounds remain at defaults if any
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Trigger a save before the window closes.
   useEffect(() => {
