@@ -47,6 +47,8 @@ const api: IElectronAPI = {
     };
   },
   saveData: (data: AppData) => invokeAndUnwrap<SaveResult>("save-data", data),
+  savePartialData: (data: Partial<AppData>) =>
+    invokeAndUnwrap<SaveResult>("save-partial-data", data),
   loadData: () => invokeAndUnwrap<AppData | null>("load-data"),
   savePassword: (password: string) =>
     invokeAndUnwrap<void>("save-password", password),

@@ -531,6 +531,44 @@ handleInvoke("save-data", async (data: AppData) => {
   return { success: true, path: filePath };
 });
 
+// Save a partial subset of AppData, preserving unspecified fields on disk.
+handleInvoke("save-partial-data", async (partial: Partial<AppData>) => {
+  const filePath = path.join(app.getPath("userData"), "my-data.json");
+
+  let existing: AppData = { bars: [], lastSynced: null, sounds: undefined };
+  if (fs.existsSync(filePath)) {
+    try {
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw) as AppData;
+      if (parsed && typeof parsed === "object") {
+        existing = parsed;
+      }
+    } catch {
+      // Ignore parse errors; fall back to defaults
+    }
+  }
+
+  const merged: AppData = {
+    bars:
+      typeof partial.bars !== "undefined"
+        ? partial.bars
+        : Array.isArray(existing.bars)
+          ? existing.bars
+          : [],
+    lastSynced:
+      typeof partial.lastSynced !== "undefined"
+        ? (partial.lastSynced ?? null)
+        : typeof existing.lastSynced !== "undefined"
+          ? (existing.lastSynced ?? null)
+          : null,
+    sounds:
+      typeof partial.sounds !== "undefined" ? partial.sounds : existing.sounds,
+  };
+
+  fs.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
+  return { success: true, path: filePath };
+});
+
 // Handle loading bar data from local storage on app start.
 handleInvoke("load-data", async () => {
   const filePath = path.join(app.getPath("userData"), "my-data.json");

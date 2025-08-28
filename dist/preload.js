@@ -33,6 +33,7 @@ const api = {
         };
     },
     saveData: (data) => invokeAndUnwrap("save-data", data),
+    savePartialData: (data) => invokeAndUnwrap("save-partial-data", data),
     loadData: () => invokeAndUnwrap("load-data"),
     savePassword: (password) => invokeAndUnwrap("save-password", password),
     getPassword: () => invokeAndUnwrap("get-password"),

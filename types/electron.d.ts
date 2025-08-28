@@ -34,6 +34,11 @@ export interface IElectronAPI {
 
   // Saving data locally.
   saveData: (data: AppData) => Promise<SaveResult>;
+  /**
+   * Save a partial subset of AppData fields, preserving unspecified fields on disk.
+   * Useful for modular settings updates (e.g., sounds) without passing all bars.
+   */
+  savePartialData: (data: Partial<AppData>) => Promise<SaveResult>;
   loadData: () => Promise<AppData | null>;
 
   // Encryption password management.

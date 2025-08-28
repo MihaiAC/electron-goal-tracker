@@ -5,16 +5,9 @@ import {
   canonicalFilenameForEvent,
   readFileAsDataUrl,
 } from "../../sound/soundManager";
-import type { ProgressBarData, SoundEventId } from "../../../../types/shared";
+import type { SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
-
-// TODO
-/**
- * Things to fix:
- * - clicking let's go doesn't stop the success sound;
- * - Passing the progress bar data into this function should not be necessary.
- */
 
 /** UI metadata for supported sound events. */
 const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [
@@ -37,8 +30,6 @@ const DEFAULT_MODAL_PREFS = {
 export interface SoundsModalProps {
   open: boolean;
   onClose: () => void;
-  /** Bars must be provided when saving sounds, as main currently overwrites bars if omitted. */
-  currentBars: ProgressBarData[];
 }
 
 /**
@@ -48,7 +39,7 @@ export interface SoundsModalProps {
  * - Preview uses an internal Audio element with a mini progress bar.
  */
 export default function SoundsModal(props: SoundsModalProps) {
-  const { open, onClose, currentBars } = props;
+  const { open, onClose } = props;
 
   const soundManager = useMemo(() => {
     return getSoundManager();
@@ -210,8 +201,7 @@ export default function SoundsModal(props: SoundsModalProps) {
       soundManager.setSoundFileForEvent(eventId, dataUrl);
 
       // Persist to app data with current bars (main overwrites bars if omitted)
-      await window.api.saveData({
-        bars: currentBars,
+      await window.api.savePartialData({
         sounds: { preferences: { ...preferences, eventFiles: nextEventFiles } },
       });
     } catch (error) {
@@ -335,8 +325,7 @@ export default function SoundsModal(props: SoundsModalProps) {
     }
 
     try {
-      await window.api.saveData({
-        bars: currentBars,
+      await window.api.savePartialData({
         sounds: {
           preferences: { ...preferences, masterVolume: nextVolume },
         },

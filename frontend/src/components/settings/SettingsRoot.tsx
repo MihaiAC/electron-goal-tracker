@@ -72,11 +72,7 @@ export default function SettingsRoot(props: {
         currentBars={currentBars}
       />
 
-      <SoundsModal
-        open={soundsOpen}
-        onClose={() => setSoundsOpen(false)}
-        currentBars={currentBars}
-      />
+      <SoundsModal open={soundsOpen} onClose={() => setSoundsOpen(false)} />
     </>
   );
 }

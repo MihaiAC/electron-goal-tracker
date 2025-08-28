@@ -173,6 +173,21 @@ export class SoundManager {
   }
 
   /**
+   * Stop any currently playing sound immediately.
+   */
+  public stopAll(): void {
+    if (this.currentPlayingAudio !== null) {
+      try {
+        this.currentPlayingAudio.pause();
+        this.currentPlayingAudio.currentTime = 0;
+      } catch {
+        // Ignore errors
+      }
+      this.currentPlayingAudio = null;
+    }
+  }
+
+  /**
    * Merge input with defaults and clamp values.
    * @param preferences Input preferences.
    * @returns Normalized preferences.
