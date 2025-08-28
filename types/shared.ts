@@ -13,6 +13,7 @@ export interface VersionedAppData {
   version: number;
   lastSynced: string;
   bars: ProgressBarData[];
+  sounds?: SoundsData;
 }
 
 export interface AppData {

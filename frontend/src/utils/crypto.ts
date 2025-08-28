@@ -42,6 +42,17 @@ export class CryptoError extends Error {
   }
 }
 
+// Convert a Uint8Array to base64 without overflowing the call stack.
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const chunkSize = 0x8000; // 32KB chunks
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize);
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  return btoa(binary);
+}
+
 export async function encryptData(
   data: string,
   password: string
@@ -60,11 +71,9 @@ export async function encryptData(
 
     // Save salt, iv, and encrypted data as base64 strings.
     const bundle = {
-      salt: btoa(String.fromCharCode(...new Uint8Array(salt))),
-      iv: btoa(String.fromCharCode(...new Uint8Array(iv))),
-      encryptedData: btoa(
-        String.fromCharCode(...new Uint8Array(encryptedData))
-      ),
+      salt: uint8ArrayToBase64(new Uint8Array(salt)),
+      iv: uint8ArrayToBase64(new Uint8Array(iv)),
+      encryptedData: uint8ArrayToBase64(new Uint8Array(encryptedData)),
     };
 
     return JSON.stringify(bundle);

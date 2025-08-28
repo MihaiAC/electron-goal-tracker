@@ -4,6 +4,8 @@
  * - No bundled defaults. If folder/file is missing, sound simply won't play.
  */
 
+// TODO: Confusing file name + remove extra comments.
+
 import type { SoundEventId } from "../../../types/shared";
 
 export interface SoundPreferences {
@@ -27,9 +29,27 @@ export const DEFAULT_MASTER_VOLUME = 0.6;
 export const DEFAULT_MUTE_ALL = false;
 export const DEFAULT_SOUNDS_FOLDER = "/home/sounds";
 
+/**
+ * Canonical list of sound event IDs. Derived from DEFAULT_SOUND_FILES keys so it scales
+ * automatically as new events are added.
+ */
+export const SOUND_EVENT_IDS: ReadonlyArray<SoundEventId> = Object.freeze(
+  Object.keys(DEFAULT_SOUND_FILES) as SoundEventId[]
+);
+
 export const DEFAULT_SOUND_PREFERENCES: SoundPreferences = {
   masterVolume: DEFAULT_MASTER_VOLUME,
   muteAll: DEFAULT_MUTE_ALL,
   soundsFolder: DEFAULT_SOUNDS_FOLDER,
-  eventFiles: { ...DEFAULT_SOUND_FILES },
+  // Default to empty strings; renderer uses data URLs for playback.
+  eventFiles: ((): Record<SoundEventId, string> => {
+    const map: Record<SoundEventId, string> = {} as Record<
+      SoundEventId,
+      string
+    >;
+    for (const id of SOUND_EVENT_IDS) {
+      map[id as SoundEventId] = "";
+    }
+    return map;
+  })(),
 };

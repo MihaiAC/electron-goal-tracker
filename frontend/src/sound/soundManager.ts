@@ -1,9 +1,5 @@
 import type { SoundEventId } from "../../../types/shared";
-import {
-  DEFAULT_SOUND_PREFERENCES,
-  DEFAULT_SOUND_FILES,
-  DEFAULT_SOUNDS_FOLDER,
-} from "./soundEvents";
+import { DEFAULT_SOUND_PREFERENCES, DEFAULT_SOUND_FILES } from "./soundEvents";
 import type { SoundPreferences } from "./soundEvents";
 
 // TODO: Sync the sound files to GDrive as well.
@@ -203,8 +199,8 @@ export class SoundManager {
         ? preferences.soundsFolder
         : DEFAULT_SOUND_PREFERENCES.soundsFolder;
     const normalizedEventFiles: Record<SoundEventId, string> = {
-      ...DEFAULT_SOUND_FILES,
-      ...preferences.eventFiles,
+      ...(DEFAULT_SOUND_PREFERENCES.eventFiles as Record<SoundEventId, string>),
+      ...(preferences.eventFiles as Record<SoundEventId, string>),
     };
 
     return {
@@ -278,30 +274,12 @@ export class SoundManager {
    * Convert a ref (URL, absolute path, or basename) to a file URL for Audio.
    */
   private resolveToPlayableUrl(ref: string): string | null {
-    // Already a URL
-    if (ref.includes("://")) {
+    // Only allow data URLs in the renderer to avoid file:// restrictions.
+    if (typeof ref === "string" && ref.startsWith("data:")) {
       return ref;
-    }
-
-    // Data URL (sandbox-safe)
-    if (ref.startsWith("data:")) {
-      return ref;
-    }
-
-    // Absolute Linux path
-    if (ref.startsWith("/")) {
-      return this.linuxPathToFileUrl(ref);
-    }
-
-    // Basename -> resolve against soundsFolder
-    const folder = this.preferences.soundsFolder || DEFAULT_SOUNDS_FOLDER;
-    const abs = this.joinLinux(folder, ref);
-
-    if (!abs.startsWith("/")) {
+    } else {
       return null;
     }
-
-    return this.linuxPathToFileUrl(abs);
   }
 
   /**

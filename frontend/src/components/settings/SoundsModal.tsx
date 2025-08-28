@@ -9,6 +9,9 @@ import type { SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
 
+// TODO: Obviously, fix theming.
+// TODO: Need a better way to signal visually whether a sound has been uploaded or not.
+
 /** UI metadata for supported sound events. */
 const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [
   { id: "progressIncrement", label: "Increment" },
