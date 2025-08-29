@@ -3,7 +3,6 @@ import { CloseIcon, PlayIcon, PauseIcon } from "../Icons";
 import {
   getSoundManager,
   canonicalFilenameForEvent,
-  readFileAsDataUrl,
 } from "../../sound/soundManager";
 import type { SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
@@ -38,8 +37,8 @@ export interface SoundsModalProps {
 /**
  * SoundsModal lets users upload per-event .mp3 files and preview them.
  * - Uploaded bytes are saved via IPC under canonical filenames.
- * - Data URLs are persisted in AppData.sounds.preferences.eventFiles for sandbox-safe playback and sync.
- * - Preview uses an internal Audio element with a mini progress bar.
+ * - Only canonical filenames are persisted in AppData.sounds.preferences.eventFiles (no base64/data URLs).
+ * - Preview uses an internal Audio element with a mini progress bar, sourcing blob URLs created at runtime from raw bytes.
  */
 export default function SoundsModal(props: SoundsModalProps) {
   const { open, onClose } = props;
@@ -87,9 +86,9 @@ export default function SoundsModal(props: SoundsModalProps) {
             try {
               soundManager.setMasterVolume(next.masterVolume);
               for (const item of EVENT_ITEMS) {
-                const dataUrl = next.eventFiles[item.id];
-                if (typeof dataUrl === "string" && dataUrl.length > 0) {
-                  soundManager.setSoundFileForEvent(item.id, dataUrl);
+                const fileRef = next.eventFiles[item.id];
+                if (typeof fileRef === "string" && fileRef.length > 0) {
+                  soundManager.setSoundFileForEvent(item.id, fileRef);
                 }
               }
             } catch {
@@ -174,9 +173,8 @@ export default function SoundsModal(props: SoundsModalProps) {
     try {
       setBusy(true);
 
-      // Prepare bytes and data URL
+      // Prepare bytes
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const dataUrl = await readFileAsDataUrl(file);
 
       // Save to disk under canonical filename via IPC
       await window.api.saveSoundForEvent(eventId, bytes);
@@ -193,20 +191,30 @@ export default function SoundsModal(props: SoundsModalProps) {
         // Ignore Drive sync errors; local save and preferences still succeed
       }
 
-      // Update local prefs and SoundManager immediately
+      // Update local prefs to store only canonical filename
+      const canonicalFileName = canonicalFilenameForEvent(eventId);
       const nextEventFiles: Record<SoundEventId, string> = {
         ...preferences.eventFiles,
-        [eventId]: dataUrl,
+        [eventId]: canonicalFileName,
       };
 
       setPreferences((prev) => ({ ...prev, eventFiles: nextEventFiles }));
 
-      soundManager.setSoundFileForEvent(eventId, dataUrl);
+      soundManager.setSoundFileForEvent(eventId, canonicalFileName);
 
       // Persist to app data with current bars (main overwrites bars if omitted)
       await window.api.savePartialData({
         sounds: { preferences: { ...preferences, eventFiles: nextEventFiles } },
       });
+
+      // Auto-start preview of the newly uploaded file from the freshly saved bytes
+      try {
+        const blob = new Blob([bytes], { type: "audio/mpeg" });
+        const objectUrl = URL.createObjectURL(blob);
+        playPreview(objectUrl, eventId);
+      } catch {
+        // Ignore preview errors
+      }
     } catch (error) {
       console.error("Failed to save sound:", error);
       setErrorMessage("Failed to save the selected sound. Please try again.");
@@ -217,12 +225,6 @@ export default function SoundsModal(props: SoundsModalProps) {
 
   /** Toggle preview for a given event (pause/resume behavior). */
   const togglePreview = (eventId: SoundEventId): void => {
-    const sourceUrl = preferences.eventFiles[eventId];
-
-    if (typeof sourceUrl !== "string" || sourceUrl.length === 0) {
-      return;
-    }
-
     const audioElement = audioRef.current;
     const isActiveEvent = playingEvent === eventId;
 
@@ -237,16 +239,32 @@ export default function SoundsModal(props: SoundsModalProps) {
         pausePreview();
       }
     } else {
-      playPreview(sourceUrl, eventId);
+      // Load from disk via IPC and preview
+      void playPreviewFromDisk(eventId);
     }
   };
 
-  /** Start previewing a given data URL. */
-  const playPreview = (dataUrl: string, eventId: SoundEventId): void => {
+  /** Read raw bytes for an event from disk and preview via a blob URL. */
+  const playPreviewFromDisk = async (eventId: SoundEventId): Promise<void> => {
+    try {
+      const bytes = await window.api.readSoundForEvent(eventId);
+      if (!bytes || bytes.length === 0) {
+        return;
+      }
+      const blob = new Blob([bytes], { type: "audio/mpeg" });
+      const objectUrl = URL.createObjectURL(blob);
+      playPreview(objectUrl, eventId);
+    } catch {
+      // Ignore preview errors
+    }
+  };
+
+  /** Start previewing a given blob URL. */
+  const playPreview = (sourceUrl: string, eventId: SoundEventId): void => {
     stopPreview();
 
     try {
-      const audioElement = new Audio(dataUrl);
+      const audioElement = new Audio(sourceUrl);
       audioElement.preload = "auto";
       // Initialize preview volume from current master volume
       let initialVolume = preferences.masterVolume;
@@ -388,7 +406,7 @@ export default function SoundsModal(props: SoundsModalProps) {
               </div>
 
               {EVENT_ITEMS.map((item) => {
-                const dataUrl = preferences.eventFiles[item.id];
+                const fileRef = preferences.eventFiles[item.id];
                 const isActiveEvent = playingEvent === item.id;
                 const isActuallyPlaying =
                   isActiveEvent && audioRef.current
@@ -408,8 +426,8 @@ export default function SoundsModal(props: SoundsModalProps) {
                           type="button"
                           onClick={() => togglePreview(item.id)}
                           disabled={
-                            typeof dataUrl !== "string" ||
-                            dataUrl.length === 0 ||
+                            typeof fileRef !== "string" ||
+                            fileRef.length === 0 ||
                             busy
                           }
                           className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center gap-1 w-24 justify-center"
@@ -471,7 +489,7 @@ export default function SoundsModal(props: SoundsModalProps) {
                     />
 
                     <div className="mt-1 text-xs text-gray-400">
-                      {typeof dataUrl === "string" && dataUrl.length > 0
+                      {typeof fileRef === "string" && fileRef.length > 0
                         ? "Custom sound selected"
                         : "No sound selected"}
                     </div>

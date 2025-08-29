@@ -1,7 +1,7 @@
 /**
  * UI sound events and preferences.
- * - Linux-focused: user selects an absolute sounds folder (default: /home/sounds).
- * - No bundled defaults. If folder/file is missing, sound simply won't play.
+ * - Canonical filenames only are stored in preferences; renderer reads raw bytes via IPC
+ *   and creates blob URLs at runtime for playback.
  */
 
 // TODO: Confusing file name + remove extra comments.
@@ -41,7 +41,6 @@ export const DEFAULT_SOUND_PREFERENCES: SoundPreferences = {
   masterVolume: DEFAULT_MASTER_VOLUME,
   muteAll: DEFAULT_MUTE_ALL,
   soundsFolder: DEFAULT_SOUNDS_FOLDER,
-  // Default to empty strings; renderer uses data URLs for playback.
   eventFiles: ((): Record<SoundEventId, string> => {
     const map: Record<SoundEventId, string> = {} as Record<
       SoundEventId,

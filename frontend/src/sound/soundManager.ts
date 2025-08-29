@@ -1,5 +1,9 @@
 import type { SoundEventId } from "../../../types/shared";
-import { DEFAULT_SOUND_PREFERENCES, DEFAULT_SOUND_FILES } from "./soundEvents";
+import {
+  DEFAULT_SOUND_PREFERENCES,
+  DEFAULT_SOUND_FILES,
+  SOUND_EVENT_IDS,
+} from "./soundEvents";
 import type { SoundPreferences } from "./soundEvents";
 
 // TODO: Sync the sound files to GDrive as well.
@@ -17,6 +21,7 @@ export class SoundManager {
   private preferences: SoundPreferences;
   private baseAudioElementsByEvent: Map<SoundEventId, HTMLAudioElement>;
   private currentPlayingAudio: HTMLAudioElement | null;
+  private eventBlobUrls: Map<SoundEventId, string>;
 
   /**
    * Initialize with preferences and preload audio.
@@ -31,6 +36,7 @@ export class SoundManager {
 
     this.baseAudioElementsByEvent = new Map<SoundEventId, HTMLAudioElement>();
     this.currentPlayingAudio = null;
+    this.eventBlobUrls = new Map<SoundEventId, string>();
 
     this.preloadAllAudioElements();
   }
@@ -73,6 +79,8 @@ export class SoundManager {
    */
   public setPreferences(newPreferences: SoundPreferences): void {
     this.preferences = this.normalizePreferences(newPreferences);
+    this.baseAudioElementsByEvent.clear();
+    this.revokeAllBlobUrls();
     this.preloadAllAudioElements();
   }
 
@@ -95,14 +103,14 @@ export class SoundManager {
   /**
    * Map an event to a sound file and preload.
    * @param soundEventId Event id.
-   * @param fileUrl URL or path to audio.
+   * @param fileRef File reference.
    */
   public setSoundFileForEvent(
     soundEventId: SoundEventId,
-    fileUrl: string
+    fileRef: string
   ): void {
-    this.preferences.eventFiles[soundEventId] = fileUrl;
-    this.preloadAudioElementForEvent(soundEventId);
+    this.preferences.eventFiles[soundEventId] = fileRef;
+    void this.preloadAudioElementForEvent(soundEventId);
   }
 
   /**
@@ -126,15 +134,44 @@ export class SoundManager {
       return;
     }
 
-    let baseAudioElement = this.baseAudioElementsByEvent.get(soundEventId);
+    const baseAudioElement = this.baseAudioElementsByEvent.get(soundEventId);
 
     if (typeof baseAudioElement === "undefined") {
-      this.preloadAudioElementForEvent(soundEventId);
-      baseAudioElement = this.baseAudioElementsByEvent.get(soundEventId);
-    }
+      void this.preloadFromDisk(soundEventId).then(() => {
+        const loadedBaseAudioElement =
+          this.baseAudioElementsByEvent.get(soundEventId);
+        if (typeof loadedBaseAudioElement === "undefined") {
+          return;
+        }
 
-    if (typeof baseAudioElement === "undefined") {
-      // Could not create base element; nothing to play
+        const clonedAudioElement = loadedBaseAudioElement.cloneNode(
+          true
+        ) as HTMLAudioElement;
+        clonedAudioElement.volume = this.preferences.masterVolume;
+
+        this.currentPlayingAudio = clonedAudioElement;
+        const clearIfCurrent = () => {
+          if (this.currentPlayingAudio === clonedAudioElement) {
+            this.currentPlayingAudio = null;
+          }
+        };
+
+        clonedAudioElement.addEventListener("ended", clearIfCurrent, {
+          once: true,
+        });
+
+        clonedAudioElement.addEventListener("error", clearIfCurrent, {
+          once: true,
+        });
+
+        const playPromise = clonedAudioElement.play();
+
+        if (typeof playPromise?.catch === "function") {
+          playPromise.catch(() => {
+            // Ignore autoplay/gesture restrictions; actual click handlers will succeed
+          });
+        }
+      });
       return;
     }
 
@@ -143,7 +180,6 @@ export class SoundManager {
     ) as HTMLAudioElement;
     clonedAudioElement.volume = this.preferences.masterVolume;
 
-    // Track as current; clear reference when done
     this.currentPlayingAudio = clonedAudioElement;
     const clearIfCurrent = () => {
       if (this.currentPlayingAudio === clonedAudioElement) {
@@ -236,11 +272,7 @@ export class SoundManager {
    * Preload base audio for all events.
    */
   private preloadAllAudioElements(): void {
-    const soundEventIds = Object.keys(
-      this.preferences.eventFiles
-    ) as SoundEventId[];
-
-    for (const soundEventId of soundEventIds) {
+    for (const soundEventId of SOUND_EVENT_IDS as SoundEventId[]) {
       this.preloadAudioElementForEvent(soundEventId);
     }
   }
@@ -250,70 +282,62 @@ export class SoundManager {
    * @param soundEventId Event id.
    */
   private preloadAudioElementForEvent(soundEventId: SoundEventId): void {
-    const ref = this.preferences.eventFiles[soundEventId];
-    if (typeof ref !== "string" || ref.length === 0) {
+    const fileReference = this.preferences.eventFiles[soundEventId];
+    if (typeof fileReference !== "string" || fileReference.length === 0) {
+      // Attempt to load from disk in case preferences were not updated yet.
+      void this.preloadFromDisk(soundEventId);
       return;
     }
 
-    const url = this.resolveToPlayableUrl(ref);
-    if (!url) {
-      return;
-    }
+    // Read raw bytes via IPC and create a blob URL at runtime.
+    void this.preloadFromDisk(soundEventId);
+  }
 
+  /**
+   * Load raw bytes for an event from disk via IPC and create a base audio element.
+   */
+  private async preloadFromDisk(soundEventId: SoundEventId): Promise<void> {
     try {
-      const baseAudioElement = new Audio(url);
+      const bytes = await window.api.readSoundForEvent(soundEventId);
+      if (!bytes || bytes.length === 0) {
+        return;
+      }
+
+      const blob = new Blob([bytes], { type: "audio/mpeg" });
+      const objectUrl = URL.createObjectURL(blob);
+
+      // Revoke any previously created object URL for this event to avoid memory leaks.
+      const previousUrl = this.eventBlobUrls.get(soundEventId);
+      if (typeof previousUrl === "string" && previousUrl.length > 0) {
+        try {
+          URL.revokeObjectURL(previousUrl);
+        } catch {
+          // Ignore revoke errors
+        }
+      }
+      this.eventBlobUrls.set(soundEventId, objectUrl);
+
+      const baseAudioElement = new Audio(objectUrl);
       baseAudioElement.preload = "auto";
       baseAudioElement.volume = 1.0;
       this.baseAudioElementsByEvent.set(soundEventId, baseAudioElement);
     } catch {
-      // Ignore invalid URLs
+      // Ignore errors
     }
   }
 
   /**
-   * Convert a ref (URL, absolute path, or basename) to a file URL for Audio.
+   * Revoke all created blob URLs to free memory.
    */
-  private resolveToPlayableUrl(ref: string): string | null {
-    // Only allow data URLs in the renderer to avoid file:// restrictions.
-    if (typeof ref === "string" && ref.startsWith("data:")) {
-      return ref;
-    } else {
-      return null;
+  private revokeAllBlobUrls(): void {
+    for (const [, objectUrl] of this.eventBlobUrls) {
+      try {
+        URL.revokeObjectURL(objectUrl);
+      } catch {
+        // Ignore revoke errors
+      }
     }
-  }
-
-  /**
-   * Minimal Linux path join (renderer-safe).
-   */
-  private joinLinux(dir: string, name: string): string {
-    if (!dir) {
-      return name;
-    }
-
-    if (dir.endsWith("/")) {
-      return dir + name;
-    }
-
-    return `${dir}/${name}`;
-  }
-
-  /**
-   * Convert absolute Linux path to file:// URL with encoding.
-   */
-  private linuxPathToFileUrl(p: string): string {
-    // Ensure absolute
-    if (!p.startsWith("/")) {
-      return "";
-    }
-
-    const encoded = p
-      .split("/")
-      .map((seg) => encodeURIComponent(seg))
-      .join("/");
-    // Ensure exactly three slashes after file:
-    const stripped = encoded.startsWith("/") ? encoded.slice(1) : encoded;
-
-    return `file:///${stripped}`;
+    this.eventBlobUrls.clear();
   }
 }
 
@@ -332,62 +356,4 @@ export function getSoundManager(): SoundManager {
  */
 export function canonicalFilenameForEvent(eventId: SoundEventId): string {
   return DEFAULT_SOUND_FILES[eventId];
-}
-
-/**
- * Read a File into a data URL string (e.g. "data:audio/mpeg;base64, ...").
- * Sandbox-safe for playback and easy to persist/sync.
- */
-export async function readFileAsDataUrl(file: File): Promise<string> {
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onerror = () => {
-      reject(reader.error);
-    };
-
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === "string") {
-        resolve(result);
-      } else {
-        reject(new Error("Failed to read file as data URL"));
-      }
-    };
-
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
- * Convert a data URL (data:...;base64,...) into raw bytes.
- */
-export function dataUrlToUint8Array(dataUrl: string): Uint8Array {
-  const commaIndex = dataUrl.indexOf(",");
-  if (commaIndex === -1) {
-    return new Uint8Array();
-  }
-
-  const base64Part = dataUrl.slice(commaIndex + 1);
-  const binaryString = atob(base64Part);
-  const length = binaryString.length;
-  const bytes = new Uint8Array(length);
-
-  for (let index = 0; index < length; index += 1) {
-    bytes[index] = binaryString.charCodeAt(index);
-  }
-
-  return bytes;
-}
-
-/**
- * Convert raw bytes to a data URL with the given content type.
- */
-export function bytesToDataUrl(bytes: Uint8Array, contentType: string): string {
-  let binaryString = "";
-  for (let index = 0; index < bytes.length; index += 1) {
-    binaryString += String.fromCharCode(bytes[index]);
-  }
-  const base64 = btoa(binaryString);
-  return `data:${contentType};base64,${base64}`;
 }

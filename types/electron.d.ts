@@ -62,6 +62,9 @@ export interface IElectronAPI {
     eventId: SoundEventId,
     content: Uint8Array
   ) => Promise<void>;
+
+  /** Read raw .mp3 bytes for the given sound event from local disk. Returns null if missing. */
+  readSoundForEvent: (eventId: SoundEventId) => Promise<Uint8Array | null>;
 }
 
 interface Window {

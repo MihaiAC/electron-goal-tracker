@@ -218,9 +218,9 @@ function App() {
             ];
 
             for (const eventId of eventIds) {
-              const dataUrl = savedPreferences.eventFiles?.[eventId];
-              if (typeof dataUrl === "string" && dataUrl.length > 0) {
-                soundManager.setSoundFileForEvent(eventId, dataUrl);
+              const fileRef = savedPreferences.eventFiles?.[eventId];
+              if (typeof fileRef === "string" && fileRef.length > 0) {
+                soundManager.setSoundFileForEvent(eventId, fileRef);
               }
             }
           }

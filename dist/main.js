@@ -344,6 +344,25 @@ handleInvoke("sounds-save", async (eventId, content) => {
         throw new main_process_errors_1.UnknownMainProcessError(`Failed to save sound for ${String(eventId)}`);
     }
 });
+// Read the saved .mp3 bytes for a given event, or null if not found.
+handleInvoke("sounds-read", async (eventId) => {
+    const name = SOUND_FILE_NAMES[eventId];
+    if (typeof name !== "string") {
+        throw new main_process_errors_1.UnknownMainProcessError("Invalid sound event id");
+    }
+    const dir = getSoundsDir();
+    const filePath = path_1.default.join(dir, name);
+    try {
+        if (fs_1.default.existsSync(filePath) === false) {
+            return null;
+        }
+        const buffer = fs_1.default.readFileSync(filePath);
+        return new Uint8Array(buffer);
+    }
+    catch (error) {
+        return null;
+    }
+});
 // Listener to handle saving progress bar data.
 // TODO: Group-up related handlers, as above.
 handleInvoke("save-data", async (data) => {

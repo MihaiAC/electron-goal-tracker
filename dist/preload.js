@@ -49,6 +49,8 @@ const api = {
     driveCancel: () => invokeAndUnwrap("drive-cancel"),
     /** Save a user-uploaded .mp3 sound under a canonical filename for the event. */
     saveSoundForEvent: (eventId, content) => invokeAndUnwrap("sounds-save", eventId, content),
+    /** Read raw .mp3 bytes for a given event from disk. */
+    readSoundForEvent: (eventId) => invokeAndUnwrap("sounds-read", eventId),
 };
 // Expose the API to the renderer process
 if (process.contextIsolated) {

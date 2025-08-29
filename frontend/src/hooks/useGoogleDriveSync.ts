@@ -8,8 +8,6 @@ import { createVersionedData } from "../utils/dataMigration";
 import { decryptData, encryptData } from "../utils/crypto";
 import {
   canonicalFilenameForEvent,
-  dataUrlToUint8Array,
-  bytesToDataUrl,
   getSoundManager,
 } from "../sound/soundManager";
 import { SOUND_EVENT_IDS } from "../sound/soundEvents";
@@ -85,20 +83,14 @@ export function useGoogleDriveSync() {
 
     // Also push raw .mp3s for each event to Drive (unencrypted, canonical filenames).
     try {
-      const preferences = savedAppData?.sounds?.preferences;
-      if (preferences && typeof preferences === "object") {
-        for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
-          const dataUrl = preferences.eventFiles?.[eventId];
-          if (typeof dataUrl === "string" && dataUrl.length > 0) {
-            const mp3Bytes = dataUrlToUint8Array(dataUrl);
-            if (mp3Bytes && mp3Bytes.length > 0) {
-              await window.api.driveSync({
-                fileName: canonicalFilenameForEvent(eventId),
-                content: mp3Bytes,
-                contentType: "audio/mpeg",
-              });
-            }
-          }
+      for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
+        const mp3Bytes = await window.api.readSoundForEvent(eventId);
+        if (mp3Bytes && mp3Bytes.length > 0) {
+          await window.api.driveSync({
+            fileName: canonicalFilenameForEvent(eventId),
+            content: mp3Bytes,
+            contentType: "audio/mpeg",
+          });
         }
       }
     } catch {
@@ -123,7 +115,7 @@ export function useGoogleDriveSync() {
     setLastSynced(versionedData.lastSynced);
 
     // Attempt to restore raw .mp3s from Drive into local userData/sounds.
-    const restoredDataUrls: Partial<Record<SoundEventId, string>> = {};
+    const restoredPresence: Partial<Record<SoundEventId, boolean>> = {};
 
     for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
       try {
@@ -132,29 +124,60 @@ export function useGoogleDriveSync() {
         if (mp3Bytes && mp3Bytes.length > 0) {
           // Save bytes locally under canonical filename for the event.
           await window.api.saveSoundForEvent(eventId, mp3Bytes);
-          // Build a data URL so we can seed preferences if needed.
-          restoredDataUrls[eventId] = bytesToDataUrl(mp3Bytes, "audio/mpeg");
+          restoredPresence[eventId] = true;
         }
       } catch {
         // Ignore if not found; not all events need to have a sound uploaded.
       }
     }
 
-    // Determine final preferences to persist: prefer encrypted snapshot, fallback to rebuilt from restored bytes.
+    // Determine final preferences to persist: construct canonical-filename
+    // preferences from restored .mp3 presence.
     const encryptedPrefs = versionedData.sounds?.preferences;
-    const nextPreferences = encryptedPrefs
-      ? encryptedPrefs
-      : {
+    const nextPreferences = ((): {
+      masterVolume: number;
+      muteAll: boolean;
+      eventFiles: Record<SoundEventId, string>;
+    } => {
+      if (encryptedPrefs && typeof encryptedPrefs === "object") {
+        const sanitizedEventFiles: Record<SoundEventId, string> = {} as Record<
+          SoundEventId,
+          string
+        >;
+        for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
+          const hadBytes = restoredPresence[eventId] === true;
+          sanitizedEventFiles[eventId] = hadBytes
+            ? canonicalFilenameForEvent(eventId)
+            : "";
+        }
+        const volume =
+          typeof encryptedPrefs.masterVolume === "number"
+            ? encryptedPrefs.masterVolume
+            : 0.6;
+        const mute = encryptedPrefs.muteAll === true;
+        return {
+          masterVolume: volume,
+          muteAll: mute,
+          eventFiles: sanitizedEventFiles,
+        };
+      } else {
+        const eventFiles: Record<SoundEventId, string> = {} as Record<
+          SoundEventId,
+          string
+        >;
+        for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
+          eventFiles[eventId] =
+            restoredPresence[eventId] === true
+              ? canonicalFilenameForEvent(eventId)
+              : "";
+        }
+        return {
           masterVolume: 0.6,
           muteAll: false,
-          eventFiles: ((): Record<SoundEventId, string> => {
-            const map: Partial<Record<SoundEventId, string>> = {};
-            for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
-              map[eventId] = restoredDataUrls[eventId] ?? "";
-            }
-            return map as Record<SoundEventId, string>;
-          })(),
+          eventFiles,
         };
+      }
+    })();
 
     // Persist restored bars/lastSynced and sounds preferences.
     await window.api.savePartialData({
@@ -174,9 +197,9 @@ export function useGoogleDriveSync() {
           soundManager.setMuteAll(nextPreferences.muteAll);
         }
         for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
-          const dataUrl = nextPreferences.eventFiles?.[eventId];
-          if (typeof dataUrl === "string" && dataUrl.length > 0) {
-            soundManager.setSoundFileForEvent(eventId, dataUrl);
+          const fileRef = nextPreferences.eventFiles?.[eventId];
+          if (typeof fileRef === "string" && fileRef.length > 0) {
+            soundManager.setSoundFileForEvent(eventId, fileRef);
           }
         }
       }

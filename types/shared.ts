@@ -66,7 +66,8 @@ export type SoundEventId =
 
 /**
  * Preferences for UI sounds persisted in app data.
- * eventFiles contain data: URLs for sandbox-safe playback and sync.
+ * eventFiles contain canonical filenames per event (e.g., ui_increment.mp3) or an empty string if unset.
+ * No base64/data URLs are stored in app data.
  */
 export interface SoundsData {
   preferences: {
