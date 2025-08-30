@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
-// Helper: invoke IPC channel and unwrap the standard IpcResult envelope
+// Helper: invoke IPC channel and unwrap the standard IpcResult wrapper
 async function invokeAndUnwrap(channel, ...args) {
     const result = (await electron_1.ipcRenderer.invoke(channel, ...args));
     if (!result || typeof result !== "object" || !("ok" in result)) {
@@ -12,7 +12,7 @@ async function invokeAndUnwrap(channel, ...args) {
         // Some handlers may not return data (void)
         return result.data ?? undefined;
     }
-    // Error path: forward minimal error envelope { code, message, status }
+    // Error path: forward minimal error wrapper { code, message, status }
     throw result.error;
 }
 // Define the API we are exposing
@@ -33,6 +33,7 @@ const api = {
         };
     },
     saveData: (data) => invokeAndUnwrap("save-data", data),
+    savePartialData: (data) => invokeAndUnwrap("save-partial-data", data),
     loadData: () => invokeAndUnwrap("load-data"),
     savePassword: (password) => invokeAndUnwrap("save-password", password),
     getPassword: () => invokeAndUnwrap("get-password"),
@@ -46,6 +47,10 @@ const api = {
     driveSync: (params) => invokeAndUnwrap("drive-sync", params),
     driveRestore: (params) => invokeAndUnwrap("drive-restore", params),
     driveCancel: () => invokeAndUnwrap("drive-cancel"),
+    /** Save a user-uploaded .mp3 sound under a canonical filename for the event. */
+    saveSoundForEvent: (eventId, content) => invokeAndUnwrap("sounds-save", eventId, content),
+    /** Read raw .mp3 bytes for a given event from disk. */
+    readSoundForEvent: (eventId) => invokeAndUnwrap("sounds-read", eventId),
 };
 // Expose the API to the renderer process
 if (process.contextIsolated) {

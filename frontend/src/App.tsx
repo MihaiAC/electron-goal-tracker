@@ -20,12 +20,13 @@ import WindowControls from "./components/WindowControls";
 import BarSettings from "./components/BarSettings";
 import SortableProgressBar from "./components/SortableProgressBar";
 import SaveButton from "./components/SaveButton";
-import type { ProgressBarData } from "../../types/shared";
+import type { ProgressBarData, SoundEventId } from "../../types/shared";
 import type { SaveStatus } from "./types";
 import { SuccessModal } from "./components/SuccessModal";
 import { Button } from "./components/Button";
-import SyncModal from "./components/sync/SyncModal";
-import { CloudIcon } from "./components/Icons";
+import SettingsRoot from "./components/settings/SettingsRoot";
+import { useUiSounds } from "./hooks/useUiSounds";
+import { getSoundManager } from "./sound/soundManager";
 
 function App() {
   // Track save status for animations.
@@ -35,9 +36,6 @@ function App() {
   const [successModalBarId, setSuccessModalBarId] = useState<string | null>(
     null
   );
-
-  // State for settings menu.
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [bars, setBars] = useState<ProgressBarData[]>(() => {
     // Let's add a second bar for easier testing of drag-and-drop
@@ -102,7 +100,20 @@ function App() {
     }
   };
 
+  // UI sounds: only wire increment/decrement/complete for now (no button click)
+  const {
+    playProgressIncrementSound,
+    playProgressDecrementSound,
+    playProgressCompleteSound,
+  } = useUiSounds();
+
   const onIncrement = (id: string, sign: number = 1) => {
+    // Play increment/decrement sound immediately; precedence handled in manager
+    if (sign > 0) {
+      playProgressIncrementSound();
+    } else {
+      playProgressDecrementSound();
+    }
     setBars((prevBars) => {
       const updatedBars = prevBars.map((bar) =>
         bar.id === id
@@ -119,6 +130,8 @@ function App() {
       // Check if the bar was just completed
       const updatedBar = updatedBars.find((bar) => bar.id === id);
       if (updatedBar && updatedBar.current === updatedBar.max) {
+        // Play completion sound
+        playProgressCompleteSound();
         setSuccessModalBarId(id);
       }
 
@@ -176,6 +189,51 @@ function App() {
   };
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
+
+  // Seed UI sounds from saved preferences on app startup so sounds work immediately.
+  useEffect(() => {
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const savedData = await window.api.loadData();
+        const savedPreferences = savedData?.sounds?.preferences;
+
+        if (isMounted) {
+          if (savedPreferences && typeof savedPreferences === "object") {
+            const soundManager = getSoundManager();
+
+            if (typeof savedPreferences.masterVolume === "number") {
+              soundManager.setMasterVolume(savedPreferences.masterVolume);
+            }
+
+            if (typeof savedPreferences.muteAll === "boolean") {
+              soundManager.setMuteAll(savedPreferences.muteAll);
+            }
+
+            const eventIds: SoundEventId[] = [
+              "progressIncrement",
+              "progressDecrement",
+              "progressComplete",
+            ];
+
+            for (const eventId of eventIds) {
+              const fileRef = savedPreferences.eventFiles?.[eventId];
+              if (typeof fileRef === "string" && fileRef.length > 0) {
+                soundManager.setSoundFileForEvent(eventId, fileRef);
+              }
+            }
+          }
+        }
+      } catch {
+        // Ignore errors; sounds remain at defaults if any
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Trigger a save before the window closes.
   useEffect(() => {
@@ -241,22 +299,11 @@ function App() {
 
           <SaveButton status={saveStatus} onClick={handleSave} />
 
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="fixed bottom-6 right-6 w-12 h-12 text-slate-800 rounded-md bg-white flex items-center justify-center shadow-lg hover:bg-slate-800 hover:text-white transition-colors duration-200 border border-white"
-          >
-            <CloudIcon />
-          </button>
+          <SettingsRoot onDataRestored={handleRestoreData} currentBars={bars} />
         </main>
       </div>
 
-      {/* Modals */}
-      <SyncModal
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onDataRestored={handleRestoreData}
-        currentBars={bars}
-      />
+      {/* Settings UI (drawer + modals) */}
 
       {editingBar && (
         <BarSettings

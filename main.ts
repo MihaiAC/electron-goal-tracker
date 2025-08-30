@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, safeStorage, shell } from "electron";
 import path from "path";
 import fs from "fs";
-import { AppData, OAuthUser, ErrorCodes } from "./types/shared";
+import { AppData, OAuthUser, ErrorCodes, SoundEventId } from "./types/shared";
 import Store from "electron-store";
 import pkceChallenge from "pkce-challenge";
 import dotenv from "dotenv";
@@ -33,6 +33,8 @@ import {
   MainProcessError,
   SafeStorageError,
 } from "./utils/main-process-errors";
+
+// TODO: Will need to split this into multiple files, I can't tell what's going on anymore.
 
 dotenv.config();
 
@@ -432,6 +434,74 @@ function setupDriveIpc() {
   });
 }
 
+/** Canonical file names for .mp3 sounds per event. */
+const SOUND_FILE_NAMES: Record<SoundEventId, string> = {
+  progressIncrement: "ui_increment.mp3",
+  progressDecrement: "ui_decrement.mp3",
+  progressComplete: "ui_complete.mp3",
+};
+
+/** Ensure a directory exists, creating parents as needed. */
+function ensureDirSync(dir: string): void {
+  if (fs.existsSync(dir) === false) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
+/** Resolve the sounds folder under userData. */
+function getSoundsDir(): string {
+  return path.join(app.getPath("userData"), "sounds");
+}
+
+// Save a user-uploaded .mp3 sound under a canonical filename for the event.
+handleInvoke(
+  "sounds-save",
+  async (eventId: SoundEventId, content: Uint8Array) => {
+    const name = SOUND_FILE_NAMES[eventId];
+    if (typeof name !== "string") {
+      throw new UnknownMainProcessError("Invalid sound event id");
+    }
+
+    const dir = getSoundsDir();
+    ensureDirSync(dir);
+
+    const filePath = path.join(dir, name);
+
+    try {
+      const buffer = Buffer.from(content);
+      fs.writeFileSync(filePath, buffer);
+    } catch (error) {
+      throw new UnknownMainProcessError(
+        `Failed to save sound for ${String(eventId)}`
+      );
+    }
+  }
+);
+
+// Read the saved .mp3 bytes for a given event, or null if not found.
+handleInvoke(
+  "sounds-read",
+  async (eventId: SoundEventId): Promise<Uint8Array | null> => {
+    const name = SOUND_FILE_NAMES[eventId];
+    if (typeof name !== "string") {
+      throw new UnknownMainProcessError("Invalid sound event id");
+    }
+
+    const dir = getSoundsDir();
+    const filePath = path.join(dir, name);
+
+    try {
+      if (fs.existsSync(filePath) === false) {
+        return null;
+      }
+      const buffer = fs.readFileSync(filePath);
+      return new Uint8Array(buffer);
+    } catch (error) {
+      return null;
+    }
+  }
+);
+
 // Listener to handle saving progress bar data.
 // TODO: Group-up related handlers, as above.
 handleInvoke("save-data", async (data: AppData) => {
@@ -459,12 +529,67 @@ handleInvoke("save-data", async (data: AppData) => {
     }
   }
 
+  // If sounds is not provided, preserve existing sounds on disk.
+  let soundsToPersist = data.sounds;
+  if (typeof soundsToPersist === "undefined") {
+    if (fs.existsSync(filePath)) {
+      try {
+        const existingJson = fs.readFileSync(filePath, "utf-8");
+        const existingAppData = JSON.parse(existingJson) as AppData;
+        if (existingAppData && typeof existingAppData.sounds !== "undefined") {
+          soundsToPersist = existingAppData.sounds;
+        }
+      } catch (error) {
+        // Ignore parse errors; fall back to undefined.
+      }
+    }
+  }
+
   const dataToSave: AppData = {
     bars: Array.isArray(data.bars) ? data.bars : [],
     lastSynced: lastSyncedToPersist,
+    sounds: soundsToPersist,
   };
 
   fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
+  return { success: true, path: filePath };
+});
+
+// Save a partial subset of AppData, preserving unspecified fields on disk.
+handleInvoke("save-partial-data", async (partial: Partial<AppData>) => {
+  const filePath = path.join(app.getPath("userData"), "my-data.json");
+
+  let existing: AppData = { bars: [], lastSynced: null, sounds: undefined };
+  if (fs.existsSync(filePath)) {
+    try {
+      const raw = fs.readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw) as AppData;
+      if (parsed && typeof parsed === "object") {
+        existing = parsed;
+      }
+    } catch {
+      // Ignore parse errors; fall back to defaults
+    }
+  }
+
+  const merged: AppData = {
+    bars:
+      typeof partial.bars !== "undefined"
+        ? partial.bars
+        : Array.isArray(existing.bars)
+          ? existing.bars
+          : [],
+    lastSynced:
+      typeof partial.lastSynced !== "undefined"
+        ? (partial.lastSynced ?? null)
+        : typeof existing.lastSynced !== "undefined"
+          ? (existing.lastSynced ?? null)
+          : null,
+    sounds:
+      typeof partial.sounds !== "undefined" ? partial.sounds : existing.sounds,
+  };
+
+  fs.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
   return { success: true, path: filePath };
 });
 
@@ -482,7 +607,7 @@ handleInvoke("load-data", async () => {
     console.error("Error loading data: ", error);
   }
 
-  return { bars: [], lastSynced: null } as AppData;
+  return { bars: [], lastSynced: null, sounds: undefined } as AppData;
 });
 
 // Handle window controls.

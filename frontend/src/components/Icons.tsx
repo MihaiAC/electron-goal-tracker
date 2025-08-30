@@ -179,3 +179,61 @@ export function ErrorIcon() {
     </svg>
   );
 }
+
+export function VolumeIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M11 5L6 9H3v6h3l5 4V5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15.54 8.46a5 5 0 010 7.07M18.07 5.93a8.5 8.5 0 010 12.02"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Simple Play (triangle) icon. */
+export function PlayIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M6 4l10 6-10 6V4z" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Simple Pause (two bars) icon. */
+export function PauseIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect x="5" y="4" width="3" height="12" fill="currentColor" />
+      <rect x="12" y="4" width="3" height="12" fill="currentColor" />
+    </svg>
+  );
+}
