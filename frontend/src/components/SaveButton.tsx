@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import CheckmarkIcon from "../assets/icons/checkmark.svg?react";
-import ErrorIcon from "../assets/icons/error.svg?react";
+import { CircleCheck, CircleX } from "lucide-react";
 import clsx from "clsx";
 import type { SaveStatus } from "../types";
 
@@ -10,6 +9,8 @@ interface SaveButtonProps {
   className?: string;
 }
 
+// TODO: This is such an abomination. Local storage should just be enabled by default.
+// Autosync after every change. I will remove the SVGs for now.
 export default function SaveButton({
   status,
   onClick,
@@ -73,7 +74,7 @@ export default function SaveButton({
               animate={{ pathLength: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <CheckmarkIcon className="w-4 h-4 mr-1.5" />
+              <CircleCheck className="w-4 h-4 mr-1.5 stroke-2" />
             </motion.span>
             Saved!
           </motion.span>
@@ -91,7 +92,7 @@ export default function SaveButton({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 20 }}
             >
-              <ErrorIcon className="w-4 h-4 mr-1.5" />
+              <CircleX className="w-4 h-4 mr-1.5 stroke-2" />
             </motion.span>
             Error!
           </motion.span>

@@ -1,6 +1,6 @@
 import type { OAuthUser } from "../../../../types/shared";
-import { SpinnerIcon } from "../Icons";
 import { Button } from "../Button";
+import { Loader2 } from "lucide-react";
 
 interface AuthenticationSectionProps {
   isSyncing: boolean;
@@ -27,7 +27,7 @@ export default function AuthenticationSection({
       {authIsLoading ? (
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-2 text-gray-400">
-            <SpinnerIcon />
+            <Loader2 className="h-8 w-8 text-white animate-spin stroke-3" />
             <span>Waiting for Google sign-in...</span>
           </div>
           <Button

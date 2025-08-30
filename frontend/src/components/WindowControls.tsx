@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { MinimizeIcon, MaximizeIcon, RestoreIcon, CloseIcon } from "./Icons";
+import { Minus, Square, Copy, X } from "lucide-react";
+import "./WindowControls.css";
 
 export default function WindowControls() {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -19,21 +20,26 @@ export default function WindowControls() {
         }}
         className="titlebar-button"
       >
-        <MinimizeIcon />
+        <Minus className="window-control-icon" />
+        {/* <MinimizeIcon /> */}
       </button>
       <button
         type="button"
         onClick={() => window.api.maximize()}
         className="titlebar-button"
       >
-        {isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
+        {isMaximized ? (
+          <Copy className="window-control-icon" />
+        ) : (
+          <Square className="window-control-icon" />
+        )}
       </button>
       <button
         type="button"
         onClick={() => window.api.close()}
         className="titlebar-button hover:bg-red-500"
       >
-        <CloseIcon />
+        <X className="close-icon" />
       </button>
     </div>
   );
