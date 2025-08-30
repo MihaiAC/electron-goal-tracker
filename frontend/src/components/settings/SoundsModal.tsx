@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { CloseIcon, PlayIcon, PauseIcon } from "../Icons";
 import {
   getSoundManager,
   canonicalFilenameForEvent,
@@ -7,6 +6,7 @@ import {
 import type { SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
+import { Pause, Play, X } from "lucide-react";
 
 // TODO: Obviously, fix theming.
 // TODO: Need a better way to signal visually whether a sound has been uploaded or not.
@@ -374,7 +374,7 @@ export default function SoundsModal(props: SoundsModalProps) {
                 onClick={() => onClose()}
                 className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
               >
-                <CloseIcon />
+                <X className="close-icon" />
               </button>
             </div>
 
@@ -432,7 +432,11 @@ export default function SoundsModal(props: SoundsModalProps) {
                           }
                           className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center gap-1 w-24 justify-center"
                         >
-                          {isActuallyPlaying ? <PauseIcon /> : <PlayIcon />}
+                          {isActuallyPlaying ? (
+                            <Pause className="h-5 w-5 stroke-2" />
+                          ) : (
+                            <Play className="h-5 w-5 stroke-2" />
+                          )}
                           <span className="text-sm">
                             {isActuallyPlaying ? "Pause" : "Play"}
                           </span>

@@ -1,7 +1,7 @@
 import React from "react";
 import Dialog from "./Dialog";
 import { Button } from "../Button";
-import { CheckmarkIcon } from "../Icons";
+import { CircleCheck } from "lucide-react";
 
 interface OperationSuccessDialogProps {
   isOpen: boolean;
@@ -22,7 +22,7 @@ export default function OperationSuccessDialog({
     <Dialog isOpen={isOpen} onClose={onClose}>
       <div className="p-8 text-center space-y-4">
         <div className="flex flex-col items-center space-y-2">
-          <CheckmarkIcon />
+          <CircleCheck className="h-12 w-12 text-green-500 stroke-2" />
           <h3 className="text-xl font-bold">{title}</h3>
           <p className="text-lg">{message}</p>
         </div>

@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { CloseIcon, CloudIcon, VolumeIcon } from "../Icons";
 import React from "react";
+import { Cloud, Volume2, X } from "lucide-react";
+import "./SettingsMenu.css";
 
 /**
  * Left slide-out settings menu (drawer) with smooth animation.
@@ -47,7 +48,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
                 onClick={() => onClose()}
                 className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
               >
-                <CloseIcon />
+                <X className="close-icon" />
               </button>
             </div>
 
@@ -62,7 +63,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
                   >
-                    <CloudIcon />
+                    <Cloud className="settings-section-icon" />
                     <span>Cloud Sync</span>
                   </button>
                 </li>
@@ -76,7 +77,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
                   >
-                    <VolumeIcon />
+                    <Volume2 className="settings-section-icon" />
                     <span>Sounds</span>
                   </button>
                 </li>

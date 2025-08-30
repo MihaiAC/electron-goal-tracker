@@ -5,7 +5,6 @@ import { isErrorWrapper } from "../../utils/errorMapping";
 import { useGoogleAuth } from "../../hooks/useGoogleAuth";
 import { usePassword } from "../../hooks/usePassword";
 import { useGoogleDriveSync } from "../../hooks/useGoogleDriveSync";
-import { CloseIcon } from "../Icons";
 import { SyncingDialog } from "../dialogs/SyncingDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import PasswordDialog from "../dialogs/PasswordDialog";
@@ -15,6 +14,7 @@ import { useSettingsState } from "../../hooks/useSyncState";
 import OperationSuccessDialog from "../dialogs/OperationSuccessDialog";
 import OperationErrorDialog from "../dialogs/OperationErrorDialog";
 import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
+import { X } from "lucide-react";
 
 interface SyncModalProps {
   open: boolean;
@@ -255,7 +255,7 @@ export default function SyncModal({
             disabled={!canClose}
             className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
           >
-            <CloseIcon />
+            <X className="close-icon" />
           </button>
         </div>
 

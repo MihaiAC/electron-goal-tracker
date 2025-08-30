@@ -1,7 +1,7 @@
 import React from "react";
 import Dialog from "./Dialog";
 import { Button } from "../Button";
-import { ErrorIcon } from "../Icons";
+import { CircleX } from "lucide-react";
 
 interface OperationErrorDialogProps {
   isOpen: boolean;
@@ -24,7 +24,7 @@ export default function OperationErrorDialog({
     <Dialog isOpen={isOpen} onClose={onClose}>
       <div className="p-8 text-center space-y-4">
         <div className="flex flex-col items-center space-y-2">
-          <ErrorIcon />
+          <CircleX className="h-12 w-12 text-red-500 stroke-2" />
           <h3 className="text-xl font-bold">{title}</h3>
           <p className="text-lg">{message}</p>
           {code && <p className="text-sm text-gray-400">Code: {code}</p>}
