@@ -19,19 +19,14 @@ import {
 import WindowControls from "./components/WindowControls";
 import BarSettings from "./components/BarSettings";
 import SortableProgressBar from "./components/SortableProgressBar";
-import SaveButton from "./components/SaveButton";
-import type { ProgressBarData, SoundEventId } from "../../types/shared";
-import type { SaveStatus } from "./types";
-import { SuccessModal } from "./components/SuccessModal";
 import { Button } from "./components/Button";
 import SettingsRoot from "./components/settings/SettingsRoot";
 import { useUiSounds } from "./hooks/useUiSounds";
 import { getSoundManager } from "./sound/soundManager";
+import { SuccessModal } from "./components/SuccessModal";
+import type { ProgressBarData, SoundEventId } from "../../types/shared";
 
 function App() {
-  // Track save status for animations.
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-
   // Success modal when a progress bar is completed.
   const [successModalBarId, setSuccessModalBarId] = useState<string | null>(
     null
@@ -174,19 +169,14 @@ function App() {
     setEditingBarId(newBar.id);
   };
 
-  const handleSave = async () => {
-    setSaveStatus("saving");
-
-    try {
-      await window.api.saveData({ bars });
-      setSaveStatus("saved");
-    } catch (error) {
-      console.error("Save failed:", error);
-      setSaveStatus("error");
-    }
-
-    setTimeout(() => setSaveStatus("idle"), 2000);
-  };
+  /**
+   * Autosave progress bars to local storage whenever they change.
+   */
+  useEffect(() => {
+    window.api.savePartialData({ bars }).catch((error) => {
+      console.error("Autosave failed:", error);
+    });
+  }, [bars]);
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
 
@@ -238,7 +228,7 @@ function App() {
   // Trigger a save before the window closes.
   useEffect(() => {
     const handleBeforeUnload = () => {
-      window.api.saveData({ bars }).catch(console.error);
+      window.api.savePartialData({ bars }).catch(console.error);
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -296,8 +286,6 @@ function App() {
           >
             + Add new bar
           </Button>
-
-          <SaveButton status={saveStatus} onClick={handleSave} />
 
           <SettingsRoot onDataRestored={handleRestoreData} currentBars={bars} />
         </main>
