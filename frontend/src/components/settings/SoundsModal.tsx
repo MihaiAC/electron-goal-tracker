@@ -10,6 +10,7 @@ import { Pause, Play, X } from "lucide-react";
 
 // TODO: Obviously, fix theming.
 // TODO: Need a better way to signal visually whether a sound has been uploaded or not.
+// TODO: Play - Pause still shifts when swapping.
 
 /** UI metadata for supported sound events. */
 const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [

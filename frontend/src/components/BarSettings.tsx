@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import type { ProgressBarData } from "../../../types/shared";
 import { Button } from "./Button";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// TODO: Do this yourself, I don''t understand why it casts them to strings first.
 
 interface BarSettingsProps {
   bar: ProgressBarData;
@@ -22,9 +27,39 @@ export default function BarSettings({
     setFormData(bar);
   }, [bar]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
+  // Zod schema + RHF (numbers via valueAsNumber)
+  const Schema = z
+    .object({
+      current: z.number().min(0, "Must be ≥ 0"),
+      max: z.number().int("Must be an integer").min(1, "Must be ≥ 1"),
+    })
+    .refine((val) => val.current <= val.max, {
+      message: "Must be ≤ Max.",
+      path: ["current"],
+    });
+
+  type RHFValues = z.infer<typeof Schema>;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    reset,
+  } = useForm<RHFValues>({
+    mode: "onChange",
+    resolver: zodResolver(Schema),
+    defaultValues: { current: bar.current, max: bar.max },
+  });
+
+  useEffect(() => {
+    reset({ current: bar.current, max: bar.max });
+  }, [bar, reset]);
+
+  const onSubmit = (vals: RHFValues) => {
+    onSave({
+      ...formData,
+      current: vals.current,
+      max: vals.max,
+    });
   };
 
   return (
@@ -33,12 +68,26 @@ export default function BarSettings({
       onClick={onClose}
     >
       <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
+        className="bg-gray-800 rounded-lg p-6 w-full max-w-md relative"
+        onClick={(e) => {
+          if (e) {
+            e.stopPropagation();
+          } else {
+            // no-op
+          }
+        }}
       >
         <h2 className="text-xl font-bold mb-4">Edit Progress Bar</h2>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-white"
+        >
+          ×
+        </button>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Title</label>
             <input
@@ -59,15 +108,23 @@ export default function BarSettings({
               </label>
               <input
                 type="number"
-                value={formData.current}
-                onChange={(e) =>
-                  setFormData({ ...formData, current: Number(e.target.value) })
-                }
-                className="w-full p-2 rounded bg-gray-700"
-                min="0"
                 step="0.1"
+                min="0"
+                {...register("current", { valueAsNumber: true })}
+                className={`w-full p-2 rounded bg-gray-700 ${errors.current ? "border-2 border-red-500" : ""}`}
                 required
               />
+              {(() => {
+                if (errors.current) {
+                  return (
+                    <p className="mt-1 text-xs text-red-400">
+                      {errors.current.message as string}
+                    </p>
+                  );
+                } else {
+                  return null;
+                }
+              })()}
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -75,15 +132,23 @@ export default function BarSettings({
               </label>
               <input
                 type="number"
-                value={formData.max}
-                onChange={(e) =>
-                  setFormData({ ...formData, max: Number(e.target.value) })
-                }
-                className="w-full p-2 rounded bg-gray-700"
                 min="1"
                 step="1"
+                {...register("max", { valueAsNumber: true })}
+                className={`w-full p-2 rounded bg-gray-700 ${errors.max ? "border-2 border-red-500" : ""}`}
                 required
               />
+              {(() => {
+                if (errors.max) {
+                  return (
+                    <p className="mt-1 text-xs text-red-400">
+                      {errors.max.message as string}
+                    </p>
+                  );
+                } else {
+                  return null;
+                }
+              })()}
             </div>
           </div>
 
@@ -175,7 +240,14 @@ export default function BarSettings({
               >
                 Cancel
               </Button>
-              <Button type="submit">Save</Button>
+              <Button
+                type="submit"
+                disabled={
+                  !isValid || !formData.title.trim() || !formData.unit.trim()
+                }
+              >
+                Save
+              </Button>
             </div>
           </div>
         </form>
