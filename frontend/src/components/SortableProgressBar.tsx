@@ -3,7 +3,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import ProgressBar from "./ProgressBar";
 import clsx from "clsx";
-import GripVerticalIcon from "../assets/icons/grip-vertical.svg?react";
+import { Grip } from "lucide-react";
 import type { ProgressBarData } from "../../../types/shared";
 import ReactConfetti from "react-confetti";
 
@@ -105,7 +105,7 @@ export default function SortableProgressBar({
           {...listeners}
           className="p-2 cursor-grab touch-none self-stretch flex items-center"
         >
-          <GripVerticalIcon className="w-6 h-6 text-gray-500" />
+          <Grip className="w-6 h-6 text-gray-500 stroke-2" />
         </div>
 
         <div className="flex-1 pr-2">

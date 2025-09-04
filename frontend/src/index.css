@@ -4,6 +4,20 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer components {
+  .close-icon {
+    @apply w-3 h-3 stroke-3;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+  }
+
+  .settings-icon {
+    @apply h-6 w-6 stroke-2;
+  }
+
+  .loader-icon {
+    @apply h-8 w-8 text-white animate-spin stroke-3;
+  }
+
   .titlebar {
     @apply fixed top-0 left-0 w-full h-8 flex items-center justify-between z-50 bg-slate-900;
     -webkit-app-region: drag;

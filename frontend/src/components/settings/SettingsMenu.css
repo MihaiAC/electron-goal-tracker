@@ -1,0 +1,6 @@
+@reference "tailwindcss";
+@layer components {
+  .settings-section-icon {
+    @apply w-6 h-6 stroke-2;
+  }
+}

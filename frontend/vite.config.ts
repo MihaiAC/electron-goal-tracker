@@ -1,13 +1,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import vitePluginSvgr from "vite-plugin-svgr";
 import path from "node:path";
 
 // https://vite.dev/config/
 export default defineConfig({
   base: "./",
-  plugins: [react(), vitePluginSvgr(), tailwindcss()],
+  plugins: [react(), tailwindcss()],
   build: {
     outDir: "dist",
     emptyOutDir: true,

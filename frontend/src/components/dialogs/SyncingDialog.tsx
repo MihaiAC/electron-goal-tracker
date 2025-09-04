@@ -1,7 +1,7 @@
 import React from "react";
 import Dialog from "./Dialog";
-import { SpinnerIcon } from "../Icons";
 import { Button } from "../Button";
+import { Loader2 } from "lucide-react";
 
 interface SyncingDialogProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ export function SyncingDialog({
     <Dialog isOpen={isOpen}>
       <div className="p-8 text-center">
         <div className="flex flex-col items-center">
-          <SpinnerIcon />
+          <Loader2 className="h-8 w-8 text-white animate-spin stroke-3" />
           <p className="text-lg">{message ?? "Working..."}</p>
           {onCancel !== undefined ? (
             <Button
