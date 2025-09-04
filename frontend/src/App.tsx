@@ -135,7 +135,10 @@ function App() {
   };
 
   const handleSaveBar = (updates: Partial<ProgressBarData>) => {
-    if (!editingBarId) return;
+    if (!editingBarId) {
+      return;
+    }
+
     setBars((prevBars) =>
       prevBars.map((bar) =>
         bar.id === editingBarId ? { ...bar, ...updates } : bar
@@ -145,7 +148,10 @@ function App() {
   };
 
   const handleDeleteBar = () => {
-    if (!editingBarId) return;
+    if (!editingBarId) {
+      return;
+    }
+
     setBars((prevBars) => prevBars.filter((bar) => bar.id !== editingBarId));
     setEditingBarId(null);
   };

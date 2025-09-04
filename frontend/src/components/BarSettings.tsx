@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import type { ProgressBarData } from "../../../types/shared";
 import { Button } from "./Button";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface BarSettingsProps {
   bar: ProgressBarData;
@@ -15,17 +18,104 @@ export default function BarSettings({
   onDelete,
   onClose,
 }: BarSettingsProps) {
-  const [formData, setFormData] = useState(bar);
+  const FormSchema = z
+    .object({
+      title: z
+        .string()
+        .trim()
+        .min(1, "Title is required")
+        .max(100, "Max 100 characters"),
+      current: z.number().int("Must be an integer").min(0, "Must be ≥ 0"),
+      max: z.number().int("Must be an integer").min(1, "Must be ≥ 1"),
+      unit: z.string().min(1, "Unit is required").max(50, "Max 50 characters"),
+      incrementDelta: z
+        .number()
+        .int("Must be an integer")
+        .min(1, "Must be ≥ 1"),
+      completedColor: z
+        .string()
+        .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color"),
+      remainingColor: z
+        .string()
+        .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color"),
+    })
+    .refine(
+      (formValues) => {
+        if (formValues) {
+          return formValues.current < formValues.max;
+        } else {
+          return true;
+        }
+      },
+      {
+        message: "Must be smaller than Max.",
+        path: ["current"],
+      }
+    )
+    .refine(
+      (formValues) => {
+        if (formValues) {
+          return formValues.incrementDelta < formValues.max;
+        } else {
+          return true;
+        }
+      },
+      {
+        message: "Must be smaller than Max.",
+        path: ["incrementDelta"],
+      }
+    );
 
-  // Update form data when the bar prop changes
+  type BarFormValues = z.infer<typeof FormSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+    watch,
+  } = useForm<BarFormValues>({
+    mode: "onSubmit",
+    reValidateMode: "onSubmit",
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      title: bar.title,
+      current: bar.current,
+      max: bar.max,
+      unit: bar.unit,
+      incrementDelta: bar.incrementDelta,
+      completedColor: bar.completedColor,
+      remainingColor: bar.remainingColor,
+    },
+  });
+
+  // Sync the form if the selected bar changes
   useEffect(() => {
-    setFormData(bar);
-  }, [bar]);
+    reset({
+      title: bar.title,
+      current: bar.current,
+      max: bar.max,
+      unit: bar.unit,
+      incrementDelta: bar.incrementDelta,
+      completedColor: bar.completedColor,
+      remainingColor: bar.remainingColor,
+    });
+  }, [bar, reset]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
+  const onSubmit = (formValues: BarFormValues) => {
+    onSave({
+      title: formValues.title,
+      current: formValues.current,
+      max: formValues.max,
+      unit: formValues.unit,
+      incrementDelta: formValues.incrementDelta,
+      completedColor: formValues.completedColor,
+      remainingColor: formValues.remainingColor,
+    });
   };
+
+  const completedColorValue = watch("completedColor");
+  const remainingColorValue = watch("remainingColor");
 
   return (
     <div
@@ -33,23 +123,44 @@ export default function BarSettings({
       onClick={onClose}
     >
       <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
+        className="bg-gray-800 rounded-lg p-6 w-full max-w-md relative"
+        onClick={(event) => {
+          if (event) {
+            event.stopPropagation();
+          }
+        }}
       >
         <h2 className="text-xl font-bold mb-4">Edit Progress Bar</h2>
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          className="absolute top-3 right-3 text-gray-400 hover:text-white"
+        >
+          ×
+        </button>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          noValidate
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-4"
+        >
           <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
+            <label className="block text-sm font-medium mb-1 break-words">
+              Title
+            </label>
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className="w-full p-2 rounded bg-gray-700"
-              required
+              {...register("title")}
+              className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.title ? "border-red-500" : "border-transparent"} whitespace-normal break-words`}
+              placeholder="Enter a title"
+              inputMode="text"
             />
+            <p
+              className={`mt-1 text-xs min-h-4 ${errors.title ? "text-red-400" : "opacity-0"}`}
+            >
+              {errors.title?.message ?? "placeholder"}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -59,15 +170,17 @@ export default function BarSettings({
               </label>
               <input
                 type="number"
-                value={formData.current}
-                onChange={(e) =>
-                  setFormData({ ...formData, current: Number(e.target.value) })
-                }
-                className="w-full p-2 rounded bg-gray-700"
-                min="0"
-                step="0.1"
-                required
+                step={1}
+                min={0}
+                {...register("current", { valueAsNumber: true })}
+                className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.current ? "border-red-500" : "border-transparent"}`}
+                inputMode="numeric"
               />
+              <p
+                className={`mt-1 text-xs min-h-4 ${errors.current ? "text-red-400" : "opacity-0"}`}
+              >
+                {errors.current?.message ?? "placeholder"}
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -75,15 +188,17 @@ export default function BarSettings({
               </label>
               <input
                 type="number"
-                value={formData.max}
-                onChange={(e) =>
-                  setFormData({ ...formData, max: Number(e.target.value) })
-                }
-                className="w-full p-2 rounded bg-gray-700"
-                min="1"
-                step="1"
-                required
+                min={1}
+                step={1}
+                {...register("max", { valueAsNumber: true })}
+                className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.max ? "border-red-500" : "border-transparent"}`}
+                inputMode="numeric"
               />
+              <p
+                className={`mt-1 text-xs min-h-4 ${errors.max ? "text-red-400" : "opacity-0"}`}
+              >
+                {errors.max?.message ?? "placeholder"}
+              </p>
             </div>
           </div>
 
@@ -91,14 +206,16 @@ export default function BarSettings({
             <label className="block text-sm font-medium mb-1">Unit</label>
             <input
               type="text"
-              value={formData.unit}
-              onChange={(e) =>
-                setFormData({ ...formData, unit: e.target.value })
-              }
-              className="w-full p-2 rounded bg-gray-700"
+              {...register("unit")}
+              className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.unit ? "border-red-500" : "border-transparent"}`}
               placeholder="e.g., days, lbs, %"
-              required
+              inputMode="text"
             />
+            <p
+              className={`mt-1 text-xs min-h-4 ${errors.unit ? "text-red-400" : "opacity-0"}`}
+            >
+              {errors.unit?.message ?? "placeholder"}
+            </p>
           </div>
 
           <div>
@@ -107,18 +224,17 @@ export default function BarSettings({
             </label>
             <input
               type="number"
-              value={formData.incrementDelta}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  incrementDelta: Number(e.target.value),
-                })
-              }
-              className="w-full p-2 rounded bg-gray-700"
-              min="0.1"
-              step="0.1"
-              required
+              min={1}
+              step={1}
+              {...register("incrementDelta", { valueAsNumber: true })}
+              className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.incrementDelta ? "border-red-500" : "border-transparent"}`}
+              inputMode="numeric"
             />
+            <p
+              className={`mt-1 text-xs min-h-4 ${errors.incrementDelta ? "text-red-400" : "opacity-0"}`}
+            >
+              {errors.incrementDelta?.message ?? "placeholder"}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -129,16 +245,18 @@ export default function BarSettings({
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={formData.completedColor}
-                  onChange={(e) =>
-                    setFormData({ ...formData, completedColor: e.target.value })
-                  }
+                  {...register("completedColor")}
                   className="flex-1 h-10"
                 />
                 <span className="text-xs opacity-75">
-                  {formData.completedColor}
+                  {completedColorValue}
                 </span>
               </div>
+              <p
+                className={`mt-1 text-xs min-h-4 ${errors.completedColor ? "text-red-400" : "opacity-0"}`}
+              >
+                {errors.completedColor?.message ?? "placeholder"}
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -147,16 +265,18 @@ export default function BarSettings({
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={formData.remainingColor}
-                  onChange={(e) =>
-                    setFormData({ ...formData, remainingColor: e.target.value })
-                  }
+                  {...register("remainingColor")}
                   className="flex-1 h-10"
                 />
                 <span className="text-xs opacity-75">
-                  {formData.remainingColor}
+                  {remainingColorValue}
                 </span>
               </div>
+              <p
+                className={`mt-1 text-xs min-h-4 ${errors.remainingColor ? "text-red-400" : "opacity-0"}`}
+              >
+                {errors.remainingColor?.message ?? "placeholder"}
+              </p>
             </div>
           </div>
 
@@ -172,6 +292,7 @@ export default function BarSettings({
               <Button
                 onClick={onClose}
                 tailwindColors="bg-gray-600 hover:bg-gray-700"
+                type="button"
               >
                 Cancel
               </Button>
