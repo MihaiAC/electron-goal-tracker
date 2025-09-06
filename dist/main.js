@@ -42,6 +42,17 @@ function handleInvoke(channel, handler) {
             return { ok: true, data };
         }
         catch (error) {
+            // Log detailed main-process error info for diagnostics
+            if (error instanceof main_process_errors_1.MainProcessError) {
+                console.error(`[ipc:${channel}] main error`, {
+                    code: error.code,
+                    status: error.status,
+                    message: error.message,
+                });
+            }
+            else {
+                console.error(`[ipc:${channel}] unknown error`, error);
+            }
             return { ok: false, error: toIpcErrorWrapper(error) };
         }
     });
@@ -404,10 +415,27 @@ handleInvoke("save-data", async (data) => {
             }
         }
     }
+    // If theme is not provided, preserve existing theme on disk.
+    let themeToPersist = data.theme;
+    if (typeof themeToPersist === "undefined") {
+        if (fs_1.default.existsSync(filePath)) {
+            try {
+                const existingJson = fs_1.default.readFileSync(filePath, "utf-8");
+                const existingAppData = JSON.parse(existingJson);
+                if (existingAppData && typeof existingAppData.theme !== "undefined") {
+                    themeToPersist = existingAppData.theme;
+                }
+            }
+            catch {
+                // Ignore parse errors; fall back to undefined.
+            }
+        }
+    }
     const dataToSave = {
         bars: Array.isArray(data.bars) ? data.bars : [],
         lastSynced: lastSyncedToPersist,
         sounds: soundsToPersist,
+        theme: themeToPersist,
     };
     fs_1.default.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
     return { success: true, path: filePath };
@@ -415,7 +443,12 @@ handleInvoke("save-data", async (data) => {
 // Save a partial subset of AppData, preserving unspecified fields on disk.
 handleInvoke("save-partial-data", async (partial) => {
     const filePath = path_1.default.join(electron_1.app.getPath("userData"), "my-data.json");
-    let existing = { bars: [], lastSynced: null, sounds: undefined };
+    let existing = {
+        bars: [],
+        lastSynced: null,
+        sounds: undefined,
+        theme: undefined,
+    };
     if (fs_1.default.existsSync(filePath)) {
         try {
             const raw = fs_1.default.readFileSync(filePath, "utf-8");
@@ -440,6 +473,7 @@ handleInvoke("save-partial-data", async (partial) => {
                 ? (existing.lastSynced ?? null)
                 : null,
         sounds: typeof partial.sounds !== "undefined" ? partial.sounds : existing.sounds,
+        theme: typeof partial.theme !== "undefined" ? partial.theme : existing.theme,
     };
     fs_1.default.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
     return { success: true, path: filePath };
@@ -459,7 +493,12 @@ handleInvoke("load-data", async () => {
         // TODO: need proper logging.
         console.error("Error loading data: ", error);
     }
-    return { bars: [], lastSynced: null, sounds: undefined };
+    return {
+        bars: [],
+        lastSynced: null,
+        sounds: undefined,
+        theme: undefined,
+    };
 });
 // Handle window controls.
 electron_1.ipcMain.on("minimize-app", () => {

@@ -54,6 +54,10 @@ export async function findAppDataFileIdByName(
 
   if (!response.ok) {
     const text = await response.text();
+    console.error("[drive] list files failed", {
+      status: response.status,
+      body: text,
+    });
     throw new DriveApiError("Drive list failed", response.status, {
       cause: text,
     });
@@ -102,6 +106,10 @@ export async function createAppDataFile(
 
   if (!response.ok) {
     const text = await response.text();
+    console.error("[drive] create file failed", {
+      status: response.status,
+      body: text,
+    });
     throw new DriveApiError("Drive create failed", response.status, {
       cause: text,
     });
@@ -160,6 +168,10 @@ export async function updateAppDataFileContent(
 
   if (!response.ok) {
     const text = await response.text();
+    console.error("[drive] update content failed", {
+      status: response.status,
+      body: text,
+    });
     throw new DriveApiError("Drive update failed", response.status, {
       cause: text,
     });
@@ -201,6 +213,10 @@ export async function downloadAppDataFileContent(
 
   if (!response.ok) {
     const text = await response.text();
+    console.error("[drive] download content failed", {
+      status: response.status,
+      body: text,
+    });
     throw new DriveApiError("Drive download failed", response.status, {
       cause: text,
     });
@@ -244,6 +260,10 @@ export async function deleteAppDataFile(
 
   if (!response.ok) {
     const text = await response.text();
+    console.error("[drive] delete file failed", {
+      status: response.status,
+      body: text,
+    });
     throw new DriveApiError("Drive delete failed", response.status, {
       cause: text,
     });

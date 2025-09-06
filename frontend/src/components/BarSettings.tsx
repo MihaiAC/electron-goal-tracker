@@ -38,6 +38,14 @@ export default function BarSettings({
       remainingColor: z
         .string()
         .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color"),
+      incrementHoverGlowHex: z
+        .string()
+        .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color")
+        .optional(),
+      decrementHoverGlowHex: z
+        .string()
+        .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color")
+        .optional(),
     })
     .refine(
       (formValues) => {
@@ -86,6 +94,8 @@ export default function BarSettings({
       incrementDelta: bar.incrementDelta,
       completedColor: bar.completedColor,
       remainingColor: bar.remainingColor,
+      incrementHoverGlowHex: bar.incrementHoverGlowHex ?? "#84cc16",
+      decrementHoverGlowHex: bar.decrementHoverGlowHex ?? "#ea580c",
     },
   });
 
@@ -99,6 +109,8 @@ export default function BarSettings({
       incrementDelta: bar.incrementDelta,
       completedColor: bar.completedColor,
       remainingColor: bar.remainingColor,
+      incrementHoverGlowHex: bar.incrementHoverGlowHex ?? "#84cc16",
+      decrementHoverGlowHex: bar.decrementHoverGlowHex ?? "#ea580c",
     });
   }, [bar, reset]);
 
@@ -111,11 +123,15 @@ export default function BarSettings({
       incrementDelta: formValues.incrementDelta,
       completedColor: formValues.completedColor,
       remainingColor: formValues.remainingColor,
+      incrementHoverGlowHex: formValues.incrementHoverGlowHex,
+      decrementHoverGlowHex: formValues.decrementHoverGlowHex,
     });
   };
 
   const completedColorValue = watch("completedColor");
   const remainingColorValue = watch("remainingColor");
+  const incrementHoverGlowHexValue = watch("incrementHoverGlowHex");
+  const decrementHoverGlowHexValue = watch("decrementHoverGlowHex");
 
   return (
     <div
@@ -280,20 +296,56 @@ export default function BarSettings({
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Increment Hover Glow
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  {...register("incrementHoverGlowHex")}
+                  className="flex-1 h-10"
+                />
+                <span className="text-xs opacity-75">
+                  {incrementHoverGlowHexValue}
+                </span>
+              </div>
+              <p
+                className={`mt-1 text-xs min-h-4 ${errors.incrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
+              >
+                {errors.incrementHoverGlowHex?.message ?? "placeholder"}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Decrement Hover Glow
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  {...register("decrementHoverGlowHex")}
+                  className="flex-1 h-10"
+                />
+                <span className="text-xs opacity-75">
+                  {decrementHoverGlowHexValue}
+                </span>
+              </div>
+              <p
+                className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
+              >
+                {errors.decrementHoverGlowHex?.message ?? "placeholder"}
+              </p>
+            </div>
+          </div>
+
           <div className="flex justify-between pt-4">
-            <Button
-              onClick={onDelete}
-              tailwindColors="bg-red-600 hover:bg-red-700"
-            >
+            <Button onClick={onDelete} variant="destructive">
               Delete Bar
             </Button>
 
             <div className="space-x-4">
-              <Button
-                onClick={onClose}
-                tailwindColors="bg-gray-600 hover:bg-gray-700"
-                type="button"
-              >
+              <Button onClick={onClose} type="button" variant="secondary">
                 Cancel
               </Button>
               <Button type="submit">Save</Button>

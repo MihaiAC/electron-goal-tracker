@@ -25,6 +25,7 @@ import { useUiSounds } from "./hooks/useUiSounds";
 import { getSoundManager } from "./sound/soundManager";
 import { SuccessModal } from "./components/SuccessModal";
 import type { ProgressBarData, SoundEventId } from "../../types/shared";
+import { applyTheme, DEFAULT_THEME } from "./utils/theme";
 
 function App() {
   // Success modal when a progress bar is completed.
@@ -44,6 +45,8 @@ function App() {
         incrementDelta: 1,
         completedColor: "#10B981",
         remainingColor: "#374151",
+        incrementHoverGlowHex: "#84cc16",
+        decrementHoverGlowHex: "#ea580c",
       },
       {
         id: "2",
@@ -54,6 +57,8 @@ function App() {
         incrementDelta: 1,
         completedColor: "#3B82F6",
         remainingColor: "#374151",
+        incrementHoverGlowHex: "#84cc16",
+        decrementHoverGlowHex: "#ea580c",
       },
     ];
   });
@@ -65,8 +70,16 @@ function App() {
         if (savedData?.bars) {
           setBars(savedData.bars);
         }
+        // Apply saved theme (or default) at startup so CSS variables are set.
+        if (savedData && savedData.theme) {
+          applyTheme(savedData.theme);
+        } else {
+          applyTheme(DEFAULT_THEME);
+        }
       } catch (error) {
         console.error("Failed to load saved data", error);
+        // Apply a safe default theme on failure
+        applyTheme(DEFAULT_THEME);
       }
     };
 
@@ -170,6 +183,8 @@ function App() {
       incrementDelta: 1,
       completedColor: "#555555",
       remainingColor: "#374151",
+      incrementHoverGlowHex: "#84cc16",
+      decrementHoverGlowHex: "#ea580c",
     };
     setBars((prev) => [...prev, newBar]);
     setEditingBarId(newBar.id);
@@ -286,10 +301,7 @@ function App() {
             </DndContext>
           </div>
 
-          <Button
-            onClick={addNewBar}
-            tailwindColors="bg-lime-500 hover:bg-lime-700 text-black"
-          >
+          <Button variant="primary" onClick={addNewBar}>
             + Add new bar
           </Button>
 

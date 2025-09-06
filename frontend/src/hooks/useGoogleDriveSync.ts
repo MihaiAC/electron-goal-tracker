@@ -1,18 +1,28 @@
 import { useEffect, useState } from "react";
 import type {
   ProgressBarData,
-  VersionedAppData,
   SoundEventId,
+  ThemeData,
+  SoundsData,
 } from "../../../types/shared";
-import { createVersionedData } from "../utils/dataMigration";
 import { decryptData, encryptData } from "../utils/crypto";
 import {
   canonicalFilenameForEvent,
   getSoundManager,
 } from "../sound/soundManager";
 import { SOUND_EVENT_IDS } from "../sound/soundEvents";
+import { applyTheme, DEFAULT_THEME } from "../utils/theme";
 
 const DRIVE_FILE_NAME = "goal-tracker.appdata.enc" as const;
+/** Unencrypted settings (sounds + theme) file name on Drive. */
+const SETTINGS_FILE_NAME = "goal-tracker.settings.json" as const;
+
+/**
+ * Drive file contract
+ * - goal-tracker.appdata.enc: encrypted JSON of shape { lastSynced: string, bars: ProgressBarData[] }
+ * - goal-tracker.settings.json: plaintext JSON { sounds?: SoundsData, theme?: ThemeData }
+ * - Per-event mp3 files: plaintext binary, canonical filenames from canonicalFilenameForEvent(eventId)
+ */
 
 export function useGoogleDriveSync() {
   const [lastSynced, setLastSynced] = useState<string | null>(null);
@@ -57,13 +67,14 @@ export function useGoogleDriveSync() {
       throw new Error("Missing encryption password");
     }
 
-    // Include sounds preferences snapshot (if any) in encrypted payload.
+    // Build encrypted payload with bars only (no sounds/theme inside the cipher).
     const savedAppData = await window.api.loadData();
-    const versionedBase = createVersionedData(bars);
-    const versionedData: VersionedAppData = savedAppData?.sounds
-      ? { ...versionedBase, sounds: savedAppData.sounds }
-      : versionedBase;
-    const jsonData = JSON.stringify(versionedData);
+    const lastSyncedIso = new Date().toISOString();
+    const encryptedBars = {
+      lastSynced: lastSyncedIso,
+      bars,
+    } as { lastSynced: string; bars: ProgressBarData[] };
+    const jsonData = JSON.stringify(encryptedBars);
     const encryptedData = await encryptData(jsonData, password);
     const bytesData = new TextEncoder().encode(encryptedData);
 
@@ -73,13 +84,36 @@ export function useGoogleDriveSync() {
       contentType: "application/octet-stream",
     });
 
-    setLastSynced(versionedData.lastSynced);
+    setLastSynced(lastSyncedIso);
 
     // Persist lastSynced alongside bars in local AppData (preserve sounds locally).
     await window.api.savePartialData({
       bars,
-      lastSynced: versionedData.lastSynced,
+      lastSynced: lastSyncedIso,
     });
+
+    // Save unencrypted settings (sounds + theme) as a single JSON file to Drive.
+    try {
+      const settingsPayload: { sounds?: SoundsData; theme?: ThemeData } = {};
+      if (savedAppData?.sounds) {
+        settingsPayload.sounds = savedAppData.sounds as SoundsData;
+      }
+      if (savedAppData?.theme) {
+        settingsPayload.theme = savedAppData.theme as ThemeData;
+      }
+      if (Object.keys(settingsPayload).length > 0) {
+        const settingsBytes = new TextEncoder().encode(
+          JSON.stringify(settingsPayload)
+        );
+        await window.api.driveSync({
+          fileName: SETTINGS_FILE_NAME,
+          content: settingsBytes,
+          contentType: "application/json",
+        });
+      }
+    } catch {
+      // Ignore settings upload errors; encrypted appdata already synced.
+    }
 
     // Also push raw .mp3s for each event to Drive (unencrypted, canonical filenames).
     try {
@@ -110,9 +144,34 @@ export function useGoogleDriveSync() {
     });
     const encryptedData = new TextDecoder().decode(bytesData);
     const jsonData = await decryptData(encryptedData, password);
-    const versionedData = JSON.parse(jsonData) as VersionedAppData;
+    const barsData = JSON.parse(jsonData) as {
+      lastSynced?: string;
+      bars: ProgressBarData[];
+    };
 
-    setLastSynced(versionedData.lastSynced);
+    if (typeof barsData.lastSynced === "string") {
+      setLastSynced(barsData.lastSynced);
+    } else {
+      setLastSynced(null);
+    }
+
+    // Read unencrypted settings (sounds + theme) from Drive, if present.
+    let settingsTheme: ThemeData | undefined = undefined;
+    let settingsSounds: SoundsData | undefined = undefined;
+    try {
+      const settingsBytes = await window.api.driveRestore({
+        fileName: SETTINGS_FILE_NAME,
+      });
+      const settingsJson = new TextDecoder().decode(settingsBytes);
+      const parsed = JSON.parse(settingsJson) as {
+        theme?: ThemeData;
+        sounds?: SoundsData;
+      };
+      settingsTheme = parsed.theme;
+      settingsSounds = parsed.sounds;
+    } catch {
+      // If not found, we'll fall back to defaults below.
+    }
 
     // Attempt to restore raw .mp3s from Drive into local userData/sounds.
     const restoredPresence: Partial<Record<SoundEventId, boolean>> = {};
@@ -132,14 +191,14 @@ export function useGoogleDriveSync() {
     }
 
     // Determine final preferences to persist: construct canonical-filename
-    // preferences from restored .mp3 presence.
-    const encryptedPrefs = versionedData.sounds?.preferences;
+    // preferences from restored .mp3 presence and saved settings file.
+    const savedPrefs = settingsSounds?.preferences;
     const nextPreferences = ((): {
       masterVolume: number;
       muteAll: boolean;
       eventFiles: Record<SoundEventId, string>;
     } => {
-      if (encryptedPrefs && typeof encryptedPrefs === "object") {
+      if (savedPrefs && typeof savedPrefs === "object") {
         const sanitizedEventFiles: Record<SoundEventId, string> = {} as Record<
           SoundEventId,
           string
@@ -151,10 +210,10 @@ export function useGoogleDriveSync() {
             : "";
         }
         const volume =
-          typeof encryptedPrefs.masterVolume === "number"
-            ? encryptedPrefs.masterVolume
+          typeof savedPrefs.masterVolume === "number"
+            ? savedPrefs.masterVolume
             : 0.6;
-        const mute = encryptedPrefs.muteAll === true;
+        const mute = savedPrefs.muteAll === true;
         return {
           masterVolume: volume,
           muteAll: mute,
@@ -179,11 +238,13 @@ export function useGoogleDriveSync() {
       }
     })();
 
-    // Persist restored bars/lastSynced and sounds preferences.
+    // Persist restored bars/lastSynced and sounds preferences plus theme.
     await window.api.savePartialData({
-      bars: versionedData.bars,
-      lastSynced: versionedData.lastSynced,
+      bars: barsData.bars,
+      lastSynced:
+        typeof barsData.lastSynced === "string" ? barsData.lastSynced : null,
       sounds: nextPreferences ? { preferences: nextPreferences } : undefined,
+      theme: settingsTheme,
     });
 
     // Update SoundManager immediately so sounds work without reopening modal.
@@ -207,7 +268,18 @@ export function useGoogleDriveSync() {
       // Ignore manager errors
     }
 
-    return versionedData.bars;
+    // Apply restored theme from settings to CSS variables (fallback to defaults if undefined)
+    try {
+      if (settingsTheme) {
+        applyTheme(settingsTheme);
+      } else {
+        applyTheme(DEFAULT_THEME);
+      }
+    } catch {
+      // Ignore theme application errors
+    }
+
+    return barsData.bars;
   };
 
   const clearLastSynced = () => {

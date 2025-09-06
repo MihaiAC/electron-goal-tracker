@@ -43,11 +43,8 @@ export function SuccessModal({
         </h3>
         <h4 className="font-thin">Placeholder for a short stats sentence</h4>
 
-        <Button
-          onClick={handleRequestClose}
-          tailwindColors="bg-lime-500 hover:bg-lime-600 text-black"
-        >
-          Let's goooooo!
+        <Button onClick={handleRequestClose} variant="primary">
+          {"Good job, champ!"}
         </Button>
       </Modal>
     </ReactConfetti>

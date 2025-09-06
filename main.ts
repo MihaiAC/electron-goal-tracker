@@ -79,6 +79,16 @@ function handleInvoke<T>(
       const data = await handler(...args);
       return { ok: true, data } as const;
     } catch (error) {
+      // Log detailed main-process error info for diagnostics
+      if (error instanceof MainProcessError) {
+        console.error(`[ipc:${channel}] main error`, {
+          code: error.code,
+          status: error.status,
+          message: error.message,
+        });
+      } else {
+        console.error(`[ipc:${channel}] unknown error`, error);
+      }
       return { ok: false, error: toIpcErrorWrapper(error) } as const;
     }
   });
@@ -545,10 +555,27 @@ handleInvoke("save-data", async (data: AppData) => {
     }
   }
 
+  // If theme is not provided, preserve existing theme on disk.
+  let themeToPersist = data.theme;
+  if (typeof themeToPersist === "undefined") {
+    if (fs.existsSync(filePath)) {
+      try {
+        const existingJson = fs.readFileSync(filePath, "utf-8");
+        const existingAppData = JSON.parse(existingJson) as AppData;
+        if (existingAppData && typeof existingAppData.theme !== "undefined") {
+          themeToPersist = existingAppData.theme;
+        }
+      } catch {
+        // Ignore parse errors; fall back to undefined.
+      }
+    }
+  }
+
   const dataToSave: AppData = {
     bars: Array.isArray(data.bars) ? data.bars : [],
     lastSynced: lastSyncedToPersist,
     sounds: soundsToPersist,
+    theme: themeToPersist,
   };
 
   fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
@@ -559,7 +586,12 @@ handleInvoke("save-data", async (data: AppData) => {
 handleInvoke("save-partial-data", async (partial: Partial<AppData>) => {
   const filePath = path.join(app.getPath("userData"), "my-data.json");
 
-  let existing: AppData = { bars: [], lastSynced: null, sounds: undefined };
+  let existing: AppData = {
+    bars: [],
+    lastSynced: null,
+    sounds: undefined,
+    theme: undefined,
+  };
   if (fs.existsSync(filePath)) {
     try {
       const raw = fs.readFileSync(filePath, "utf-8");
@@ -587,6 +619,8 @@ handleInvoke("save-partial-data", async (partial: Partial<AppData>) => {
           : null,
     sounds:
       typeof partial.sounds !== "undefined" ? partial.sounds : existing.sounds,
+    theme:
+      typeof partial.theme !== "undefined" ? partial.theme : existing.theme,
   };
 
   fs.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
@@ -607,7 +641,12 @@ handleInvoke("load-data", async () => {
     console.error("Error loading data: ", error);
   }
 
-  return { bars: [], lastSynced: null, sounds: undefined } as AppData;
+  return {
+    bars: [],
+    lastSynced: null,
+    sounds: undefined,
+    theme: undefined,
+  } as AppData;
 });
 
 // Handle window controls.

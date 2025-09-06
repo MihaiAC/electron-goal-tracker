@@ -323,6 +323,7 @@ export default function SyncModal({
         isOpen={state.type === "ERROR"}
         message={state.type === "ERROR" ? state.message : ""}
         code={state.type === "ERROR" ? state.code : undefined}
+        status={state.type === "ERROR" ? state.status : undefined}
         onClose={() => dispatch({ type: "BACK_TO_IDLE" })}
       />
 
