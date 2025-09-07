@@ -38,12 +38,12 @@ const api = {
     savePassword: (password) => invokeAndUnwrap("save-password", password),
     getPassword: () => invokeAndUnwrap("get-password"),
     clearPassword: () => invokeAndUnwrap("clear-password"),
-    // OAuth for Google Drive
-    startGoogleAuth: () => invokeAndUnwrap("auth-start"),
-    cancelGoogleAuth: () => invokeAndUnwrap("auth-cancel"),
+    // OAuth for Dropbox (keeping same API names for UI compatibility)
+    startDropboxAuth: () => invokeAndUnwrap("auth-start"),
+    cancelDropboxAuth: () => invokeAndUnwrap("auth-cancel"),
     getAuthStatus: () => invokeAndUnwrap("auth-status"),
     authSignOut: () => invokeAndUnwrap("auth-sign-out"),
-    // GDrive syncing operations
+    // Dropbox syncing operations (keeping same API names for UI compatibility)
     driveSync: (params) => invokeAndUnwrap("drive-sync", params),
     driveRestore: (params) => invokeAndUnwrap("drive-restore", params),
     driveCancel: () => invokeAndUnwrap("drive-cancel"),

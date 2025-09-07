@@ -19,10 +19,10 @@ export default function SyncSection({
       <div className="space-y-4">
         <div className="flex space-x-2">
           <Button onClick={onSync} disabled={isSyncing} variant="primary">
-            Sync to Drive
+            Sync to Dropbox
           </Button>
           <Button onClick={onRestore} disabled={isSyncing} variant="secondary">
-            Restore from Drive
+            Restore from Dropbox
           </Button>
         </div>
 

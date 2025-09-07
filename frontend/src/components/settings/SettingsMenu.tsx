@@ -12,13 +12,14 @@ import "./SettingsMenu.css";
 export interface SettingsMenuProps {
   open: boolean;
   onClose: () => void;
-  onOpenCloudSync: () => void;
+  onOpenDropboxSync: () => void;
   onOpenSounds: () => void;
   onOpenThemes: () => void;
 }
 
 export default function SettingsMenu(props: SettingsMenuProps) {
-  const { open, onClose, onOpenCloudSync, onOpenSounds, onOpenThemes } = props;
+  const { open, onClose, onOpenDropboxSync, onOpenSounds, onOpenThemes } =
+    props;
 
   return createPortal(
     <AnimatePresence initial={false}>
@@ -60,7 +61,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
                     type="button"
                     onClick={() => {
                       onClose();
-                      onOpenCloudSync();
+                      onOpenDropboxSync();
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
                   >

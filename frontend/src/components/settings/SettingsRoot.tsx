@@ -60,7 +60,7 @@ export default function SettingsRoot(props: {
       <SettingsMenu
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        onOpenCloudSync={() => setSyncOpen(true)}
+        onOpenDropboxSync={() => setSyncOpen(true)}
         onOpenSounds={() => {
           setSoundsOpen(true);
         }}

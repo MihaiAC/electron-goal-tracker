@@ -83,18 +83,8 @@ export default function SoundsModal(props: SoundsModalProps) {
 
             setPreferences(next);
 
-            // Seed SoundManager so app playback reflects current saved choices.
-            try {
-              soundManager.setMasterVolume(next.masterVolume);
-              for (const item of EVENT_ITEMS) {
-                const fileRef = next.eventFiles[item.id];
-                if (typeof fileRef === "string" && fileRef.length > 0) {
-                  soundManager.setSoundFileForEvent(item.id, fileRef);
-                }
-              }
-            } catch {
-              // Ignore manager errors
-            }
+            // Don't update SoundManager here - it should only be initialized once in App.tsx
+            // This prevents overriding restored sound preferences
           } else {
             setPreferences(DEFAULT_MODAL_PREFS);
           }
@@ -113,7 +103,7 @@ export default function SoundsModal(props: SoundsModalProps) {
     return () => {
       isMounted = false;
     };
-  }, [open, soundManager]);
+  }, [open]);
 
   /** Clean up preview audio when modal closes. */
   useEffect(() => {
@@ -180,17 +170,7 @@ export default function SoundsModal(props: SoundsModalProps) {
       // Save to disk under canonical filename via IPC
       await window.api.saveSoundForEvent(eventId, bytes);
 
-      // Upload raw .mp3 to Google Drive (unencrypted), using canonical filename
-      try {
-        const canonicalFileName = canonicalFilenameForEvent(eventId);
-        await window.api.driveSync({
-          fileName: canonicalFileName,
-          content: bytes,
-          contentType: "audio/mpeg",
-        });
-      } catch {
-        // Ignore Drive sync errors; local save and preferences still succeed
-      }
+      // Do NOT auto-upload to Dropbox here; syncing should be explicit via Sync action.
 
       // Update local prefs to store only canonical filename
       const canonicalFileName = canonicalFilenameForEvent(eventId);

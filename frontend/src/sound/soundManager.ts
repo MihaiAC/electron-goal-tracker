@@ -6,7 +6,7 @@ import {
 } from "./soundEvents";
 import type { SoundPreferences } from "./soundEvents";
 
-// TODO: Sync the sound files to GDrive as well.
+// TODO: Sync the sound files to Dropbox as well.
 
 /**
  * Renderer-side sound manager responsible for:
@@ -109,6 +109,9 @@ export class SoundManager {
     soundEventId: SoundEventId,
     fileRef: string
   ): void {
+    console.log(
+      `[SoundManager] Setting sound file for event ${soundEventId}: "${fileRef}"`
+    );
     this.preferences.eventFiles[soundEventId] = fileRef;
     void this.preloadAudioElementForEvent(soundEventId);
   }
@@ -220,6 +223,64 @@ export class SoundManager {
   }
 
   /**
+   * Clear all cached audio elements and blob URLs, then reload sounds from current preferences.
+   * This is useful after restoring from cloud to ensure fresh sound files are loaded.
+   * @param newPreferences Optional new preferences to apply before reloading
+   */
+  public clearAndReloadSounds(newPreferences?: SoundPreferences): void {
+    console.log(
+      "[SoundManager] Clearing and reloading all sounds after restore"
+    );
+    console.log(
+      "[SoundManager] Current preferences before update:",
+      this.preferences
+    );
+
+    // Update preferences if provided
+    if (newPreferences) {
+      console.log(
+        "[SoundManager] Updating preferences before reload:",
+        newPreferences
+      );
+      this.preferences = this.normalizePreferences(newPreferences);
+      console.log(
+        "[SoundManager] Normalized preferences after update:",
+        this.preferences
+      );
+    }
+
+    // Clear existing audio elements
+    console.log(
+      "[SoundManager] Clearing",
+      this.baseAudioElementsByEvent.size,
+      "existing audio elements"
+    );
+    this.baseAudioElementsByEvent.clear();
+
+    // Revoke all blob URLs to free memory
+    console.log(
+      "[SoundManager] Revoking",
+      this.eventBlobUrls.size,
+      "blob URLs"
+    );
+    this.revokeAllBlobUrls();
+
+    // Stop any currently playing audio
+    this.stopAll();
+
+    // Preload all audio elements from current preferences
+    console.log(
+      "[SoundManager] Preloading all audio elements with current preferences:",
+      this.preferences.eventFiles
+    );
+    this.preloadAllAudioElements();
+    console.log(
+      "[SoundManager] Reload complete. Audio elements count:",
+      this.baseAudioElementsByEvent.size
+    );
+  }
+
+  /**
    * Merge input with defaults and clamp values.
    * @param preferences Input preferences.
    * @returns Normalized preferences.
@@ -324,6 +385,53 @@ export class SoundManager {
     } catch {
       // Ignore errors
     }
+  }
+
+  /**
+   * Create a base audio element for an event from a byte array.
+   * @param soundEventId Event id.
+   * @param bytes Raw sound file bytes.
+   */
+  public loadSoundFromBytes(
+    soundEventId: SoundEventId,
+    bytes: Uint8Array
+  ): void {
+    if (!bytes || bytes.length === 0) {
+      console.log(
+        `[SoundManager] No sound bytes provided for event: ${soundEventId}`
+      );
+      return;
+    }
+
+    console.log(
+      `[SoundManager] Loading sound from ${bytes.length} bytes for event: ${soundEventId}`
+    );
+
+    const blob = new Blob([bytes], { type: "audio/mpeg" });
+    const objectUrl = URL.createObjectURL(blob);
+
+    // Revoke any previously created object URL for this event to avoid memory leaks.
+    const previousUrl = this.eventBlobUrls.get(soundEventId);
+    if (typeof previousUrl === "string" && previousUrl.length > 0) {
+      try {
+        URL.revokeObjectURL(previousUrl);
+      } catch (error) {
+        console.warn(
+          `[SoundManager] Failed to revoke previous blob URL for event ${soundEventId}:`,
+          error
+        );
+      }
+    }
+    this.eventBlobUrls.set(soundEventId, objectUrl);
+
+    const baseAudioElement = new Audio(objectUrl);
+    baseAudioElement.preload = "auto";
+    baseAudioElement.volume = 1.0;
+    this.baseAudioElementsByEvent.set(soundEventId, baseAudioElement);
+
+    console.log(
+      `[SoundManager] Successfully loaded audio element from bytes for event: ${soundEventId}`
+    );
   }
 
   /**

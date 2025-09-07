@@ -13,7 +13,7 @@ export interface ProgressBarData {
   decrementHoverGlowHex?: string;
 }
 
-// BarsPayload removed: AppData is the single canonical shape. Drive uses
+// BarsPayload removed: AppData is the single canonical shape. Dropbox uses
 // subsets of AppData (encrypted bars, plaintext settings) without an extra type.
 
 export interface AppData {
@@ -53,7 +53,7 @@ export const ErrorCodes = {
   NotAuthenticated: "NotAuthenticated",
   OAuthConfig: "OAuthConfig",
   TokenRefreshFailed: "TokenRefreshFailed",
-  DriveApi: "DriveApi",
+  DropboxApi: "DropboxApi",
   Network: "Network",
   NotFound: "NotFound",
   Crypto: "Crypto",

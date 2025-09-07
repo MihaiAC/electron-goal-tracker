@@ -24,7 +24,7 @@ import SettingsRoot from "./components/settings/SettingsRoot";
 import { useUiSounds } from "./hooks/useUiSounds";
 import { getSoundManager } from "./sound/soundManager";
 import { SuccessModal } from "./components/SuccessModal";
-import type { ProgressBarData, SoundEventId } from "../../types/shared";
+import type { ProgressBarData } from "../../types/shared";
 import { applyTheme, DEFAULT_THEME } from "./utils/theme";
 
 function App() {
@@ -210,34 +210,28 @@ function App() {
         const savedData = await window.api.loadData();
         const savedPreferences = savedData?.sounds?.preferences;
 
-        if (isMounted) {
-          if (savedPreferences && typeof savedPreferences === "object") {
-            const soundManager = getSoundManager();
+        if (
+          isMounted &&
+          savedPreferences &&
+          typeof savedPreferences === "object"
+        ) {
+          // Initialize SoundManager with saved preferences instead of updating after creation
+          const soundPreferences = {
+            masterVolume:
+              typeof savedPreferences.masterVolume === "number"
+                ? savedPreferences.masterVolume
+                : 0.6,
+            muteAll: savedPreferences.muteAll === true,
+            soundsFolder: "/home/sounds", // Default folder path
+            eventFiles: savedPreferences.eventFiles || {},
+          };
 
-            if (typeof savedPreferences.masterVolume === "number") {
-              soundManager.setMasterVolume(savedPreferences.masterVolume);
-            }
-
-            if (typeof savedPreferences.muteAll === "boolean") {
-              soundManager.setMuteAll(savedPreferences.muteAll);
-            }
-
-            const eventIds: SoundEventId[] = [
-              "progressIncrement",
-              "progressDecrement",
-              "progressComplete",
-            ];
-
-            for (const eventId of eventIds) {
-              const fileRef = savedPreferences.eventFiles?.[eventId];
-              if (typeof fileRef === "string" && fileRef.length > 0) {
-                soundManager.setSoundFileForEvent(eventId, fileRef);
-              }
-            }
-          }
+          // Get SoundManager instance with initial preferences
+          const soundManager = getSoundManager();
+          soundManager.setPreferences(soundPreferences);
         }
       } catch {
-        // Ignore errors; sounds remain at defaults if any
+        // Ignore errors; SoundManager will use defaults
       }
     })();
 
