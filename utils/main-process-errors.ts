@@ -49,13 +49,13 @@ export class TokenRefreshFailedError extends MainProcessError {
   }
 }
 
-export class DriveApiError extends MainProcessError {
+export class DropboxApiError extends MainProcessError {
   constructor(
-    message = "Google Drive API error",
+    message = "Cloud storage API error",
     status?: number,
     options?: { cause?: unknown }
   ) {
-    super(ErrorCodes.DriveApi, message, status, options);
+    super(ErrorCodes.DropboxApi, message, status, options);
   }
 }
 

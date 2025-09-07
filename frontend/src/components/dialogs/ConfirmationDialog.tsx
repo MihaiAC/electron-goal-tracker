@@ -23,16 +23,10 @@ export default function ConfirmationDialog({
         <h3 className="text-xl font-bold">{title}</h3>
         <p>{message}</p>
         <div className="flex justify-end space-x-4">
-          <Button
-            onClick={onCancel}
-            tailwindColors="bg-red-500 hover:bg-red-700 text-white"
-          >
+          <Button onClick={onCancel} variant="secondary">
             Cancel
           </Button>
-          <Button
-            onClick={onConfirm}
-            tailwindColors="bg-green-500 hover:bg-green-700 text-white"
-          >
+          <Button onClick={onConfirm} variant="primary">
             Confirm
           </Button>
         </div>

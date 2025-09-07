@@ -11,7 +11,7 @@ const electron_store_1 = __importDefault(require("electron-store"));
 const pkce_challenge_1 = __importDefault(require("pkce-challenge"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const auth_1 = require("./utils/auth");
-const drive_1 = require("./utils/drive");
+const dropbox_1 = require("./utils/dropbox");
 const main_process_errors_1 = require("./utils/main-process-errors");
 // TODO: Will need to split this into multiple files, I can't tell what's going on anymore.
 dotenv_1.default.config();
@@ -42,6 +42,17 @@ function handleInvoke(channel, handler) {
             return { ok: true, data };
         }
         catch (error) {
+            // Log detailed main-process error info for diagnostics
+            if (error instanceof main_process_errors_1.MainProcessError) {
+                console.error(`[ipc:${channel}] main error`, {
+                    code: error.code,
+                    status: error.status,
+                    message: error.message,
+                });
+            }
+            else {
+                console.error(`[ipc:${channel}] unknown error`, error);
+            }
             return { ok: false, error: toIpcErrorWrapper(error) };
         }
     });
@@ -93,21 +104,16 @@ function setupAuthIpc() {
     // Local controller to cancel an in-flight OAuth attempt.
     let authController = null;
     const ensurePreconditions = () => {
-        const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-        const oauthClientSecretRaw = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-        const oauthClientSecret = typeof oauthClientSecretRaw === "string" &&
-            oauthClientSecretRaw.trim().length > 0
-            ? oauthClientSecretRaw.trim()
-            : undefined;
-        if (!clientId) {
-            throw new main_process_errors_1.OAuthConfigError("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
+        const appKey = process.env.DROPBOX_APP_KEY;
+        if (!appKey) {
+            throw new main_process_errors_1.OAuthConfigError("Missing DROPBOX_APP_KEY in .env");
         }
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
             throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
-        return { clientId, oauthClientSecret };
+        return { appKey };
     };
-    const storeTokensAndUser = (tokens) => {
+    const storeTokensAndUser = async (tokens) => {
         const refresh = tokens.refresh_token;
         if (refresh) {
             if (!electron_1.safeStorage.isEncryptionAvailable()) {
@@ -130,14 +136,9 @@ function setupAuthIpc() {
                 throw new main_process_errors_1.OAuthConfigError("No refresh_token returned. Please try again.");
             }
         }
-        if (tokens.id_token) {
+        if (tokens.access_token) {
             try {
-                const payload = (0, auth_1.decodeJwtPayload)(tokens.id_token);
-                const user = {
-                    email: payload?.email,
-                    name: payload?.name,
-                    picture: payload?.picture,
-                };
+                const user = await (0, auth_1.getDropboxUserInfo)(tokens.access_token);
                 store.set(OAUTH_USER_INFO_KEY, user);
             }
             catch {
@@ -149,7 +150,7 @@ function setupAuthIpc() {
         }
     };
     handleInvoke("auth-start", async () => {
-        const { clientId, oauthClientSecret } = ensurePreconditions();
+        const { appKey } = ensurePreconditions();
         // PKCE
         const { code_verifier, code_challenge } = await (0, pkce_challenge_1.default)();
         // Abort previous attempt, create fresh controller
@@ -160,7 +161,7 @@ function setupAuthIpc() {
         const signal = authController.signal;
         // Loopback server + auth URL
         const { server, redirectUri } = await (0, auth_1.startLoopbackRedirectServer)();
-        const url = (0, auth_1.buildAuthUrl)(clientId, redirectUri, code_challenge);
+        const url = (0, auth_1.buildAuthUrl)(appKey, redirectUri, code_challenge);
         await electron_1.shell.openExternal(url);
         // Wait for code (abortable, with timeout)
         let code;
@@ -174,15 +175,13 @@ function setupAuthIpc() {
             catch { }
         }
         // Exchange tokens and store
-        console.info(`[auth] Token exchange will include client_secret: ${oauthClientSecret ? "yes" : "no"}`);
         const tokens = await (0, auth_1.exchangeAuthorizationCodeForTokens)({
-            clientId,
+            appKey,
             authorizationCode: code,
             pkceCodeVerifier: code_verifier,
             redirectUri,
-            clientSecret: oauthClientSecret,
         });
-        storeTokensAndUser(tokens);
+        await storeTokensAndUser(tokens);
         authController = null;
     });
     handleInvoke("auth-cancel", async () => {
@@ -209,7 +208,7 @@ function setupAuthIpc() {
         }
     });
 }
-function setupDriveIpc() {
+function setupDropboxIpc() {
     let driveSyncController = null;
     let driveRestoreController = null;
     const getDecryptedRefreshToken = () => {
@@ -233,15 +232,12 @@ function setupDriveIpc() {
         }
     };
     const getAccessToken = async (signal) => {
-        const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-        if (!clientId) {
-            throw new main_process_errors_1.OAuthConfigError("Missing GOOGLE_OAUTH_CLIENT_ID in .env");
+        const appKey = process.env.DROPBOX_APP_KEY;
+        if (!appKey) {
+            throw new main_process_errors_1.OAuthConfigError("Missing DROPBOX_APP_KEY in .env");
         }
-        const raw = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-        // TODO: This could be a util function.
-        const oauthClientSecret = typeof raw === "string" && raw.trim().length > 0 ? raw.trim() : undefined;
         const refreshToken = getDecryptedRefreshToken();
-        const refreshed = await (0, auth_1.refreshAccessToken)(clientId, refreshToken, oauthClientSecret, signal);
+        const refreshed = await (0, auth_1.refreshAccessToken)(appKey, refreshToken, signal);
         const accessToken = refreshed.access_token;
         if (!accessToken) {
             throw new main_process_errors_1.TokenRefreshFailedError("Failed to obtain access token.");
@@ -256,27 +252,11 @@ function setupDriveIpc() {
         driveSyncController = new AbortController();
         const signal = driveSyncController.signal;
         const accessToken = await getAccessToken(signal);
-        const { fileName, content, contentType } = args;
-        const existingId = await (0, drive_1.findAppDataFileIdByName)(accessToken, fileName, signal);
-        let createdNewFileId = null;
-        let targetFileId;
-        if (existingId) {
-            targetFileId = existingId;
-        }
-        else {
-            createdNewFileId = await (0, drive_1.createAppDataFile)(accessToken, fileName, signal);
-            targetFileId = createdNewFileId;
-        }
+        const { fileName, content } = args;
         try {
-            await (0, drive_1.updateAppDataFileContent)(accessToken, targetFileId, content, contentType, signal);
+            await (0, dropbox_1.uploadDropboxFile)(accessToken, fileName, content, signal);
         }
         catch (error) {
-            if (createdNewFileId) {
-                try {
-                    await (0, drive_1.deleteAppDataFile)(accessToken, createdNewFileId, signal);
-                }
-                catch { }
-            }
             throw error;
         }
         finally {
@@ -291,12 +271,12 @@ function setupDriveIpc() {
         const signal = driveRestoreController.signal;
         const accessToken = await getAccessToken(signal);
         const { fileName } = args;
-        const fileId = await (0, drive_1.findAppDataFileIdByName)(accessToken, fileName, signal);
-        if (!fileId) {
+        const fileExists = await (0, dropbox_1.dropboxFileExists)(accessToken, fileName, signal);
+        if (!fileExists) {
             driveRestoreController = null;
-            throw new main_process_errors_1.NotFoundError("No backup found in Drive.");
+            throw new main_process_errors_1.NotFoundError("No backup found in Dropbox.");
         }
-        const bytes = await (0, drive_1.downloadAppDataFileContent)(accessToken, fileId, signal);
+        const bytes = await (0, dropbox_1.downloadDropboxFile)(accessToken, fileName, signal);
         driveRestoreController = null;
         return bytes;
     });
@@ -404,10 +384,27 @@ handleInvoke("save-data", async (data) => {
             }
         }
     }
+    // If theme is not provided, preserve existing theme on disk.
+    let themeToPersist = data.theme;
+    if (typeof themeToPersist === "undefined") {
+        if (fs_1.default.existsSync(filePath)) {
+            try {
+                const existingJson = fs_1.default.readFileSync(filePath, "utf-8");
+                const existingAppData = JSON.parse(existingJson);
+                if (existingAppData && typeof existingAppData.theme !== "undefined") {
+                    themeToPersist = existingAppData.theme;
+                }
+            }
+            catch {
+                // Ignore parse errors; fall back to undefined.
+            }
+        }
+    }
     const dataToSave = {
         bars: Array.isArray(data.bars) ? data.bars : [],
         lastSynced: lastSyncedToPersist,
         sounds: soundsToPersist,
+        theme: themeToPersist,
     };
     fs_1.default.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
     return { success: true, path: filePath };
@@ -415,7 +412,12 @@ handleInvoke("save-data", async (data) => {
 // Save a partial subset of AppData, preserving unspecified fields on disk.
 handleInvoke("save-partial-data", async (partial) => {
     const filePath = path_1.default.join(electron_1.app.getPath("userData"), "my-data.json");
-    let existing = { bars: [], lastSynced: null, sounds: undefined };
+    let existing = {
+        bars: [],
+        lastSynced: null,
+        sounds: undefined,
+        theme: undefined,
+    };
     if (fs_1.default.existsSync(filePath)) {
         try {
             const raw = fs_1.default.readFileSync(filePath, "utf-8");
@@ -440,6 +442,7 @@ handleInvoke("save-partial-data", async (partial) => {
                 ? (existing.lastSynced ?? null)
                 : null,
         sounds: typeof partial.sounds !== "undefined" ? partial.sounds : existing.sounds,
+        theme: typeof partial.theme !== "undefined" ? partial.theme : existing.theme,
     };
     fs_1.default.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
     return { success: true, path: filePath };
@@ -459,7 +462,12 @@ handleInvoke("load-data", async () => {
         // TODO: need proper logging.
         console.error("Error loading data: ", error);
     }
-    return { bars: [], lastSynced: null, sounds: undefined };
+    return {
+        bars: [],
+        lastSynced: null,
+        sounds: undefined,
+        theme: undefined,
+    };
 });
 // Handle window controls.
 electron_1.ipcMain.on("minimize-app", () => {
@@ -516,7 +524,7 @@ function createWindow() {
 electron_1.app.whenReady().then(() => {
     setupPasswordIpc();
     setupAuthIpc();
-    setupDriveIpc();
+    setupDropboxIpc();
     createWindow();
 });
 electron_1.app.on("window-all-closed", () => {

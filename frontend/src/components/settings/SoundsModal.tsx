@@ -83,18 +83,8 @@ export default function SoundsModal(props: SoundsModalProps) {
 
             setPreferences(next);
 
-            // Seed SoundManager so app playback reflects current saved choices.
-            try {
-              soundManager.setMasterVolume(next.masterVolume);
-              for (const item of EVENT_ITEMS) {
-                const fileRef = next.eventFiles[item.id];
-                if (typeof fileRef === "string" && fileRef.length > 0) {
-                  soundManager.setSoundFileForEvent(item.id, fileRef);
-                }
-              }
-            } catch {
-              // Ignore manager errors
-            }
+            // Don't update SoundManager here - it should only be initialized once in App.tsx
+            // This prevents overriding restored sound preferences
           } else {
             setPreferences(DEFAULT_MODAL_PREFS);
           }
@@ -113,7 +103,7 @@ export default function SoundsModal(props: SoundsModalProps) {
     return () => {
       isMounted = false;
     };
-  }, [open, soundManager]);
+  }, [open]);
 
   /** Clean up preview audio when modal closes. */
   useEffect(() => {
@@ -180,17 +170,7 @@ export default function SoundsModal(props: SoundsModalProps) {
       // Save to disk under canonical filename via IPC
       await window.api.saveSoundForEvent(eventId, bytes);
 
-      // Upload raw .mp3 to Google Drive (unencrypted), using canonical filename
-      try {
-        const canonicalFileName = canonicalFilenameForEvent(eventId);
-        await window.api.driveSync({
-          fileName: canonicalFileName,
-          content: bytes,
-          contentType: "audio/mpeg",
-        });
-      } catch {
-        // Ignore Drive sync errors; local save and preferences still succeed
-      }
+      // Do NOT auto-upload to Dropbox here; syncing should be explicit via Sync action.
 
       // Update local prefs to store only canonical filename
       const canonicalFileName = canonicalFilenameForEvent(eventId);
@@ -415,6 +395,14 @@ export default function SoundsModal(props: SoundsModalProps) {
                     : false;
                 const inputId = `file-${item.id}`;
 
+                let displayFileName: string | null = null;
+                if (typeof fileRef === "string") {
+                  if (fileRef.length > 0) {
+                    const parts = fileRef.split(/[\\\/]/);
+                    displayFileName = parts[parts.length - 1] ?? fileRef;
+                  }
+                }
+
                 return (
                   <div
                     key={item.id}
@@ -431,7 +419,7 @@ export default function SoundsModal(props: SoundsModalProps) {
                             fileRef.length === 0 ||
                             busy
                           }
-                          className="px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-50 flex items-center gap-1 w-24 justify-center"
+                          className="btn btn-primary w-24 gap-1"
                         >
                           {isActuallyPlaying ? (
                             <Pause className="h-5 w-5 stroke-2" />
@@ -445,7 +433,7 @@ export default function SoundsModal(props: SoundsModalProps) {
 
                         <label
                           htmlFor={inputId}
-                          className="px-3 py-1 rounded-md bg-blue-500 hover:bg-blue-600 text-black cursor-pointer"
+                          className="btn btn-secondary cursor-pointer"
                         >
                           Upload .mp3
                         </label>
@@ -494,8 +482,8 @@ export default function SoundsModal(props: SoundsModalProps) {
                     />
 
                     <div className="mt-1 text-xs text-gray-400">
-                      {typeof fileRef === "string" && fileRef.length > 0
-                        ? "Custom sound selected"
+                      {displayFileName !== null
+                        ? displayFileName
                         : "No sound selected"}
                     </div>
                   </div>

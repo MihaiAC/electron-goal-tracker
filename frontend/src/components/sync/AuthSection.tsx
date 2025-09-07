@@ -28,29 +28,22 @@ export default function AuthenticationSection({
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-2 text-gray-400">
             <Loader2 className="h-8 w-8 text-white animate-spin stroke-3" />
-            <span>Waiting for Google sign-in...</span>
+            <span>Waiting for Dropbox sign-in...</span>
           </div>
-          <Button
-            onClick={onCancelSignIn}
-            tailwindColors="bg-gray-600 hover:bg-gray-700"
-          >
+          <Button onClick={onCancelSignIn} variant="secondary">
             Cancel
           </Button>
         </div>
       ) : isAuthenticated ? (
         <div className="flex items-center justify-between">
           <p>Signed in{user?.email ? ` as ${user.email}` : ""}</p>
-          <Button
-            onClick={onSignOut}
-            disabled={isSyncing}
-            tailwindColors="bg-gray-600 hover:bg-gray-700"
-          >
-            Sign Out
+          <Button onClick={onSignOut} disabled={isSyncing} variant="secondary">
+            Sign out
           </Button>
         </div>
       ) : (
-        <Button onClick={onSignIn} disabled={isSyncing}>
-          Sign in with Google
+        <Button onClick={onSignIn} disabled={isSyncing} variant="primary">
+          Sign in with Dropbox
         </Button>
       )}
     </section>

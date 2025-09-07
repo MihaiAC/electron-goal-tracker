@@ -7,24 +7,27 @@ export interface ProgressBarData {
   incrementDelta: number;
   completedColor: string;
   remainingColor: string;
+  /** Hex color used to render the hover glow when incrementing (right side). */
+  incrementHoverGlowHex?: string;
+  /** Hex color used to render the hover glow when decrementing (left side). */
+  decrementHoverGlowHex?: string;
 }
 
-export interface VersionedAppData {
-  version: number;
-  lastSynced: string;
-  bars: ProgressBarData[];
-  sounds?: SoundsData;
-}
+// BarsPayload removed: AppData is the single canonical shape. Dropbox uses
+// subsets of AppData (encrypted bars, plaintext settings) without an extra type.
 
 export interface AppData {
   bars: ProgressBarData[];
   lastSynced?: string | null;
   sounds?: SoundsData;
+  /** Optional theme saved locally. */
+  theme?: ThemeData;
 }
 
 export interface SaveResult {
   success: boolean;
-  path: string;
+  path?: string;
+  error?: string;
 }
 
 export interface OAuthUser {
@@ -50,7 +53,7 @@ export const ErrorCodes = {
   NotAuthenticated: "NotAuthenticated",
   OAuthConfig: "OAuthConfig",
   TokenRefreshFailed: "TokenRefreshFailed",
-  DriveApi: "DriveApi",
+  DropboxApi: "DropboxApi",
   Network: "Network",
   NotFound: "NotFound",
   Crypto: "Crypto",
@@ -75,4 +78,13 @@ export interface SoundsData {
     muteAll: boolean;
     eventFiles: Record<SoundEventId, string>;
   };
+}
+
+/** Theme data persisted in app data and included in cloud sync (hex colors). */
+export interface ThemeData {
+  backgroundHex: string;
+  foregroundHex: string;
+  buttonPrimaryHex: string;
+  buttonSecondaryHex: string;
+  buttonDestructiveHex: string;
 }

@@ -13,11 +13,6 @@ export function useUiSounds() {
     return getSoundManager();
   }, []);
 
-  /** Play the generic button click sound. */
-  const playButtonClickSound = (): void => {
-    soundManager.playEventSound("buttonClick");
-  };
-
   /** Play the progress increment sound. */
   const playProgressIncrementSound = (): void => {
     soundManager.playEventSound("progressIncrement");
@@ -44,7 +39,6 @@ export function useUiSounds() {
   };
 
   return {
-    playButtonClickSound,
     playProgressIncrementSound,
     playProgressDecrementSound,
     playProgressCompleteSound,

@@ -7,11 +7,10 @@ import {
   oauthCallbackErrorHtml,
 } from "./oauthSuccessPage";
 
-/** App scopes: file-scoped Drive access + minimal identity for email. */
+/** Dropbox OAuth scopes for file access. */
 export const OAUTH_SCOPES = [
-  "https://www.googleapis.com/auth/drive.appdata",
-  "openid",
-  "email",
+  "files.content.write",
+  "files.content.read",
 ] as const;
 
 /** Max time to wait for the OAuth redirect before timing out. */
@@ -145,60 +144,52 @@ export function waitForAuthorizationCode(
 }
 
 /**
- * Build the Google OAuth URL for PKCE.
+ * Build the Dropbox OAuth URL for PKCE.
  */
 export function buildAuthUrl(
-  clientId: string,
+  appKey: string,
   redirectUri: string,
   pkceCodeChallenge: string
 ): string {
-  const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  authUrl.searchParams.set("client_id", clientId);
+  const authUrl = new URL("https://www.dropbox.com/oauth2/authorize");
+  authUrl.searchParams.set("client_id", appKey);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("access_type", "offline");
-  authUrl.searchParams.set("include_granted_scopes", "true");
-  authUrl.searchParams.set("prompt", "consent");
   authUrl.searchParams.set("code_challenge", pkceCodeChallenge);
   authUrl.searchParams.set("code_challenge_method", "S256");
   authUrl.searchParams.set("scope", OAUTH_SCOPES.join(" "));
+  authUrl.searchParams.set("token_access_type", "offline");
 
   return authUrl.toString();
 }
 
-/** Exchange authorization code for tokens. */
+/** Exchange authorization code for tokens with Dropbox. */
 export async function exchangeAuthorizationCodeForTokens(params: {
-  clientId: string;
+  appKey: string;
   authorizationCode: string;
   pkceCodeVerifier: string;
   redirectUri: string;
-  clientSecret?: string;
 }): Promise<OAuthTokens> {
   const {
-    clientId,
+    appKey,
     authorizationCode: code,
     pkceCodeVerifier: codeVerifier,
     redirectUri,
-    clientSecret,
   } = params;
 
   const body = new URLSearchParams({
-    client_id: clientId,
+    client_id: appKey,
     code,
     code_verifier: codeVerifier,
     redirect_uri: redirectUri,
     grant_type: "authorization_code",
   });
 
-  if (clientSecret) {
-    body.set("client_secret", clientSecret);
-  }
-
   console.info(
     `[auth] Token request body keys: ${Array.from(body.keys()).join(", ")}`
   );
 
-  const tokenResp = await fetch("https://oauth2.googleapis.com/token", {
+  const tokenResp = await fetch("https://api.dropboxapi.com/oauth2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -208,19 +199,6 @@ export async function exchangeAuthorizationCodeForTokens(params: {
     let detail = await tokenResp.text();
     try {
       const json = JSON.parse(detail);
-      const desc =
-        (json && typeof json === "object"
-          ? (json as any).error_description
-          : "") || "";
-      if (
-        typeof desc === "string" &&
-        desc.toLowerCase().includes("client_secret is missing")
-      ) {
-        // TODO: Revert this to something shorter once we finish debugging.
-        throw new Error(
-          "Token exchange failed: client_secret is missing. This typically means the OAuth Client ID is for a Web/confidential client. Ensure GOOGLE_OAUTH_CLIENT_ID is the Desktop app (installed) client for PKCE, or provide GOOGLE_OAUTH_CLIENT_SECRET if your client requires a secret."
-        );
-      }
       detail = JSON.stringify(json);
     } catch {}
 
@@ -230,36 +208,47 @@ export async function exchangeAuthorizationCodeForTokens(params: {
   return (await tokenResp.json()) as OAuthTokens;
 }
 
-/** Decode the payload of a JWT (id_token) to extract minimal user info. */
-export function decodeJwtPayload(idToken: string): any {
-  const parts = idToken.split(".");
+/** Get user info from Dropbox access token. */
+export async function getDropboxUserInfo(accessToken: string): Promise<{
+  email?: string;
+  name?: string;
+  picture?: string;
+}> {
+  const response = await fetch(
+    "https://api.dropboxapi.com/2/users/get_current_account",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
 
-  if (parts.length !== 3) {
-    return null;
+  if (!response.ok) {
+    throw new Error(`Failed to get user info: ${response.status}`);
   }
 
-  const payload = Buffer.from(parts[1], "base64").toString("utf8");
-
-  return JSON.parse(payload);
+  const data = await response.json();
+  return {
+    email: data.email,
+    name: data.name?.display_name || data.name?.given_name,
+    picture: data.profile_photo_url,
+  };
 }
 
 export async function refreshAccessToken(
-  clientId: string,
+  appKey: string,
   refreshToken: string,
-  clientSecret?: string,
   signal?: AbortSignal
 ): Promise<OAuthTokens> {
   const body = new URLSearchParams({
-    client_id: clientId,
+    client_id: appKey,
     refresh_token: refreshToken,
     grant_type: "refresh_token",
   });
 
-  if (clientSecret) {
-    body.set("client_secret", clientSecret);
-  }
-
-  const response = await fetch("https://oauth2.googleapis.com/token", {
+  const response = await fetch("https://api.dropboxapi.com/oauth2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,

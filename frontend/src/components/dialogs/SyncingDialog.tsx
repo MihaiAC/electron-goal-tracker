@@ -26,10 +26,7 @@ export function SyncingDialog({
           <Loader2 className="h-8 w-8 text-white animate-spin stroke-3" />
           <p className="text-lg">{message ?? "Working..."}</p>
           {onCancel !== undefined ? (
-            <Button
-              tailwindColors="bg-transparent hover:bg-white/10 text-white border-2 border-white"
-              onClick={onCancel}
-            >
+            <Button variant="secondary" onClick={onCancel}>
               Cancel
             </Button>
           ) : null}

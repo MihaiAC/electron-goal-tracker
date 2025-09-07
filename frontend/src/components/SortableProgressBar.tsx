@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import ProgressBar from "./ProgressBar";
 import clsx from "clsx";
 import { Grip } from "lucide-react";
+import type { CSSProperties } from "react";
 import type { ProgressBarData } from "../../../types/shared";
 import ReactConfetti from "react-confetti";
 
@@ -14,6 +15,11 @@ interface SortableProgressBarProps {
   onDecrement: () => void;
   className?: string;
 }
+
+type GlowStyle = CSSProperties & {
+  "--bar-increment-hover"?: string;
+  "--bar-decrement-hover"?: string;
+};
 
 export default function SortableProgressBar({
   bar,
@@ -54,7 +60,9 @@ export default function SortableProgressBar({
   }, [bar.current, bar.max, isComplete]);
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!contentRef.current) return;
+    if (!contentRef.current) {
+      return;
+    }
     const rect = contentRef.current.getBoundingClientRect();
     const xCoord = e.clientX - rect.left;
     setHoverSide(xCoord > rect.width / 2 ? "right" : "left");
@@ -68,26 +76,26 @@ export default function SortableProgressBar({
     }
   };
 
+  const style: GlowStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || undefined,
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 10 : 0,
+    position: "relative",
+    touchAction: "none",
+    "--bar-increment-hover": bar.incrementHoverGlowHex ?? "#84cc16",
+    "--bar-decrement-hover": bar.decrementHoverGlowHex ?? "#ea580c",
+  };
+
   const content = (
     <div
       ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: transition || undefined,
-        opacity: isDragging ? 0.8 : 1,
-        zIndex: isDragging ? 10 : 0,
-        position: "relative",
-        touchAction: "none",
-      }}
+      style={style}
       className={clsx(
         "flex items-center rounded-lg p-4",
         isComplete && "golden-pattern completed",
-        isHovered &&
-          hoverSide === "right" &&
-          "shadow-[0_0_20px_5px_rgba(132,204,22,0.6)] transition-shadow duration-100",
-        isHovered &&
-          hoverSide === "left" &&
-          "shadow-[0_0_20px_5px_rgba(234,88,12,0.6)] transition-shadow duration-100",
+        isHovered && hoverSide === "right" && "bar-hover-right",
+        isHovered && hoverSide === "left" && "bar-hover-left",
         className
       )}
       onContextMenu={onContextMenu}

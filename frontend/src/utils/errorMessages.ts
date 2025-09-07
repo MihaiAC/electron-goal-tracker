@@ -2,21 +2,21 @@ import { ErrorCodes } from "../../../types/shared";
 
 export function getUserFriendlyErrorMessage(
   errorCode: string,
-  operation: "sync" | "restore"
+  operation?: "sync" | "restore"
 ): string {
   switch (errorCode) {
     case ErrorCodes.NotAuthenticated: {
-      return "Please sign in to Google first.";
+      return "Please sign in to Dropbox first.";
     }
     case ErrorCodes.NotFound: {
       if (operation === "restore") {
-        return "No backup found in Google Drive.";
+        return "No backup found in Dropbox.";
       } else {
         return "Resource not found.";
       }
     }
-    case ErrorCodes.DriveApi: {
-      return "A Google Drive error occurred.";
+    case ErrorCodes.DropboxApi: {
+      return "A Dropbox API error occurred.";
     }
     case ErrorCodes.Network: {
       return "Network error. Please check your connection and try again.";

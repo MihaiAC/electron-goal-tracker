@@ -18,15 +18,11 @@ export default function SyncSection({
       <h3 className="text-lg font-semibold mb-3">Sync Settings</h3>
       <div className="space-y-4">
         <div className="flex space-x-2">
-          <Button onClick={onSync} disabled={isSyncing}>
-            Sync to Drive
+          <Button onClick={onSync} disabled={isSyncing} variant="primary">
+            Sync to Dropbox
           </Button>
-          <Button
-            onClick={onRestore}
-            disabled={isSyncing}
-            tailwindColors="bg-amber-600 hover:bg-amber-700"
-          >
-            Restore from Drive
+          <Button onClick={onRestore} disabled={isSyncing} variant="secondary">
+            Restore from Dropbox
           </Button>
         </div>
 

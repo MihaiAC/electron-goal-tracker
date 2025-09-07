@@ -1,76 +1,58 @@
 import { AppData, AuthStatus, SaveResult, SoundEventId } from "./shared";
 
-// Parameters for Google Drive IPC methods
-export type DriveSyncParameters = {
+// Parameters for Dropbox IPC methods
+export type DropboxSyncParameters = {
   fileName: string;
   content: Uint8Array;
   contentType?: string;
 };
 
-export type DriveRestoreParameters = {
+export type DropboxRestoreParameters = {
   fileName: string;
 };
 
-// Error typing for main.
-export type MainProcessErrorCode = string;
-
-export type MainProcessError = {
-  code: MainProcessErrorCode;
-  message?: string;
-  status?: number;
-};
-
-// IPC result wrapper.
 export type IpcResult<T> =
-  | { ok: true; data?: T }
-  | { ok: false; error: MainProcessError };
+  | { ok: true; data: T }
+  | { ok: false; error: { code: string; message?: string; status?: number } };
 
 export interface IElectronAPI {
-  // Window controls.
+  // Window controls
   minimize: () => void;
   maximize: () => void;
   close: () => void;
-  onWindowStateChange: (callback: (isMaximized: boolean) => void) => void;
+  onWindowStateChange: (callback: (isMaximized: boolean) => void) => () => void;
 
-  // Saving data locally.
+  // Data persistence
   saveData: (data: AppData) => Promise<SaveResult>;
-  /**
-   * Save a partial subset of AppData fields, preserving unspecified fields on disk.
-   * Useful for modular settings updates (e.g., sounds) without passing all bars.
-   */
   savePartialData: (data: Partial<AppData>) => Promise<SaveResult>;
   loadData: () => Promise<AppData | null>;
 
-  // Encryption password management.
+  // Password management
   savePassword: (password: string) => Promise<void>;
   getPassword: () => Promise<string | null>;
   clearPassword: () => Promise<void>;
 
-  // OAuth
-  startGoogleAuth: () => Promise<void>;
-  cancelGoogleAuth: () => Promise<void>;
+  // OAuth (keeping same names for UI compatibility)
+  startDropboxAuth: () => Promise<void>;
+  cancelDropboxAuth: () => Promise<void>;
   getAuthStatus: () => Promise<AuthStatus>;
   authSignOut: () => Promise<void>;
 
-  // Google Drive sync/restore (appDataFolder)
-  driveSync: (params: DriveSyncParameters) => Promise<void>;
-  driveRestore: (params: DriveRestoreParameters) => Promise<Uint8Array>;
+  // Dropbox sync/restore (keeping same names for UI compatibility)
+  driveSync: (params: DropboxSyncParameters) => Promise<void>;
+  driveRestore: (params: DropboxRestoreParameters) => Promise<Uint8Array>;
   driveCancel: () => Promise<void>;
 
-  /** Save an uploaded .mp3 sound for the given event under a canonical filename. */
+  // Sound management
   saveSoundForEvent: (
     eventId: SoundEventId,
     content: Uint8Array
   ) => Promise<void>;
-
-  /** Read raw .mp3 bytes for the given sound event from local disk. Returns null if missing. */
   readSoundForEvent: (eventId: SoundEventId) => Promise<Uint8Array | null>;
 }
 
-interface Window {
-  api: IElectronAPI;
+declare global {
+  interface Window {
+    api: IElectronAPI;
+  }
 }
-
-export type SecureStoreData = {
-  syncPassword: string;
-};

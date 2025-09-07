@@ -24,7 +24,8 @@ import SettingsRoot from "./components/settings/SettingsRoot";
 import { useUiSounds } from "./hooks/useUiSounds";
 import { getSoundManager } from "./sound/soundManager";
 import { SuccessModal } from "./components/SuccessModal";
-import type { ProgressBarData, SoundEventId } from "../../types/shared";
+import type { ProgressBarData } from "../../types/shared";
+import { applyTheme, DEFAULT_THEME } from "./utils/theme";
 
 function App() {
   // Success modal when a progress bar is completed.
@@ -44,6 +45,8 @@ function App() {
         incrementDelta: 1,
         completedColor: "#10B981",
         remainingColor: "#374151",
+        incrementHoverGlowHex: "#84cc16",
+        decrementHoverGlowHex: "#ea580c",
       },
       {
         id: "2",
@@ -54,6 +57,8 @@ function App() {
         incrementDelta: 1,
         completedColor: "#3B82F6",
         remainingColor: "#374151",
+        incrementHoverGlowHex: "#84cc16",
+        decrementHoverGlowHex: "#ea580c",
       },
     ];
   });
@@ -65,8 +70,16 @@ function App() {
         if (savedData?.bars) {
           setBars(savedData.bars);
         }
+        // Apply saved theme (or default) at startup so CSS variables are set.
+        if (savedData && savedData.theme) {
+          applyTheme(savedData.theme);
+        } else {
+          applyTheme(DEFAULT_THEME);
+        }
       } catch (error) {
         console.error("Failed to load saved data", error);
+        // Apply a safe default theme on failure
+        applyTheme(DEFAULT_THEME);
       }
     };
 
@@ -170,6 +183,8 @@ function App() {
       incrementDelta: 1,
       completedColor: "#555555",
       remainingColor: "#374151",
+      incrementHoverGlowHex: "#84cc16",
+      decrementHoverGlowHex: "#ea580c",
     };
     setBars((prev) => [...prev, newBar]);
     setEditingBarId(newBar.id);
@@ -195,34 +210,28 @@ function App() {
         const savedData = await window.api.loadData();
         const savedPreferences = savedData?.sounds?.preferences;
 
-        if (isMounted) {
-          if (savedPreferences && typeof savedPreferences === "object") {
-            const soundManager = getSoundManager();
+        if (
+          isMounted &&
+          savedPreferences &&
+          typeof savedPreferences === "object"
+        ) {
+          // Initialize SoundManager with saved preferences instead of updating after creation
+          const soundPreferences = {
+            masterVolume:
+              typeof savedPreferences.masterVolume === "number"
+                ? savedPreferences.masterVolume
+                : 0.6,
+            muteAll: savedPreferences.muteAll === true,
+            soundsFolder: "/home/sounds", // Default folder path
+            eventFiles: savedPreferences.eventFiles || {},
+          };
 
-            if (typeof savedPreferences.masterVolume === "number") {
-              soundManager.setMasterVolume(savedPreferences.masterVolume);
-            }
-
-            if (typeof savedPreferences.muteAll === "boolean") {
-              soundManager.setMuteAll(savedPreferences.muteAll);
-            }
-
-            const eventIds: SoundEventId[] = [
-              "progressIncrement",
-              "progressDecrement",
-              "progressComplete",
-            ];
-
-            for (const eventId of eventIds) {
-              const fileRef = savedPreferences.eventFiles?.[eventId];
-              if (typeof fileRef === "string" && fileRef.length > 0) {
-                soundManager.setSoundFileForEvent(eventId, fileRef);
-              }
-            }
-          }
+          // Get SoundManager instance with initial preferences
+          const soundManager = getSoundManager();
+          soundManager.setPreferences(soundPreferences);
         }
       } catch {
-        // Ignore errors; sounds remain at defaults if any
+        // Ignore errors; SoundManager will use defaults
       }
     })();
 
@@ -286,10 +295,7 @@ function App() {
             </DndContext>
           </div>
 
-          <Button
-            onClick={addNewBar}
-            tailwindColors="bg-lime-500 hover:bg-lime-700 text-black"
-          >
+          <Button variant="primary" onClick={addNewBar}>
             + Add new bar
           </Button>
 

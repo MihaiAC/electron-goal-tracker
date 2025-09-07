@@ -27,10 +27,7 @@ export default function OperationSuccessDialog({
           <p className="text-lg">{message}</p>
         </div>
         <div className="flex justify-center">
-          <Button
-            onClick={onClose}
-            tailwindColors="bg-green-500 hover:bg-green-700 text-white"
-          >
+          <Button onClick={onClose} variant="primary">
             Ok
           </Button>
         </div>

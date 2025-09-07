@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { OAuthUser } from "../../../types/shared";
 
-export function useGoogleAuth() {
+export function useDropboxAuth() {
   const [user, setUser] = useState<OAuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +38,7 @@ export function useGoogleAuth() {
     signInCanceledByUser.current = false;
 
     try {
-      await window.api.startGoogleAuth();
+      await window.api.startDropboxAuth();
       if (!signInCanceledByUser.current) {
         await refreshStatus();
       }
@@ -55,7 +55,7 @@ export function useGoogleAuth() {
   const cancelSignIn = async () => {
     signInCanceledByUser.current = true;
     try {
-      await window.api.cancelGoogleAuth();
+      await window.api.cancelDropboxAuth();
     } catch (e) {
       console.error(e);
     } finally {

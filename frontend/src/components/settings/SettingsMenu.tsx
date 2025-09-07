@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import React from "react";
-import { Cloud, Volume2, X } from "lucide-react";
+import { Cloud, Volume2, Palette, X } from "lucide-react";
 import "./SettingsMenu.css";
 
 /**
@@ -12,12 +12,14 @@ import "./SettingsMenu.css";
 export interface SettingsMenuProps {
   open: boolean;
   onClose: () => void;
-  onOpenCloudSync: () => void;
+  onOpenDropboxSync: () => void;
   onOpenSounds: () => void;
+  onOpenThemes: () => void;
 }
 
 export default function SettingsMenu(props: SettingsMenuProps) {
-  const { open, onClose, onOpenCloudSync, onOpenSounds } = props;
+  const { open, onClose, onOpenDropboxSync, onOpenSounds, onOpenThemes } =
+    props;
 
   return createPortal(
     <AnimatePresence initial={false}>
@@ -59,7 +61,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
                     type="button"
                     onClick={() => {
                       onClose();
-                      onOpenCloudSync();
+                      onOpenDropboxSync();
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
                   >
@@ -79,6 +81,20 @@ export default function SettingsMenu(props: SettingsMenuProps) {
                   >
                     <Volume2 className="settings-section-icon" />
                     <span>Sounds</span>
+                  </button>
+                </li>
+
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenThemes();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
+                  >
+                    <Palette className="settings-section-icon" />
+                    <span>Themes</span>
                   </button>
                 </li>
               </ul>

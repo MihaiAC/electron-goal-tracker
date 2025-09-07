@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
-  DriveRestoreParameters,
-  DriveSyncParameters,
+  DropboxRestoreParameters,
+  DropboxSyncParameters,
   IElectronAPI,
 } from "./types/electron";
 import { AuthStatus } from "./types/shared";
@@ -55,16 +55,16 @@ const api: IElectronAPI = {
   getPassword: () => invokeAndUnwrap<string | null>("get-password"),
   clearPassword: () => invokeAndUnwrap<void>("clear-password"),
 
-  // OAuth for Google Drive
-  startGoogleAuth: () => invokeAndUnwrap<void>("auth-start"),
-  cancelGoogleAuth: () => invokeAndUnwrap<void>("auth-cancel"),
+  // OAuth for Dropbox (keeping same API names for UI compatibility)
+  startDropboxAuth: () => invokeAndUnwrap<void>("auth-start"),
+  cancelDropboxAuth: () => invokeAndUnwrap<void>("auth-cancel"),
   getAuthStatus: () => invokeAndUnwrap<AuthStatus>("auth-status"),
   authSignOut: () => invokeAndUnwrap<void>("auth-sign-out"),
 
-  // GDrive syncing operations
-  driveSync: (params: DriveSyncParameters) =>
+  // Dropbox syncing operations (keeping same API names for UI compatibility)
+  driveSync: (params: DropboxSyncParameters) =>
     invokeAndUnwrap<void>("drive-sync", params),
-  driveRestore: (params: DriveRestoreParameters) =>
+  driveRestore: (params: DropboxRestoreParameters) =>
     invokeAndUnwrap<Uint8Array>("drive-restore", params),
   driveCancel: () => invokeAndUnwrap<void>("drive-cancel"),
 

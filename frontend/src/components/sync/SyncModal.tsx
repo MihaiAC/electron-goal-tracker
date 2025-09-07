@@ -2,9 +2,9 @@ import { useEffect } from "react";
 import type { ProgressBarData } from "../../../../types/shared";
 import { ErrorCodes } from "../../../../types/shared";
 import { isErrorWrapper } from "../../utils/errorMapping";
-import { useGoogleAuth } from "../../hooks/useGoogleAuth";
+import { useDropboxAuth } from "../../hooks/useDropboxAuth";
 import { usePassword } from "../../hooks/usePassword";
-import { useGoogleDriveSync } from "../../hooks/useGoogleDriveSync";
+import { useDropboxSync } from "../../hooks/useDropboxSync";
 import { SyncingDialog } from "../dialogs/SyncingDialog";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import PasswordDialog from "../dialogs/PasswordDialog";
@@ -38,15 +38,15 @@ export default function SyncModal({
     signOut,
     clearError: clearAuthError,
     cancelSignIn,
-  } = useGoogleAuth();
+  } = useDropboxAuth();
 
   const {
     lastSynced,
-    syncToDrive,
-    restoreFromDrive,
+    syncToDropbox,
+    restoreFromDropbox,
     clearLastSynced,
-    cancelDriveOperation,
-  } = useGoogleDriveSync();
+    cancelDropboxOperation,
+  } = useDropboxSync();
 
   const { getPassword, savePassword, clearPassword } = usePassword();
 
@@ -72,7 +72,7 @@ export default function SyncModal({
     if (savedPassword) {
       try {
         dispatch({ type: "START_SYNC" });
-        await syncToDrive(savedPassword, currentBars);
+        await syncToDropbox(savedPassword, currentBars);
         dispatch({
           type: "OPERATION_SUCCESS",
           operation: "sync",
@@ -113,7 +113,7 @@ export default function SyncModal({
       dispatch({ type: "CONFIRM_RESTORE" });
 
       try {
-        const restoredData = await restoreFromDrive(savedPassword);
+        const restoredData = await restoreFromDropbox(savedPassword);
         if (restoredData) {
           onDataRestored(restoredData);
           dispatch({
@@ -156,7 +156,7 @@ export default function SyncModal({
   const handleSyncWithPassword = async (password: string) => {
     dispatch({ type: "PASSWORD_PROVIDED", password, purpose: "sync" });
     try {
-      await syncToDrive(password, currentBars);
+      await syncToDropbox(password, currentBars);
       dispatch({ type: "OFFER_SAVE_PASSWORD", password });
     } catch (error) {
       if (isErrorWrapper(error)) {
@@ -183,7 +183,7 @@ export default function SyncModal({
   const handleRestoreWithPassword = async (password: string) => {
     dispatch({ type: "PASSWORD_PROVIDED", password, purpose: "restore" });
     try {
-      const restoredData = await restoreFromDrive(password);
+      const restoredData = await restoreFromDropbox(password);
       if (restoredData) {
         onDataRestored(restoredData);
         dispatch({ type: "OFFER_SAVE_PASSWORD", password });
@@ -299,11 +299,11 @@ export default function SyncModal({
         message={
           state.type === "SYNCING"
             ? state.operation === "sync"
-              ? "Syncing with Google Drive..."
-              : "Restoring from Google Drive..."
+              ? "Syncing with Dropbox..."
+              : "Restoring from Dropbox..."
             : undefined
         }
-        onCancel={cancelDriveOperation}
+        onCancel={cancelDropboxOperation}
       />
 
       <OperationSuccessDialog
@@ -323,6 +323,7 @@ export default function SyncModal({
         isOpen={state.type === "ERROR"}
         message={state.type === "ERROR" ? state.message : ""}
         code={state.type === "ERROR" ? state.code : undefined}
+        status={state.type === "ERROR" ? state.status : undefined}
         onClose={() => dispatch({ type: "BACK_TO_IDLE" })}
       />
 
@@ -330,7 +331,7 @@ export default function SyncModal({
         isOpen={state.type === "CONFIRM_RESTORE"}
         onCancel={() => dispatch({ type: "BACK_TO_IDLE" })}
         onConfirm={handleConfirmRestore} // Need to handle user input timing.
-        title="Restore from Google Drive?"
+        title="Restore from Dropbox?"
         message="This will overwrite your current local data. This action cannot be undone."
       />
 
@@ -339,7 +340,7 @@ export default function SyncModal({
         onCancel={() => dispatch({ type: "BACK_TO_IDLE" })}
         onConfirm={handleSyncWithPassword} // Probably need a dispatch here too.
         title="Enter Encryption Password"
-        message="Please enter the password to encrypt your data for Google Drive."
+        message="Please enter the password to encrypt your data for Dropbox."
       />
 
       <PasswordDialog
@@ -347,7 +348,7 @@ export default function SyncModal({
         onCancel={() => dispatch({ type: "BACK_TO_IDLE" })}
         onConfirm={handleRestoreWithPassword} // Probably need a dispatch here too.
         title="Enter Decryption Password"
-        message="Please enter the password to decrypt your data from Google Drive."
+        message="Please enter the password to decrypt your data from Dropbox."
       />
 
       <ConfirmationDialog

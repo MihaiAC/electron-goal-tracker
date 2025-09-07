@@ -37,13 +37,12 @@ export default function PasswordDialog({
           placeholder="Enter password"
         />
         <div className="flex justify-end space-x-4">
-          <Button
-            onClick={onCancel}
-            tailwindColors="text-red-500 hover:text-red-700 text-white"
-          >
+          <Button onClick={onCancel} variant="secondary">
             Cancel
           </Button>
-          <Button onClick={handleConfirm}>Confirm</Button>
+          <Button onClick={handleConfirm} variant="primary">
+            Confirm
+          </Button>
         </div>
       </div>
     </Dialog>

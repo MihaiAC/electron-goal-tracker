@@ -8,6 +8,7 @@ interface OperationErrorDialogProps {
   title?: string;
   message: string;
   code?: string;
+  status?: number;
   onClose: () => void;
 }
 
@@ -16,6 +17,7 @@ export default function OperationErrorDialog({
   title = "Something went wrong",
   message,
   code,
+  status,
   onClose,
 }: OperationErrorDialogProps) {
   if (!isOpen) return null;
@@ -28,12 +30,12 @@ export default function OperationErrorDialog({
           <h3 className="text-xl font-bold">{title}</h3>
           <p className="text-lg">{message}</p>
           {code && <p className="text-sm text-gray-400">Code: {code}</p>}
+          {typeof status === "number" ? (
+            <p className="text-sm text-gray-400">HTTP Status: {status}</p>
+          ) : null}
         </div>
         <div className="flex justify-center">
-          <Button
-            onClick={onClose}
-            tailwindColors="bg-red-500 hover:bg-red-700 text-white"
-          >
+          <Button onClick={onClose} variant="destructive">
             Dismiss
           </Button>
         </div>
