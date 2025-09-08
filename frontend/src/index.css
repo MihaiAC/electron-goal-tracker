@@ -56,6 +56,22 @@
     animation: shine 2s linear infinite;
   }
 
+  /* Strong golden glow utility for completed bars */
+  .gold-glow {
+    box-shadow:
+      0 0 0 2px color-mix(in srgb, #ffd700 35%, transparent) inset,
+      0 0 18px 4px color-mix(in srgb, #ffd700 55%, transparent),
+      0 0 45px 12px color-mix(in srgb, #ffc000 35%, transparent);
+    transition: box-shadow 150ms linear;
+  }
+
+  .confetti-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 45;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

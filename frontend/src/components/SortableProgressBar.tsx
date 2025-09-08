@@ -28,12 +28,12 @@ export default function SortableProgressBar({
   onDecrement,
   className = "",
 }: SortableProgressBarProps) {
-  const [showConfetti, setShowConfetti] = useState(false);
   const [isComplete, setIsComplete] = useState(bar.current === bar.max);
   const [isHovered, setIsHovered] = useState(false);
   const [hoverSide, setHoverSide] = useState<"left" | "right" | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const {
     attributes,
@@ -54,8 +54,11 @@ export default function SortableProgressBar({
     if (bar.current === bar.max) {
       setIsComplete(true);
       setShowConfetti(true);
-    } else if (isComplete) {
-      setIsComplete(false);
+    } else {
+      if (isComplete) {
+        setIsComplete(false);
+      }
+      setShowConfetti(false);
     }
   }, [bar.current, bar.max, isComplete]);
 
@@ -83,8 +86,12 @@ export default function SortableProgressBar({
     zIndex: isDragging ? 10 : 0,
     position: "relative",
     touchAction: "none",
-    "--bar-increment-hover": bar.incrementHoverGlowHex ?? "#84cc16",
-    "--bar-decrement-hover": bar.decrementHoverGlowHex ?? "#ea580c",
+    "--bar-increment-hover": isComplete
+      ? "#FFD700"
+      : (bar.incrementHoverGlowHex ?? "#84cc16"),
+    "--bar-decrement-hover": isComplete
+      ? "#FFD700"
+      : (bar.decrementHoverGlowHex ?? "#ea580c"),
   };
 
   const content = (
@@ -93,9 +100,9 @@ export default function SortableProgressBar({
       style={style}
       className={clsx(
         "flex items-center rounded-lg p-4",
-        isComplete && "golden-pattern completed",
         isHovered && hoverSide === "right" && "bar-hover-right",
         isHovered && hoverSide === "left" && "bar-hover-left",
+        isComplete && "completed",
         className
       )}
       onContextMenu={onContextMenu}
@@ -128,7 +135,9 @@ export default function SortableProgressBar({
     </div>
   );
 
-  if (!showConfetti) return content;
+  if (!showConfetti) {
+    return content;
+  }
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -139,16 +148,16 @@ export default function SortableProgressBar({
         recycle={true}
         numberOfPieces={30}
         colors={["#FFD700", "#FFC000", "#FFA500"]}
-        gravity={0.05}
-        initialVelocityY={0.05}
+        gravity={0.15}
+        initialVelocityY={1.5}
         confettiSource={{
           w: containerRef.current?.offsetWidth || 0,
-          h: containerRef.current?.offsetHeight || 0,
+          h: 1,
           x: 0,
           y: 0,
         }}
         className="absolute inset-0"
-        style={{ pointerEvents: "none", zIndex: 20 }}
+        style={{ pointerEvents: "none", zIndex: 30 }}
       />
       {content}
     </div>

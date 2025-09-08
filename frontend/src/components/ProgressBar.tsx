@@ -35,9 +35,10 @@ export default function ProgressBar({
     <div className="flex flex-col space-y-2">
       <h3 className="text-center">{title}</h3>
       <div
-        className={`w-full h-6 rounded-xl overflow-hidden ${
-          isComplete ? "shadow-md shadow-amber-200/30" : ""
-        }`}
+        className={clsx(
+          "w-full h-6 rounded-xl overflow-hidden",
+          isComplete && "gold-glow"
+        )}
         style={{
           backgroundColor: remainingColor,
         }}

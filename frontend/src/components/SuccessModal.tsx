@@ -3,6 +3,7 @@ import type { ProgressBarData } from "../../../types/shared";
 import { Button } from "./Button";
 import ReactConfetti from "react-confetti";
 import { getSoundManager } from "../sound/soundManager";
+import { useEffect, useState } from "react";
 
 interface SuccessModalProps {
   barData: ProgressBarData;
@@ -22,11 +23,38 @@ export function SuccessModal({
     onRequestClose();
   };
 
+  // Track window size to keep confetti canvas in sync with resizes.
+  const [windowSize, setWindowSize] = useState<{
+    width: number;
+    height: number;
+  }>(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }));
+
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
   // TODO: Add custom uplifting dismiss messages + congratulations messages.
   // TODO: Add completion stats? Completed after x days. Created on...
   // TODO: Add the golden experience mission success soundbite (it was a minified, slightly muted version of the main theme).
   return (
-    <ReactConfetti className="flex flex-col">
+    <>
+      <ReactConfetti
+        width={windowSize.width}
+        height={windowSize.height}
+        recycle={true}
+        run={isOpen}
+        className="confetti-overlay"
+      />
       <Modal
         isOpen={isOpen}
         ariaHideApp={false}
@@ -47,6 +75,6 @@ export function SuccessModal({
           {"Good job, champ!"}
         </Button>
       </Modal>
-    </ReactConfetti>
+    </>
   );
 }
