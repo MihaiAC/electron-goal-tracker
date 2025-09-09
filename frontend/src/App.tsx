@@ -27,6 +27,8 @@ import { SuccessModal } from "./components/SuccessModal";
 import type { ProgressBarData } from "../../types/shared";
 import { applyTheme, DEFAULT_THEME } from "./utils/theme";
 
+// TODO: Fix the max listeners exceeded warning.
+// TODO: Do a QA pass on the UI/UX.
 function App() {
   // Success modal when a progress bar is completed.
   const [successModalBarId, setSuccessModalBarId] = useState<string | null>(
@@ -187,7 +189,6 @@ function App() {
       decrementHoverGlowHex: "#ea580c",
     };
     setBars((prev) => [...prev, newBar]);
-    setEditingBarId(newBar.id);
   };
 
   /**
