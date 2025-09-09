@@ -4,6 +4,7 @@ import { Button } from "./Button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { X } from "lucide-react";
 
 interface BarSettingsProps {
   bar: ProgressBarData;
@@ -147,13 +148,14 @@ export default function BarSettings({
         }}
       >
         <h2 className="text-xl font-bold mb-4">Edit Progress Bar</h2>
+        {/* TODO: This type of "button" gets repeated quite a lot -> new variant? */}
         <button
           type="button"
           aria-label="Close"
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-white"
+          className="titlebar-button hover:bg-red-500 absolute top-3 right-3"
         >
-          ×
+          <X className="close-icon" />
         </button>
 
         <form

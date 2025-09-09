@@ -3,6 +3,7 @@ import SettingsMenu from "./SettingsMenu";
 import SyncModal from "../sync/SyncModal";
 import SoundsModal from "./SoundsModal";
 import ThemeModal from "./ThemeModal";
+import HelpModal from "./HelpModal";
 import type { ProgressBarData } from "../../../../types/shared";
 import { Settings } from "lucide-react";
 
@@ -22,10 +23,12 @@ export default function SettingsRoot(props: {
   const [syncOpen, setSyncOpen] = useState(false);
   const [soundsOpen, setSoundsOpen] = useState(false);
   const [themesOpen, setThemesOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Prevent background scroll and layout shift when any settings UI is open
   useEffect(() => {
-    const anyOpen = menuOpen || syncOpen || soundsOpen || themesOpen;
+    const anyOpen =
+      menuOpen || syncOpen || soundsOpen || themesOpen || helpOpen;
     const body = document.body;
     const html = document.documentElement;
     if (anyOpen) {
@@ -42,12 +45,12 @@ export default function SettingsRoot(props: {
       body.style.overflow = "";
       body.style.paddingRight = "";
     };
-  }, [menuOpen, syncOpen, soundsOpen, themesOpen]);
+  }, [menuOpen, syncOpen, soundsOpen, themesOpen, helpOpen]);
 
   return (
     <>
       {/* Floating Settings button */}
-      {!menuOpen && !syncOpen && !soundsOpen && !themesOpen && (
+      {!menuOpen && !syncOpen && !soundsOpen && !themesOpen && !helpOpen && (
         <button
           onClick={() => setMenuOpen(true)}
           className="fixed bottom-6 left-6 w-12 h-12 text-slate-800 rounded-md bg-white flex items-center justify-center shadow-lg hover:bg-slate-800 hover:text-white transition-colors duration-200 border border-white"
@@ -67,6 +70,9 @@ export default function SettingsRoot(props: {
         onOpenThemes={() => {
           setThemesOpen(true);
         }}
+        onOpenHelp={() => {
+          setHelpOpen(true);
+        }}
       />
 
       {/* Cloud Sync modal now lives under Settings */}
@@ -80,6 +86,8 @@ export default function SettingsRoot(props: {
       <SoundsModal open={soundsOpen} onClose={() => setSoundsOpen(false)} />
 
       <ThemeModal open={themesOpen} onClose={() => setThemesOpen(false)} />
+
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </>
   );
 }

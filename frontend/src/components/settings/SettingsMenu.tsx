@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import React from "react";
-import { Cloud, Volume2, Palette, X } from "lucide-react";
+import { Cloud, Volume2, Palette, X, HelpCircle } from "lucide-react";
 import "./SettingsMenu.css";
 
 /**
  * Left slide-out settings menu (drawer) with smooth animation.
- * - Provides navigation to Cloud Sync and Sounds settings.
+ * - Provides navigation to Cloud Sync, Sounds, Themes, and Help.
  * - Closes when clicking the overlay or the close button.
  */
 export interface SettingsMenuProps {
@@ -15,11 +15,18 @@ export interface SettingsMenuProps {
   onOpenDropboxSync: () => void;
   onOpenSounds: () => void;
   onOpenThemes: () => void;
+  onOpenHelp: () => void;
 }
 
 export default function SettingsMenu(props: SettingsMenuProps) {
-  const { open, onClose, onOpenDropboxSync, onOpenSounds, onOpenThemes } =
-    props;
+  const {
+    open,
+    onClose,
+    onOpenDropboxSync,
+    onOpenSounds,
+    onOpenThemes,
+    onOpenHelp,
+  } = props;
 
   return createPortal(
     <AnimatePresence initial={false}>
@@ -55,7 +62,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
             </div>
 
             <nav className="flex-1 p-2">
-              <ul className="space-y-1">
+              <ul className="space-y-1 flex flex-col h-full">
                 <li>
                   <button
                     type="button"
@@ -95,6 +102,20 @@ export default function SettingsMenu(props: SettingsMenuProps) {
                   >
                     <Palette className="settings-section-icon" />
                     <span>Themes</span>
+                  </button>
+                </li>
+
+                <li className="mt-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenHelp();
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
+                  >
+                    <HelpCircle className="settings-section-icon" />
+                    <span>Help</span>
                   </button>
                 </li>
               </ul>
