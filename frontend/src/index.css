@@ -93,19 +93,31 @@
 
   /* Button: unified primary with hover scale */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-md disabled:opacity-50 disabled:pointer-events-none origin-center hover:opacity-85;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md disabled:opacity-50 disabled:pointer-events-none origin-center transition-colors;
+    /* Base background is supplied by variants via --btn-bg */
+    background: var(--btn-bg);
+    transition-duration: 75ms;
+    transition-timing-function: ease-out;
+  }
+
+  /* Background-only hover/active without affecting text color */
+  .btn:hover {
+    background: color-mix(in srgb, var(--btn-bg) 85%, transparent);
+  }
+  .btn:active {
+    background: color-mix(in srgb, var(--btn-bg) 65%, transparent);
   }
 
   .btn-primary {
-    background: var(--button-primary);
+    --btn-bg: var(--button-primary);
     color: var(--foreground);
   }
   .btn-secondary {
-    background: var(--button-secondary);
+    --btn-bg: var(--button-secondary);
     color: var(--foreground);
   }
   .btn-destructive {
-    background: var(--button-destructive);
+    --btn-bg: var(--button-destructive);
     color: var(--foreground);
   }
 
