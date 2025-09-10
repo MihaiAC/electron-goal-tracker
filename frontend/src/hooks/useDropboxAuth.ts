@@ -15,11 +15,19 @@ export function useDropboxAuth() {
     signInCanceledByUser.current = false;
 
     try {
+      console.info("[auth][renderer] Checking authentication status...");
       const status = await window.api.getAuthStatus();
       setIsAuthenticated(Boolean(status?.isAuthenticated));
       setUser(status?.user ?? null);
+      console.info("[auth][renderer] Auth status updated", {
+        isAuthenticated: Boolean(status?.isAuthenticated),
+        hasUser: Boolean(status?.user),
+      });
     } catch (e) {
-      console.error(e);
+      console.error(
+        "[auth][renderer] Failed to check authentication status",
+        e
+      );
       setError("Failed to check authentication status");
       setIsAuthenticated(false);
       setUser(null);
@@ -38,14 +46,18 @@ export function useDropboxAuth() {
     signInCanceledByUser.current = false;
 
     try {
+      console.info("[auth][renderer] Starting Dropbox sign-in");
       await window.api.startDropboxAuth();
       if (!signInCanceledByUser.current) {
         await refreshStatus();
+        console.info("[auth][renderer] Sign-in completed");
+      } else {
+        console.info("[auth][renderer] Sign-in was canceled by user");
       }
     } catch (e) {
       if (!signInCanceledByUser.current) {
         setError("Failed to sign in.");
-        console.error(e);
+        console.error("[auth][renderer] Sign-in failed", e);
       }
     } finally {
       setIsLoading(false);
@@ -55,9 +67,10 @@ export function useDropboxAuth() {
   const cancelSignIn = async () => {
     signInCanceledByUser.current = true;
     try {
+      console.info("[auth][renderer] Cancelling Dropbox sign-in");
       await window.api.cancelDropboxAuth();
     } catch (e) {
-      console.error(e);
+      console.error("[auth][renderer] Failed to cancel sign-in", e);
     } finally {
       setIsLoading(false);
     }
@@ -65,10 +78,12 @@ export function useDropboxAuth() {
 
   const signOut = async () => {
     try {
+      console.info("[auth][renderer] Signing out");
       await window.api.authSignOut();
     } finally {
       setIsAuthenticated(false);
       setUser(null);
+      console.info("[auth][renderer] Signed out (local state cleared)");
     }
   };
 

@@ -23,6 +23,12 @@ async function invokeAndUnwrap<T>(channel: string, ...args: any[]): Promise<T> {
   }
 
   // Error path: forward minimal error wrapper { code, message, status }
+  console.error("[preload] IPC error", {
+    channel,
+    code: result.error?.code,
+    status: result.error?.status,
+    message: result.error?.message,
+  });
   throw result.error;
 }
 

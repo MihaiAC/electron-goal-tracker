@@ -13,6 +13,12 @@ async function invokeAndUnwrap(channel, ...args) {
         return result.data ?? undefined;
     }
     // Error path: forward minimal error wrapper { code, message, status }
+    console.error("[preload] IPC error", {
+        channel,
+        code: result.error?.code,
+        status: result.error?.status,
+        message: result.error?.message,
+    });
     throw result.error;
 }
 // Define the API we are exposing

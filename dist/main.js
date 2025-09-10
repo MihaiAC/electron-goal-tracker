@@ -60,6 +60,7 @@ function handleInvoke(channel, handler) {
 function setupPasswordIpc() {
     // Save the password securely.
     handleInvoke("save-password", async (password) => {
+        console.info("[password] save-password invoked");
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
             throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
@@ -67,6 +68,7 @@ function setupPasswordIpc() {
             const encryptedPassword = electron_1.safeStorage.encryptString(password);
             // Store the encrypted password as a base64 string.
             store.set(SYNC_PASSWORD_KEY, encryptedPassword.toString("base64"));
+            console.info("[password] password saved (encrypted)");
         }
         catch (error) {
             console.error("[password] Failed to encrypt password for storage: ", error);
@@ -76,6 +78,7 @@ function setupPasswordIpc() {
         }
     });
     handleInvoke("get-password", async () => {
+        console.info("[password] get-password invoked");
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
             throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
@@ -83,10 +86,13 @@ function setupPasswordIpc() {
             const encryptedPasswordBase64 = store.get(SYNC_PASSWORD_KEY);
             if (!encryptedPasswordBase64 ||
                 typeof encryptedPasswordBase64 !== "string") {
+                console.info("[password] no password stored");
                 return null;
             }
             const encryptedPassword = Buffer.from(encryptedPasswordBase64, "base64");
-            return electron_1.safeStorage.decryptString(encryptedPassword);
+            const decrypted = electron_1.safeStorage.decryptString(encryptedPassword);
+            console.info("[password] password retrieved (decrypted in-memory)");
+            return decrypted;
         }
         catch (error) {
             console.error("Failed to get password, clearing potentially corrupt entry.", error);
@@ -95,6 +101,7 @@ function setupPasswordIpc() {
         }
     });
     handleInvoke("clear-password", async () => {
+        console.info("[password] clear-password invoked");
         store.delete(SYNC_PASSWORD_KEY);
     });
 }
@@ -111,6 +118,7 @@ function setupAuthIpc() {
         if (!electron_1.safeStorage.isEncryptionAvailable()) {
             throw new main_process_errors_1.CryptoError("Safe storage is not available on this system.");
         }
+        console.info("[auth] Preconditions OK (env and safeStorage)");
         return { appKey };
     };
     const storeTokensAndUser = async (tokens) => {
@@ -122,6 +130,7 @@ function setupAuthIpc() {
             try {
                 const encrypted = electron_1.safeStorage.encryptString(refresh);
                 store.set(OAUTH_REFRESH_TOKEN_KEY, encrypted.toString("base64"));
+                console.info("[auth] refresh token stored (encrypted)");
             }
             catch (error) {
                 console.error("[auth] Failed to encrypt refresh token: ", error);
@@ -140,8 +149,13 @@ function setupAuthIpc() {
             try {
                 const user = await (0, auth_1.getDropboxUserInfo)(tokens.access_token);
                 store.set(OAUTH_USER_INFO_KEY, user);
+                console.info("[auth] user info fetched and stored", {
+                    hasEmail: Boolean(user?.email),
+                    hasName: Boolean(user?.name),
+                });
             }
             catch {
+                console.warn("[auth] failed to fetch user info; clearing stored user");
                 store.delete(OAUTH_USER_INFO_KEY);
             }
         }
@@ -150,45 +164,58 @@ function setupAuthIpc() {
         }
     };
     handleInvoke("auth-start", async () => {
+        console.info("[auth] Starting Dropbox OAuth flow");
         const { appKey } = ensurePreconditions();
         // PKCE
         const { code_verifier, code_challenge } = await (0, pkce_challenge_1.default)();
+        console.info("[auth] PKCE challenge generated");
         // Abort previous attempt, create fresh controller
         if (authController) {
+            console.info("[auth] Aborting previous OAuth attempt");
             authController.abort();
         }
         authController = new AbortController();
         const signal = authController.signal;
         // Loopback server + auth URL
         const { server, redirectUri } = await (0, auth_1.startLoopbackRedirectServer)();
+        console.info("[auth] Loopback server started", { redirectUri });
         const url = (0, auth_1.buildAuthUrl)(appKey, redirectUri, code_challenge);
+        console.info("[auth] Opening external auth URL");
         await electron_1.shell.openExternal(url);
         // Wait for code (abortable, with timeout)
         let code;
         try {
+            console.info("[auth] Waiting for authorization code...");
             code = await (0, auth_1.waitForAuthorizationCode)(server, signal);
+            console.info("[auth] Authorization code received (not logging value)");
         }
         finally {
             try {
                 server.close();
+                console.info("[auth] Loopback server closed");
             }
             catch { }
         }
         // Exchange tokens and store
+        console.info("[auth] Exchanging code for tokens...");
         const tokens = await (0, auth_1.exchangeAuthorizationCodeForTokens)({
             appKey,
             authorizationCode: code,
             pkceCodeVerifier: code_verifier,
             redirectUri,
         });
+        console.info("[auth] Token exchange successful (not logging tokens)");
         await storeTokensAndUser(tokens);
         authController = null;
+        console.info("[auth] OAuth flow completed successfully");
     });
     handleInvoke("auth-cancel", async () => {
+        console.info("[auth] OAuth cancel requested");
         authController?.abort();
         authController = null;
     });
     handleInvoke("auth-sign-out", async () => {
+        console.info("[auth] Signing out and clearing stored tokens/user");
         store.delete(OAUTH_REFRESH_TOKEN_KEY);
         store.delete(OAUTH_USER_INFO_KEY);
     });
@@ -196,14 +223,19 @@ function setupAuthIpc() {
         try {
             const enc = store.get(OAUTH_REFRESH_TOKEN_KEY);
             if (!enc || typeof enc !== "string") {
+                console.info("[auth] auth-status: not authenticated (no token)");
                 return { isAuthenticated: false, user: null };
             }
             // Throws if corrupt.
             electron_1.safeStorage.decryptString(Buffer.from(enc, "base64"));
             const user = store.get(OAUTH_USER_INFO_KEY) ?? null;
+            console.info("[auth] auth-status: authenticated", {
+                hasUser: Boolean(user),
+            });
             return { isAuthenticated: true, user };
         }
         catch {
+            console.info("[auth] auth-status: not authenticated (decrypt failed)");
             return { isAuthenticated: false, user: null };
         }
     });
@@ -236,27 +268,36 @@ function setupDropboxIpc() {
         if (!appKey) {
             throw new main_process_errors_1.OAuthConfigError("Missing DROPBOX_APP_KEY in .env");
         }
+        console.info("[cloud] Refreshing access token...");
         const refreshToken = getDecryptedRefreshToken();
         const refreshed = await (0, auth_1.refreshAccessToken)(appKey, refreshToken, signal);
         const accessToken = refreshed.access_token;
         if (!accessToken) {
             throw new main_process_errors_1.TokenRefreshFailedError("Failed to obtain access token.");
         }
+        console.info("[cloud] Access token obtained (not logging token)");
         return accessToken;
     };
     handleInvoke("drive-sync", async (args) => {
         // Guard against user spamming actions.
         if (driveSyncController) {
+            console.info("[cloud] Aborting previous sync operation");
             driveSyncController.abort();
         }
         driveSyncController = new AbortController();
         const signal = driveSyncController.signal;
         const accessToken = await getAccessToken(signal);
         const { fileName, content } = args;
+        console.info("[cloud] Sync starting", {
+            fileName,
+            bytes: content?.length ?? 0,
+        });
         try {
             await (0, dropbox_1.uploadDropboxFile)(accessToken, fileName, content, signal);
+            console.info("[cloud] Sync success", { fileName });
         }
         catch (error) {
+            console.error("[cloud] Sync failed", { fileName, error });
             throw error;
         }
         finally {
@@ -265,22 +306,28 @@ function setupDropboxIpc() {
     });
     handleInvoke("drive-restore", async (args) => {
         if (driveRestoreController) {
+            console.info("[cloud] Aborting previous restore operation");
             driveRestoreController.abort();
         }
         driveRestoreController = new AbortController();
         const signal = driveRestoreController.signal;
         const accessToken = await getAccessToken(signal);
         const { fileName } = args;
+        console.info("[cloud] Restore starting", { fileName });
         const fileExists = await (0, dropbox_1.dropboxFileExists)(accessToken, fileName, signal);
+        console.info("[cloud] Restore existence check", { fileName, fileExists });
         if (!fileExists) {
             driveRestoreController = null;
+            console.warn("[cloud] Restore file not found", { fileName });
             throw new main_process_errors_1.NotFoundError("No backup found in Dropbox.");
         }
         const bytes = await (0, dropbox_1.downloadDropboxFile)(accessToken, fileName, signal);
+        console.info("[cloud] Restore success", { fileName, bytes: bytes.length });
         driveRestoreController = null;
         return bytes;
     });
     handleInvoke("drive-cancel", async () => {
+        console.info("[cloud] Cancel requested for sync/restore");
         if (driveSyncController) {
             driveSyncController.abort();
         }
@@ -319,8 +366,18 @@ handleInvoke("sounds-save", async (eventId, content) => {
     try {
         const buffer = Buffer.from(content);
         fs_1.default.writeFileSync(filePath, buffer);
+        console.info("[local] sound saved", {
+            eventId,
+            filePath,
+            bytes: buffer.length,
+        });
     }
     catch (error) {
+        console.error("[local] failed to save sound", {
+            eventId,
+            filePath,
+            error,
+        });
         throw new main_process_errors_1.UnknownMainProcessError(`Failed to save sound for ${String(eventId)}`);
     }
 });
@@ -334,12 +391,23 @@ handleInvoke("sounds-read", async (eventId) => {
     const filePath = path_1.default.join(dir, name);
     try {
         if (fs_1.default.existsSync(filePath) === false) {
+            console.info("[local] sound not found", { eventId, filePath });
             return null;
         }
         const buffer = fs_1.default.readFileSync(filePath);
+        console.info("[local] sound read", {
+            eventId,
+            filePath,
+            bytes: buffer.length,
+        });
         return new Uint8Array(buffer);
     }
     catch (error) {
+        console.error("[local] failed to read sound", {
+            eventId,
+            filePath,
+            error,
+        });
         return null;
     }
 });
@@ -347,6 +415,13 @@ handleInvoke("sounds-read", async (eventId) => {
 // TODO: Group-up related handlers, as above.
 handleInvoke("save-data", async (data) => {
     const filePath = path_1.default.join(electron_1.app.getPath("userData"), "my-data.json");
+    console.info("[local] save-data invoked", {
+        path: filePath,
+        bars: Array.isArray(data?.bars) ? data.bars.length : 0,
+        hasSounds: typeof data?.sounds !== "undefined",
+        hasTheme: typeof data?.theme !== "undefined",
+        hasLastSynced: typeof data?.lastSynced !== "undefined",
+    });
     // If lastSynced is not provided by the renderer, preserve the existing value
     // from the current AppData on disk to avoid wiping it on ordinary saves.
     let lastSyncedToPersist = null;
@@ -407,11 +482,26 @@ handleInvoke("save-data", async (data) => {
         theme: themeToPersist,
     };
     fs_1.default.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
+    console.info("[local] save-data success", {
+        path: filePath,
+        bytes: Buffer.byteLength(JSON.stringify(dataToSave)),
+        bars: dataToSave.bars.length,
+        hasSounds: typeof dataToSave.sounds !== "undefined",
+        hasTheme: typeof dataToSave.theme !== "undefined",
+        lastSynced: dataToSave.lastSynced,
+    });
     return { success: true, path: filePath };
 });
 // Save a partial subset of AppData, preserving unspecified fields on disk.
 handleInvoke("save-partial-data", async (partial) => {
     const filePath = path_1.default.join(electron_1.app.getPath("userData"), "my-data.json");
+    console.info("[local] save-partial-data invoked", {
+        path: filePath,
+        hasBars: typeof partial?.bars !== "undefined",
+        hasLastSynced: typeof partial?.lastSynced !== "undefined",
+        hasSounds: typeof partial?.sounds !== "undefined",
+        hasTheme: typeof partial?.theme !== "undefined",
+    });
     let existing = {
         bars: [],
         lastSynced: null,
@@ -445,6 +535,14 @@ handleInvoke("save-partial-data", async (partial) => {
         theme: typeof partial.theme !== "undefined" ? partial.theme : existing.theme,
     };
     fs_1.default.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
+    console.info("[local] save-partial-data success", {
+        path: filePath,
+        bytes: Buffer.byteLength(JSON.stringify(merged)),
+        bars: merged.bars.length,
+        hasSounds: typeof merged.sounds !== "undefined",
+        hasTheme: typeof merged.theme !== "undefined",
+        lastSynced: merged.lastSynced,
+    });
     return { success: true, path: filePath };
 });
 // Handle loading bar data from local storage on app start.
@@ -453,9 +551,19 @@ handleInvoke("load-data", async () => {
     try {
         if (fs_1.default.existsSync(filePath)) {
             const data = fs_1.default.readFileSync(filePath, "utf-8");
-            return JSON.parse(data);
+            const parsed = JSON.parse(data);
+            console.info("[local] load-data success", {
+                path: filePath,
+                bytes: Buffer.byteLength(data),
+                bars: Array.isArray(parsed?.bars) ? parsed.bars.length : 0,
+                hasSounds: typeof parsed?.sounds !== "undefined",
+                hasTheme: typeof parsed?.theme !== "undefined",
+                lastSynced: parsed?.lastSynced ?? null,
+            });
+            return parsed;
         }
         else {
+            console.info("[local] load-data: no file on disk", { path: filePath });
         }
     }
     catch (error) {
