@@ -567,7 +567,6 @@ handleInvoke("load-data", async () => {
         }
     }
     catch (error) {
-        // TODO: need proper logging.
         console.error("Error loading data: ", error);
     }
     return {

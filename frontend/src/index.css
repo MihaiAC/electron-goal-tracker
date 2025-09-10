@@ -93,26 +93,20 @@
 
   /* Button: unified primary with hover scale */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-md disabled:opacity-50 disabled:pointer-events-none transition-transform origin-center;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md disabled:opacity-50 disabled:pointer-events-none origin-center hover:opacity-85;
   }
 
   .btn-primary {
     background: var(--button-primary);
     color: var(--foreground);
-    transition: transform 100ms linear;
   }
   .btn-secondary {
     background: var(--button-secondary);
     color: var(--foreground);
-    transition: transform 100ms linear;
   }
   .btn-destructive {
     background: var(--button-destructive);
     color: var(--foreground);
-    transition: transform 100ms linear;
-  }
-  .btn:hover {
-    transform: scale(1.1);
   }
 
   /* Per-bar hover glow helpers; colors supplied via CSS variables on the element */
