@@ -91,3 +91,9 @@ export class UnknownMainProcessError extends MainProcessError {
     super(ErrorCodes.Unknown, message, undefined, options);
   }
 }
+
+export class FilesystemError extends MainProcessError {
+  constructor(message = "Filesystem error", options?: { cause?: unknown }) {
+    super(ErrorCodes.Filesystem, message, undefined, options);
+  }
+}

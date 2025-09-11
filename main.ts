@@ -30,6 +30,7 @@ import {
   UnknownMainProcessError,
   MainProcessError,
   SafeStorageError,
+  FilesystemError,
 } from "./utils/main-process-errors";
 
 // TODO: Will need to split this into multiple files, I can't tell what's going on anymore.
@@ -595,7 +596,7 @@ handleInvoke("save-data", async (data: AppData) => {
     theme: themeToPersist,
   };
 
-  fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
+  atomicWriteJson(filePath, dataToSave);
   console.info("[local] save-data success", {
     path: filePath,
     bytes: Buffer.byteLength(JSON.stringify(dataToSave)),
@@ -655,7 +656,7 @@ handleInvoke("save-partial-data", async (partial: Partial<AppData>) => {
       typeof partial.theme !== "undefined" ? partial.theme : existing.theme,
   };
 
-  fs.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
+  atomicWriteJson(filePath, merged);
   console.info("[local] save-partial-data success", {
     path: filePath,
     bytes: Buffer.byteLength(JSON.stringify(merged)),
@@ -781,3 +782,29 @@ app.on("activate", () => {
 process.on("uncaughtException", (error) => {
   console.error("Uncaught exception: ", error);
 });
+
+/** Atomically write pretty-printed JSON to a file by writing to a temporary file and renaming. */
+function atomicWriteJson(filePath: string, payload: unknown): void {
+  const directoryPath = path.dirname(filePath);
+  const baseName = path.basename(filePath);
+  const tempPath = path.join(directoryPath, `${baseName}.tmp`);
+
+  const jsonText = JSON.stringify(payload, null, 2);
+
+  try {
+    fs.writeFileSync(tempPath, jsonText, "utf-8");
+    fs.renameSync(tempPath, filePath);
+  } catch (error) {
+    try {
+      if (fs.existsSync(tempPath) === true) {
+        fs.rmSync(tempPath, { force: true });
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    throw new FilesystemError("Failed to write application data to disk.", {
+      cause: error,
+    });
+  }
+}

@@ -481,7 +481,7 @@ handleInvoke("save-data", async (data) => {
         sounds: soundsToPersist,
         theme: themeToPersist,
     };
-    fs_1.default.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2), "utf-8");
+    atomicWriteJson(filePath, dataToSave);
     console.info("[local] save-data success", {
         path: filePath,
         bytes: Buffer.byteLength(JSON.stringify(dataToSave)),
@@ -534,7 +534,7 @@ handleInvoke("save-partial-data", async (partial) => {
         sounds: typeof partial.sounds !== "undefined" ? partial.sounds : existing.sounds,
         theme: typeof partial.theme !== "undefined" ? partial.theme : existing.theme,
     };
-    fs_1.default.writeFileSync(filePath, JSON.stringify(merged, null, 2), "utf-8");
+    atomicWriteJson(filePath, merged);
     console.info("[local] save-partial-data success", {
         path: filePath,
         bytes: Buffer.byteLength(JSON.stringify(merged)),
@@ -650,4 +650,28 @@ electron_1.app.on("activate", () => {
 process.on("uncaughtException", (error) => {
     console.error("Uncaught exception: ", error);
 });
+/** Atomically write pretty-printed JSON to a file by writing to a temporary file and renaming. */
+function atomicWriteJson(filePath, payload) {
+    const directoryPath = path_1.default.dirname(filePath);
+    const baseName = path_1.default.basename(filePath);
+    const tempPath = path_1.default.join(directoryPath, `${baseName}.tmp`);
+    const jsonText = JSON.stringify(payload, null, 2);
+    try {
+        fs_1.default.writeFileSync(tempPath, jsonText, "utf-8");
+        fs_1.default.renameSync(tempPath, filePath);
+    }
+    catch (error) {
+        try {
+            if (fs_1.default.existsSync(tempPath) === true) {
+                fs_1.default.rmSync(tempPath, { force: true });
+            }
+        }
+        catch {
+            // Ignore cleanup errors
+        }
+        throw new main_process_errors_1.FilesystemError("Failed to write application data to disk.", {
+            cause: error,
+        });
+    }
+}
 //# sourceMappingURL=main.js.map

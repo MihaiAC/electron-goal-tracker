@@ -58,6 +58,7 @@ export const ErrorCodes = {
   NotFound: "NotFound",
   Crypto: "Crypto",
   SafeStorage: "SafeStorage",
+  Filesystem: "Filesystem",
   Unknown: "Unknown",
 } as const;
 
