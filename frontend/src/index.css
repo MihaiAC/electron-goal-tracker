@@ -28,6 +28,11 @@
     -webkit-app-region: no-drag;
   }
 
+  /* Utility to prevent Electron titlebar drag from capturing events */
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+
   .app-container {
     @apply h-screen flex flex-col pt-8 bg-background text-foreground;
   }

@@ -34,7 +34,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
         <>
           {/* Overlay (raised z-index, full viewport) */}
           <motion.div
-            className="fixed inset-0 bg-black/40 z-40"
+            className="fixed inset-0 bg-black/40 z-[55] no-drag"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -44,7 +44,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
 
           {/* Drawer (topmost) */}
           <motion.aside
-            className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-gray-900 text-white border-r border-white/10 z-50 shadow-2xl flex flex-col"
+            className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-gray-900 text-white border-r border-white/10 z-[60] shadow-2xl flex flex-col no-drag"
             initial={{ x: -320 }}
             animate={{ x: 0 }}
             exit={{ x: -320 }}
