@@ -54,9 +54,6 @@ export default function ThemeModal(props: ThemeModalProps) {
         };
         if (isMounted) {
           setTheme(next);
-          try {
-            applyTheme(next);
-          } catch {}
         }
       } catch {
         if (isMounted) {
@@ -67,9 +64,6 @@ export default function ThemeModal(props: ThemeModalProps) {
             buttonSecondaryHex: DEFAULT_THEME.buttonSecondaryHex,
             buttonDestructiveHex: DEFAULT_THEME.buttonDestructiveHex,
           });
-          try {
-            applyTheme(DEFAULT_THEME);
-          } catch {}
         }
       }
     })();
@@ -82,9 +76,6 @@ export default function ThemeModal(props: ThemeModalProps) {
   const handleChange = (key: keyof ThemeData, value: string): void => {
     setTheme((prev) => {
       const next = { ...prev, [key]: value } as ThemeData;
-      try {
-        applyTheme(next);
-      } catch {}
       return next;
     });
   };
@@ -95,6 +86,9 @@ export default function ThemeModal(props: ThemeModalProps) {
     let success = false;
     try {
       await window.api.savePartialData({ theme });
+      try {
+        applyTheme(theme);
+      } catch {}
       success = true;
     } catch {
       setErrorMessage("Failed to save theme. Please try again.");
@@ -114,9 +108,6 @@ export default function ThemeModal(props: ThemeModalProps) {
       buttonSecondaryHex: DEFAULT_THEME.buttonSecondaryHex,
       buttonDestructiveHex: DEFAULT_THEME.buttonDestructiveHex,
     });
-    try {
-      applyTheme(DEFAULT_THEME);
-    } catch {}
   };
 
   if (!open) {
