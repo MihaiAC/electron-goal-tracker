@@ -1,6 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 import type { ProgressBarData } from "../../../types/shared";
+import { getPatternUrl, DEFAULT_PATTERN_COLOR } from "../utils/patterns";
 
 interface ProgressBarProps {
   bar: Omit<ProgressBarData, "id">;
@@ -11,7 +12,16 @@ interface ProgressBarProps {
 }
 
 export default function ProgressBar({
-  bar: { title, current, max, unit, completedColor, remainingColor },
+  bar: {
+    title,
+    current,
+    max,
+    unit,
+    completedColor,
+    remainingColor,
+    patternId,
+    patternColorHex,
+  },
   onRightClick,
   onIncrement,
   onDecrement,
@@ -30,6 +40,11 @@ export default function ProgressBar({
       onDecrement();
     }
   };
+
+  // Get pattern URL if a pattern is specified
+  const patternUrl = patternId
+    ? getPatternUrl(patternId, patternColorHex || DEFAULT_PATTERN_COLOR)
+    : "";
 
   return (
     <div className="flex flex-col space-y-2">
@@ -53,7 +68,9 @@ export default function ProgressBar({
             width: `${progress}%`,
             background: isComplete
               ? undefined
-              : `linear-gradient(to right, ${completedColor}, ${completedColor})`,
+              : patternUrl
+                ? `${patternUrl}, ${completedColor}`
+                : completedColor,
           }}
         ></div>
       </div>

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Trash2 } from "lucide-react";
+import { patterns, DEFAULT_PATTERN_COLOR } from "../utils/patterns";
 
 interface BarSettingsProps {
   bar: ProgressBarData;
@@ -44,6 +45,11 @@ export default function BarSettings({
         .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color")
         .optional(),
       decrementHoverGlowHex: z
+        .string()
+        .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color")
+        .optional(),
+      patternId: z.string().optional(),
+      patternColorHex: z
         .string()
         .regex(/^#(?:[0-9a-fA-F]{3}){1,2}$/, "Must be a hex color")
         .optional(),
@@ -97,6 +103,8 @@ export default function BarSettings({
       remainingColor: bar.remainingColor,
       incrementHoverGlowHex: bar.incrementHoverGlowHex ?? "#84cc16",
       decrementHoverGlowHex: bar.decrementHoverGlowHex ?? "#ea580c",
+      patternId: bar.patternId ?? "",
+      patternColorHex: bar.patternColorHex ?? DEFAULT_PATTERN_COLOR,
     },
   });
 
@@ -112,6 +120,8 @@ export default function BarSettings({
       remainingColor: bar.remainingColor,
       incrementHoverGlowHex: bar.incrementHoverGlowHex ?? "#84cc16",
       decrementHoverGlowHex: bar.decrementHoverGlowHex ?? "#ea580c",
+      patternId: bar.patternId ?? "",
+      patternColorHex: bar.patternColorHex ?? DEFAULT_PATTERN_COLOR,
     });
   }, [bar, reset]);
 
@@ -195,6 +205,8 @@ export default function BarSettings({
       remainingColor: formValues.remainingColor,
       incrementHoverGlowHex: formValues.incrementHoverGlowHex,
       decrementHoverGlowHex: formValues.decrementHoverGlowHex,
+      patternId: formValues.patternId,
+      patternColorHex: formValues.patternColorHex,
       notes: notesDraft,
     });
   };
@@ -203,6 +215,7 @@ export default function BarSettings({
   const remainingColorValue = watch("remainingColor");
   const incrementHoverGlowHexValue = watch("incrementHoverGlowHex");
   const decrementHoverGlowHexValue = watch("decrementHoverGlowHex");
+  const patternColorHexValue = watch("patternColorHex");
 
   return (
     <div
@@ -405,6 +418,51 @@ export default function BarSettings({
                     className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
                   >
                     {errors.decrementHoverGlowHex?.message ?? "placeholder"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Pattern
+                  </label>
+                  <select
+                    {...register("patternId")}
+                    className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.patternId ? "border-red-500" : "border-transparent"}`}
+                  >
+                    <option value="">None</option>
+                    {patterns.map((pattern) => (
+                      <option key={pattern.id} value={pattern.id}>
+                        {pattern.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.patternId ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.patternId?.message ?? "placeholder"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Pattern Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      {...register("patternColorHex")}
+                      className="flex-1 h-10"
+                      defaultValue={DEFAULT_PATTERN_COLOR}
+                    />
+                    <span className="text-xs opacity-75">
+                      {patternColorHexValue || DEFAULT_PATTERN_COLOR}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.patternColorHex ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.patternColorHex?.message ?? "placeholder"}
                   </p>
                 </div>
               </div>

@@ -15,6 +15,10 @@ export interface ProgressBarData {
   createdAt?: string;
   /** User-authored notes for this bar (max 50 enforced by UI). Oldest may be pruned; createdAt is not part of notes. */
   notes?: BarNote[];
+  /** ID of the pattern to use for the progress bar (e.g., "diagonal-lines"). */
+  patternId?: string;
+  /** Color for the pattern (defaults to black if not specified). */
+  patternColorHex?: string;
 }
 
 /**
