@@ -139,6 +139,15 @@
       color-mix(in srgb, var(--bar-decrement-hover, #ea580c) 60%, transparent);
     transition: box-shadow 100ms linear;
   }
+
+  /* Modal content with sticky footer */
+  .modal-content {
+    @apply overflow-y-auto pr-1 -mr-1;
+    max-height: calc(80vh - 140px);
+  }
+  .modal-footer {
+    @apply sticky bottom-0 bg-gray-800 border-t border-gray-700 p-4 mt-4 -mx-6 px-6 -mb-6;
+  }
 }
 
 @theme inline {

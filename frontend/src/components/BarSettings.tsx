@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
-import type { ProgressBarData } from "../../../types/shared";
+import React, { useEffect, useState } from "react";
+import type { ProgressBarData, BarNote } from "../../../types/shared";
 import { Button } from "./Button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { X, Trash2 } from "lucide-react";
 
 interface BarSettingsProps {
   bar: ProgressBarData;
@@ -115,6 +115,75 @@ export default function BarSettings({
     });
   }, [bar, reset]);
 
+  // Notes state (draft) stored locally until Save is pressed.
+  const [notesDraft, setNotesDraft] = useState<BarNote[]>(() => {
+    const existing = Array.isArray(bar.notes) ? bar.notes : [];
+    // Newest first by ISO timestamp; ISO strings compare lexicographically.
+    return [...existing].sort((a, b) =>
+      a.at > b.at ? -1 : a.at < b.at ? 1 : 0
+    );
+  });
+  const [pendingNoteText, setPendingNoteText] = useState<string>("");
+
+  useEffect(() => {
+    const existing = Array.isArray(bar.notes) ? bar.notes : [];
+    setNotesDraft(
+      [...existing].sort((a, b) => (a.at > b.at ? -1 : a.at < b.at ? 1 : 0))
+    );
+    setPendingNoteText("");
+  }, [bar]);
+
+  const handleAddNote = () => {
+    const message = pendingNoteText.trim();
+    if (message.length === 0) {
+      return;
+    }
+    const nowIso = new Date().toISOString();
+    const newNote: BarNote = {
+      id: `${Date.now()}`,
+      at: nowIso,
+      message,
+    };
+    const next = [newNote, ...notesDraft];
+    // Cap at 50 notes (newest first); createdAt is separate and never pruned.
+    const capped = next.slice(0, 50);
+    setNotesDraft(capped);
+    setPendingNoteText("");
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    setNotesDraft((currentNotes) =>
+      currentNotes.filter((note) => note.id !== noteId)
+    );
+  };
+
+  const formatJournalDate = (iso: string | undefined): string => {
+    if (!iso) {
+      return "";
+    }
+    const dateObj = new Date(iso);
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const dayName = weekdays[dateObj.getDay()];
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    const month = months[dateObj.getMonth()];
+    const year = String(dateObj.getFullYear()).slice(-2);
+    return `${dayName}, ${day}/${month}/${year}`;
+  };
+
   const onSubmit = (formValues: BarFormValues) => {
     onSave({
       title: formValues.title,
@@ -126,6 +195,7 @@ export default function BarSettings({
       remainingColor: formValues.remainingColor,
       incrementHoverGlowHex: formValues.incrementHoverGlowHex,
       decrementHoverGlowHex: formValues.decrementHoverGlowHex,
+      notes: notesDraft,
     });
   };
 
@@ -140,220 +210,269 @@ export default function BarSettings({
       onClick={onClose}
     >
       <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-md relative"
+        className="bg-gray-800 rounded-lg w-full max-w-md relative overflow-hidden"
         onClick={(event) => {
           if (event) {
             event.stopPropagation();
           }
         }}
       >
-        <h2 className="text-xl font-bold mb-4">Edit Progress Bar</h2>
-        {/* TODO: This type of "button" gets repeated quite a lot -> new variant? */}
-        <button
-          type="button"
-          aria-label="Close"
-          onClick={onClose}
-          className="titlebar-button hover:bg-red-500 absolute top-3 right-3"
-        >
-          <X className="close-icon" />
-        </button>
+        <div className="p-6">
+          <h2 className="text-xl font-bold mb-4">Edit Progress Bar</h2>
+          {/* TODO: This type of "button" gets repeated quite a lot -> new variant? */}
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            className="titlebar-button hover:bg-red-500 absolute top-3 right-3"
+          >
+            <X className="close-icon" />
+          </button>
 
-        <form
-          noValidate
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4"
-        >
-          <div>
-            <label className="block text-sm font-medium mb-1 break-words">
-              Title
-            </label>
-            <input
-              type="text"
-              {...register("title")}
-              className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.title ? "border-red-500" : "border-transparent"} whitespace-normal break-words`}
-              placeholder="Enter a title"
-              inputMode="text"
-            />
-            <p
-              className={`mt-1 text-xs min-h-4 ${errors.title ? "text-red-400" : "opacity-0"}`}
-            >
-              {errors.title?.message ?? "placeholder"}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Current Value
-              </label>
-              <input
-                type="number"
-                step={1}
-                min={0}
-                {...register("current", { valueAsNumber: true })}
-                className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.current ? "border-red-500" : "border-transparent"}`}
-                inputMode="numeric"
-              />
-              <p
-                className={`mt-1 text-xs min-h-4 ${errors.current ? "text-red-400" : "opacity-0"}`}
-              >
-                {errors.current?.message ?? "placeholder"}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Max Value
-              </label>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                {...register("max", { valueAsNumber: true })}
-                className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.max ? "border-red-500" : "border-transparent"}`}
-                inputMode="numeric"
-              />
-              <p
-                className={`mt-1 text-xs min-h-4 ${errors.max ? "text-red-400" : "opacity-0"}`}
-              >
-                {errors.max?.message ?? "placeholder"}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Unit</label>
-            <input
-              type="text"
-              {...register("unit")}
-              className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.unit ? "border-red-500" : "border-transparent"}`}
-              placeholder="e.g., days, lbs, %"
-              inputMode="text"
-            />
-            <p
-              className={`mt-1 text-xs min-h-4 ${errors.unit ? "text-red-400" : "opacity-0"}`}
-            >
-              {errors.unit?.message ?? "placeholder"}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Increment Step
-            </label>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              {...register("incrementDelta", { valueAsNumber: true })}
-              className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.incrementDelta ? "border-red-500" : "border-transparent"}`}
-              inputMode="numeric"
-            />
-            <p
-              className={`mt-1 text-xs min-h-4 ${errors.incrementDelta ? "text-red-400" : "opacity-0"}`}
-            >
-              {errors.incrementDelta?.message ?? "placeholder"}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Completed Color
-              </label>
-              <div className="flex items-center gap-2">
+          <form noValidate onSubmit={handleSubmit(onSubmit)}>
+            <div className="modal-content space-y-4 pb-2">
+              <div>
+                <label className="block text-sm font-medium mb-1 break-words">
+                  Title
+                </label>
                 <input
-                  type="color"
-                  {...register("completedColor")}
-                  className="flex-1 h-10"
+                  type="text"
+                  {...register("title")}
+                  className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.title ? "border-red-500" : "border-transparent"} whitespace-normal break-words`}
+                  placeholder="Enter a title"
+                  inputMode="text"
                 />
-                <span className="text-xs opacity-75">
-                  {completedColorValue}
-                </span>
+                <p
+                  className={`mt-1 text-xs min-h-4 ${errors.title ? "text-red-400" : "opacity-0"}`}
+                >
+                  {errors.title?.message ?? "placeholder"}
+                </p>
               </div>
-              <p
-                className={`mt-1 text-xs min-h-4 ${errors.completedColor ? "text-red-400" : "opacity-0"}`}
-              >
-                {errors.completedColor?.message ?? "placeholder"}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Remaining Color
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  {...register("remainingColor")}
-                  className="flex-1 h-10"
-                />
-                <span className="text-xs opacity-75">
-                  {remainingColorValue}
-                </span>
-              </div>
-              <p
-                className={`mt-1 text-xs min-h-4 ${errors.remainingColor ? "text-red-400" : "opacity-0"}`}
-              >
-                {errors.remainingColor?.message ?? "placeholder"}
-              </p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Increment Hover Glow
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  {...register("incrementHoverGlowHex")}
-                  className="flex-1 h-10"
-                />
-                <span className="text-xs opacity-75">
-                  {incrementHoverGlowHexValue}
-                </span>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Current Value
+                  </label>
+                  <input
+                    type="number"
+                    step={1}
+                    min={0}
+                    {...register("current", { valueAsNumber: true })}
+                    className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.current ? "border-red-500" : "border-transparent"}`}
+                    inputMode="numeric"
+                  />
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.current ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.current?.message ?? "placeholder"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Max Value
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    {...register("max", { valueAsNumber: true })}
+                    className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.max ? "border-red-500" : "border-transparent"}`}
+                    inputMode="numeric"
+                  />
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.max ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.max?.message ?? "placeholder"}
+                  </p>
+                </div>
               </div>
-              <p
-                className={`mt-1 text-xs min-h-4 ${errors.incrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
-              >
-                {errors.incrementHoverGlowHex?.message ?? "placeholder"}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Decrement Hover Glow
-              </label>
-              <div className="flex items-center gap-2">
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Unit</label>
                 <input
-                  type="color"
-                  {...register("decrementHoverGlowHex")}
-                  className="flex-1 h-10"
+                  type="text"
+                  {...register("unit")}
+                  className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.unit ? "border-red-500" : "border-transparent"}`}
+                  placeholder="e.g., days, lbs, %"
+                  inputMode="text"
                 />
-                <span className="text-xs opacity-75">
-                  {decrementHoverGlowHexValue}
-                </span>
+                <p
+                  className={`mt-1 text-xs min-h-4 ${errors.unit ? "text-red-400" : "opacity-0"}`}
+                >
+                  {errors.unit?.message ?? "placeholder"}
+                </p>
               </div>
-              <p
-                className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
-              >
-                {errors.decrementHoverGlowHex?.message ?? "placeholder"}
-              </p>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Increment Step
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  step={1}
+                  {...register("incrementDelta", { valueAsNumber: true })}
+                  className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.incrementDelta ? "border-red-500" : "border-transparent"}`}
+                  inputMode="numeric"
+                />
+                <p
+                  className={`mt-1 text-xs min-h-4 ${errors.incrementDelta ? "text-red-400" : "opacity-0"}`}
+                >
+                  {errors.incrementDelta?.message ?? "placeholder"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Completed Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      {...register("completedColor")}
+                      className="flex-1 h-10"
+                    />
+                    <span className="text-xs opacity-75">
+                      {completedColorValue}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.completedColor ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.completedColor?.message ?? "placeholder"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Remaining Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      {...register("remainingColor")}
+                      className="flex-1 h-10"
+                    />
+                    <span className="text-xs opacity-75">
+                      {remainingColorValue}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.remainingColor ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.remainingColor?.message ?? "placeholder"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Increment Hover Glow
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      {...register("incrementHoverGlowHex")}
+                      className="flex-1 h-10"
+                    />
+                    <span className="text-xs opacity-75">
+                      {incrementHoverGlowHexValue}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.incrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.incrementHoverGlowHex?.message ?? "placeholder"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Decrement Hover Glow
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      {...register("decrementHoverGlowHex")}
+                      className="flex-1 h-10"
+                    />
+                    <span className="text-xs opacity-75">
+                      {decrementHoverGlowHexValue}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
+                  >
+                    {errors.decrementHoverGlowHex?.message ?? "placeholder"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Notes section */}
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">Notes</h3>
+                <p className="text-xs text-gray-300 mb-2">
+                  Created: {formatJournalDate(bar.createdAt)}
+                </p>
+                <div className="space-y-2">
+                  <textarea
+                    value={pendingNoteText}
+                    onChange={(event) => setPendingNoteText(event.target.value)}
+                    placeholder="Write a note about today's progress..."
+                    className="w-full min-h-20 p-2 rounded bg-gray-700 border-2 border-transparent focus:border-blue-400"
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">
+                      {notesDraft.length} / 50 notes
+                    </span>
+                    <Button type="button" onClick={handleAddNote}>
+                      Add note
+                    </Button>
+                  </div>
+                </div>
+
+                <ul className="mt-4 space-y-3">
+                  {notesDraft.map((note) => (
+                    <li
+                      key={note.id}
+                      className="p-3 rounded bg-gray-700 border border-gray-600"
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="text-xs text-gray-300">
+                          {formatJournalDate(note.at)}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteNote(note.id)}
+                          className="text-red-500 hover:text-red-400 transition-colors p-1 -mt-1 -mr-1"
+                          aria-label="Delete note"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {note.message}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-
-          <div className="flex justify-between pt-4">
-            <Button onClick={onDelete} variant="destructive">
-              Delete Bar
-            </Button>
-
-            <div className="space-x-4">
-              <Button onClick={onClose} type="button" variant="secondary">
-                Cancel
+            <div className="modal-footer flex justify-between">
+              <Button onClick={onDelete} variant="destructive">
+                Delete Bar
               </Button>
-              <Button type="submit">Save</Button>
+
+              <div className="space-x-4">
+                <Button onClick={onClose} type="button" variant="secondary">
+                  Cancel
+                </Button>
+                <Button type="submit">Save</Button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -49,6 +49,8 @@ function App() {
         remainingColor: "#374151",
         incrementHoverGlowHex: "#84cc16",
         decrementHoverGlowHex: "#ea580c",
+        createdAt: new Date().toISOString(),
+        notes: [],
       },
       {
         id: "2",
@@ -61,6 +63,8 @@ function App() {
         remainingColor: "#374151",
         incrementHoverGlowHex: "#84cc16",
         decrementHoverGlowHex: "#ea580c",
+        createdAt: new Date().toISOString(),
+        notes: [],
       },
     ];
   });
@@ -70,7 +74,23 @@ function App() {
       try {
         const savedData = await window.api.loadData();
         if (savedData?.bars) {
-          setBars(savedData.bars);
+          const normalizedBars = savedData.bars.map((barFromDisk) => {
+            const createdAt =
+              typeof barFromDisk.createdAt === "string" &&
+              barFromDisk.createdAt.length > 0
+                ? barFromDisk.createdAt
+                : new Date().toISOString();
+            const notes = Array.isArray(barFromDisk.notes)
+              ? barFromDisk.notes
+              : [];
+            const normalizedBar: ProgressBarData = {
+              ...barFromDisk,
+              createdAt,
+              notes,
+            };
+            return normalizedBar;
+          });
+          setBars(normalizedBars);
         }
         // Apply saved theme (or default) at startup so CSS variables are set.
         if (savedData && savedData.theme) {
@@ -187,6 +207,8 @@ function App() {
       remainingColor: "#374151",
       incrementHoverGlowHex: "#84cc16",
       decrementHoverGlowHex: "#ea580c",
+      createdAt: new Date().toISOString(),
+      notes: [],
     };
     setBars((prev) => [...prev, newBar]);
   };

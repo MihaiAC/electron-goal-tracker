@@ -19,6 +19,7 @@ export default function SettingsRoot(props: {
 }) {
   const { onDataRestored, currentBars } = props;
 
+  // TODO: useReducer?
   const [menuOpen, setMenuOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
   const [soundsOpen, setSoundsOpen] = useState(false);

@@ -11,6 +11,23 @@ export interface ProgressBarData {
   incrementHoverGlowHex?: string;
   /** Hex color used to render the hover glow when decrementing (left side). */
   decrementHoverGlowHex?: string;
+  /** ISO timestamp when this bar was created. If missing (older data), treat as now when rendering. */
+  createdAt?: string;
+  /** User-authored notes for this bar (max 50 enforced by UI). Oldest may be pruned; createdAt is not part of notes. */
+  notes?: BarNote[];
+}
+
+/**
+ * A single user-authored journal note attached to a progress bar.
+ * Stored with ISO timestamp and rendered in UI as EEE, dd/MMM/yy.
+ */
+export interface BarNote {
+  /** Stable id for the note (e.g., timestamp-based). */
+  id: string;
+  /** ISO timestamp when the note was added. */
+  at: string;
+  /** Freeform text entered by the user. */
+  message: string;
 }
 
 // BarsPayload removed: AppData is the single canonical shape. Dropbox uses
