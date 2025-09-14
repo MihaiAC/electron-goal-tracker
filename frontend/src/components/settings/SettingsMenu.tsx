@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import React from "react";
-import { Cloud, Volume2, Palette, X, HelpCircle } from "lucide-react";
+import { Cloud, Volume2, Palette, HelpCircle, X } from "lucide-react";
+import { Button } from "../Button";
 import "./SettingsMenu.css";
 
 /**
@@ -52,13 +53,9 @@ export default function SettingsMenu(props: SettingsMenuProps) {
           >
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold">Settings</h2>
-              <button
-                type="button"
-                onClick={() => onClose()}
-                className="titlebar-button titlebar-button-danger"
-              >
+              <Button variant="close" onClick={() => onClose()}>
                 <X className="close-icon" />
-              </button>
+              </Button>
             </div>
 
             <nav className="flex-1 p-2">

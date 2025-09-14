@@ -7,6 +7,7 @@ import type { SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
 import { Pause, Play, X } from "lucide-react";
+import { Button } from "../Button";
 
 // TODO: Obviously, fix theming.
 // TODO: Need a better way to signal visually whether a sound has been uploaded or not.
@@ -347,13 +348,9 @@ export default function SoundsModal(props: SoundsModalProps) {
           >
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Sounds</h2>
-              <button
-                type="button"
-                onClick={() => onClose()}
-                className="titlebar-button titlebar-button-danger"
-              >
+              <Button variant="close" onClick={() => onClose()}>
                 <X className="close-icon" />
-              </button>
+              </Button>
             </div>
 
             {errorMessage ? (

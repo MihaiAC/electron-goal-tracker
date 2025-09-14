@@ -15,6 +15,7 @@ import OperationSuccessDialog from "../dialogs/OperationSuccessDialog";
 import OperationErrorDialog from "../dialogs/OperationErrorDialog";
 import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
 import { X } from "lucide-react";
+import { Button } from "../Button";
 
 interface SyncModalProps {
   open: boolean;
@@ -246,14 +247,13 @@ export default function SyncModal({
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Settings</h2>
-          <button
-            type="button"
+          <Button
+            variant="close"
             onClick={canClose ? onClose : undefined}
             disabled={!canClose}
-            className="titlebar-button titlebar-button-danger"
           >
             <X className="close-icon" />
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-6">

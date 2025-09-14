@@ -1,5 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { Button } from "../Button";
 import { X } from "lucide-react";
 
 export interface HelpModalProps {
@@ -29,13 +30,9 @@ export default function HelpModal(props: HelpModalProps) {
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Help</h2>
-          <button
-            type="button"
-            onClick={() => onClose()}
-            className="titlebar-button titlebar-button-danger"
-          >
+          <Button variant="close" onClick={() => onClose()}>
             <X className="close-icon" />
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-3 text-sm">

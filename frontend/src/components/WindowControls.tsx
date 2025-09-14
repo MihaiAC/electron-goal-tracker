@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Minus, Square, Copy, X } from "lucide-react";
+import { Button } from "./Button";
 import "./WindowControls.css";
 
 export default function WindowControls() {
@@ -34,13 +35,9 @@ export default function WindowControls() {
           <Square className="window-control-icon" />
         )}
       </button>
-      <button
-        type="button"
-        onClick={() => window.api.close()}
-        className="titlebar-button titlebar-button-danger"
-      >
+      <Button variant="close" onClick={() => window.api.close()}>
         <X className="close-icon" />
-      </button>
+      </Button>
     </div>
   );
 }

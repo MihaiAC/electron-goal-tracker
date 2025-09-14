@@ -229,15 +229,13 @@ export default function BarSettings({
       >
         <div className="p-6">
           <h2 className="text-xl font-bold mb-4">Edit Progress Bar</h2>
-          {/* TODO: This type of "button" gets repeated quite a lot -> new variant? */}
-          <button
-            type="button"
-            aria-label="Close"
+          <Button
             onClick={onClose}
-            className="titlebar-button titlebar-button-danger absolute top-3 right-3"
+            variant="close"
+            className="absolute top-3 right-3"
           >
             <X className="close-icon" />
-          </button>
+          </Button>
 
           <form noValidate onSubmit={handleSubmit(onSubmit)}>
             <div className="modal-content space-y-4 pb-2">

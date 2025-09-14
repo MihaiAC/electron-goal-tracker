@@ -122,13 +122,9 @@ export default function ThemeModal(props: ThemeModalProps) {
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Theme</h2>
-          <button
-            type="button"
-            onClick={() => onClose()}
-            className="titlebar-button titlebar-button-danger"
-          >
+          <Button variant="close" onClick={() => onClose()}>
             <X className="close-icon" />
-          </button>
+          </Button>
         </div>
 
         {errorMessage ? (
