@@ -7,10 +7,13 @@ export default function WindowControls() {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
-    window.api.onWindowStateChange((maximizedState) => {
+    const cleanup = window.api.onWindowStateChange((maximizedState) => {
       setIsMaximized(maximizedState);
     });
-  });
+
+    // Return the cleanup function to remove the listener when component unmounts
+    return cleanup;
+  }, []);
 
   return (
     <div className="flex">
