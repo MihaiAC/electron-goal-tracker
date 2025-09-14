@@ -125,8 +125,8 @@ export class SoundManager {
       try {
         this.currentPlayingAudio.pause();
         this.currentPlayingAudio.currentTime = 0;
-      } catch {
-        // Ignore errors
+      } catch (error) {
+        console.error("Error stopping previous audio:", error);
       }
       this.currentPlayingAudio = null;
     }
@@ -168,8 +168,8 @@ export class SoundManager {
         const playPromise = clonedAudioElement.play();
 
         if (typeof playPromise?.catch === "function") {
-          playPromise.catch(() => {
-            // Ignore autoplay/gesture restrictions; actual click handlers will succeed
+          playPromise.catch((error) => {
+            console.debug("Audio playback prevented by browser:", error);
           });
         }
       });
@@ -199,8 +199,8 @@ export class SoundManager {
     const playPromise = clonedAudioElement.play();
 
     if (typeof playPromise?.catch === "function") {
-      playPromise.catch(() => {
-        // Ignore autoplay/gesture restrictions; actual click handlers will succeed
+      playPromise.catch((error) => {
+        console.debug("Audio playback prevented by browser:", error);
       });
     }
   }
@@ -213,8 +213,8 @@ export class SoundManager {
       try {
         this.currentPlayingAudio.pause();
         this.currentPlayingAudio.currentTime = 0;
-      } catch {
-        // Ignore errors
+      } catch (error) {
+        console.error("Error stopping audio:", error);
       }
       this.currentPlayingAudio = null;
     }
@@ -247,6 +247,8 @@ export class SoundManager {
       );
     }
 
+    console.log("[SoundManager] Reloading with preferences:", this.preferences);
+
     // Clear existing audio elements
     console.log(
       "[SoundManager] Clearing",
@@ -266,7 +268,6 @@ export class SoundManager {
     // Stop any currently playing audio
     this.stopAll();
 
-    // Preload all audio elements from current preferences
     console.log(
       "[SoundManager] Preloading all audio elements with current preferences:",
       this.preferences.eventFiles
@@ -343,12 +344,10 @@ export class SoundManager {
   private preloadAudioElementForEvent(soundEventId: SoundEventId): void {
     const fileReference = this.preferences.eventFiles[soundEventId];
     if (typeof fileReference !== "string" || fileReference.length === 0) {
-      // Attempt to load from disk in case preferences were not updated yet.
       void this.preloadFromDisk(soundEventId);
       return;
     }
 
-    // Read raw bytes via IPC and create a blob URL at runtime.
     void this.preloadFromDisk(soundEventId);
   }
 
@@ -365,13 +364,15 @@ export class SoundManager {
       const blob = new Blob([bytes], { type: "audio/mpeg" });
       const objectUrl = URL.createObjectURL(blob);
 
-      // Revoke any previously created object URL for this event to avoid memory leaks.
+      /**
+       * Clean up previous blob URL to prevent memory leaks
+       */
       const previousUrl = this.eventBlobUrls.get(soundEventId);
       if (typeof previousUrl === "string" && previousUrl.length > 0) {
         try {
           URL.revokeObjectURL(previousUrl);
-        } catch {
-          // Ignore revoke errors
+        } catch (error) {
+          console.error("Error revoking URL:", error);
         }
       }
       this.eventBlobUrls.set(soundEventId, objectUrl);
@@ -380,8 +381,8 @@ export class SoundManager {
       baseAudioElement.preload = "auto";
       baseAudioElement.volume = 1.0;
       this.baseAudioElementsByEvent.set(soundEventId, baseAudioElement);
-    } catch {
-      // Ignore errors
+    } catch (error) {
+      console.error("Error preloading audio:", error);
     }
   }
 
@@ -408,16 +409,15 @@ export class SoundManager {
     const blob = new Blob([bytes], { type: "audio/mpeg" });
     const objectUrl = URL.createObjectURL(blob);
 
-    // Revoke any previously created object URL for this event to avoid memory leaks.
+    /**
+     * Clean up previous blob URL to prevent memory leaks
+     */
     const previousUrl = this.eventBlobUrls.get(soundEventId);
     if (typeof previousUrl === "string" && previousUrl.length > 0) {
       try {
         URL.revokeObjectURL(previousUrl);
       } catch (error) {
-        console.warn(
-          `[SoundManager] Failed to revoke previous blob URL for event ${soundEventId}:`,
-          error
-        );
+        console.error("Error revoking URL:", error);
       }
     }
     this.eventBlobUrls.set(soundEventId, objectUrl);
@@ -439,8 +439,8 @@ export class SoundManager {
     for (const [, objectUrl] of this.eventBlobUrls) {
       try {
         URL.revokeObjectURL(objectUrl);
-      } catch {
-        // Ignore revoke errors
+      } catch (error) {
+        console.error("Error revoking URL:", error);
       }
     }
     this.eventBlobUrls.clear();

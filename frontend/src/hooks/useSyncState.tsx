@@ -1,20 +1,22 @@
 import { useReducer } from "react";
 import { useMinDurationDispatch } from "./useMinDurationDispatch";
 
-// One state for each screen/modal the user sees
+/**
+ * State machine for sync/restore operations
+ */
 type SettingsState =
-  // Idle states.
+  // Idle states - normal app operation
   | { type: "SIGNED_OUT" }
   | { type: "SIGNED_IN" }
 
-  // Transitory state.
+  // Operation in progress
   | { type: "SYNCING"; operation: "sync" | "restore" }
 
-  // Outcome states.
-  | { type: "SUCCESS"; operation: "sync" | "restore"; message: string } // pre-idle
-  | { type: "ERROR"; message: string; code?: string; status?: number } // pre- action required
+  // Operation results
+  | { type: "SUCCESS"; operation: "sync" | "restore"; message: string }
+  | { type: "ERROR"; message: string; code?: string; status?: number }
 
-  // User choice required.
+  // User interaction required states
   | { type: "CONFIRM_RESTORE" }
   | { type: "PASSWORD_SYNC" }
   | { type: "PASSWORD_RESTORE" }
@@ -25,7 +27,7 @@ type SettingsAction =
   | { type: "SIGN_IN_SUCCESS" }
   | { type: "SIGN_OUT" }
 
-  // Operations
+  // Operation triggers
   | { type: "START_SYNC" }
   | { type: "START_RESTORE" }
   | { type: "CONFIRM_RESTORE" }
@@ -106,9 +108,8 @@ function settingsReducer(
     case "SAVE_PASSWORD_CANCELLED":
       return { type: "SIGNED_IN" };
 
-    // Go back to idle
+    // Return to idle state
     case "BACK_TO_IDLE":
-      // Goes back to appropriate idle state
       if (state.type === "SIGNED_OUT") return state;
       return { type: "SIGNED_IN" };
 
@@ -117,7 +118,7 @@ function settingsReducer(
   }
 }
 
-// Simple helpers
+// Minimum duration to show loading state for better UX
 const MIN_SYNCING_MS = 700;
 
 function useSyncStateMachine(isAuthenticated: boolean) {

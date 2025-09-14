@@ -34,9 +34,8 @@ dotenv.config();
 let mainWindow: BrowserWindow | null = null;
 
 /**
- * Sets up a Content Security Policy for the application.
- * This helps protect against XSS and other injection attacks.
- * Different policies are applied for development and production environments.
+ * Sets up Content Security Policy for the application
+ * Configures different CSP rules for development and production environments
  */
 function setupContentSecurityPolicy() {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -65,7 +64,7 @@ function setupContentSecurityPolicy() {
           ...baseDirectives,
           // Stricter CSP for production
           "script-src 'self'",
-          "style-src 'self' 'unsafe-inline'", // Still need unsafe-inline for styled-components
+          "style-src 'self' 'unsafe-inline'", // Required for styled-components
         ];
 
     callback({
@@ -118,7 +117,10 @@ function createWindow() {
   });
 }
 
-// Initialize all IPC handlers and create window when app is ready
+/**
+ * Initialize application when Electron is ready
+ * Sets up all IPC handlers and creates the main window
+ */
 app.whenReady().then(() => {
   setupContentSecurityPolicy();
   setupPasswordIpc();

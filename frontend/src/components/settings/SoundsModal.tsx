@@ -16,7 +16,9 @@ const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [
   { id: "progressComplete", label: "Complete" },
 ];
 
-/** Default preferences for modal state when nothing is saved yet. */
+/**
+ * Default preferences for modal state when nothing is saved yet.
+ */
 const DEFAULT_MODAL_PREFS = {
   masterVolume: 0.6,
   muteAll: false,
@@ -49,13 +51,17 @@ export default function SoundsModal(props: SoundsModalProps) {
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Preview state (single audio element for simplicity)
+  /**
+   * Audio preview state management
+   */
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playingEvent, setPlayingEvent] = useState<SoundEventId | null>(null);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  /** Load existing preferences when opening the modal. */
+  /**
+   * Load existing preferences when opening the modal.
+   */
   useEffect(() => {
     let isMounted = true;
 
@@ -102,14 +108,18 @@ export default function SoundsModal(props: SoundsModalProps) {
     };
   }, [open]);
 
-  /** Clean up preview audio when modal closes. */
+  /**
+   * Clean up preview audio when modal closes.
+   */
   useEffect(() => {
     if (open === false) {
       stopPreview();
     }
   }, [open]);
 
-  /** Attach timeupdate listeners for preview updates. */
+  /**
+   * Attach timeupdate listeners for preview updates.
+   */
   useEffect(() => {
     const audioElement = audioRef.current;
 
@@ -139,7 +149,9 @@ export default function SoundsModal(props: SoundsModalProps) {
     };
   }, [audioRef.current]);
 
-  /** Handle file upload for a given event. */
+  /**
+   * Handle file upload for a given event.
+   */
   const handleFileChange = async (
     eventId: SoundEventId,
     file: File | null
@@ -164,12 +176,15 @@ export default function SoundsModal(props: SoundsModalProps) {
       // Prepare bytes
       const bytes = new Uint8Array(await file.arrayBuffer());
 
-      // Save to disk under canonical filename via IPC
+      /**
+       * Save sound file to disk with canonical filename
+       */
       await window.api.saveSoundForEvent(eventId, bytes);
 
-      // Do NOT auto-upload to Dropbox here; syncing should be explicit via Sync action.
-
-      // Update local prefs to store only canonical filename
+      /**
+       * Update preferences with canonical filename reference
+       * Note: Sync to Dropbox requires explicit user action
+       */
       const canonicalFileName = canonicalFilenameForEvent(eventId);
       const nextEventFiles: Record<SoundEventId, string> = {
         ...preferences.eventFiles,
@@ -180,12 +195,16 @@ export default function SoundsModal(props: SoundsModalProps) {
 
       soundManager.setSoundFileForEvent(eventId, canonicalFileName);
 
-      // Persist to app data with current bars (main overwrites bars if omitted)
+      /**
+       * Save updated preferences to app data
+       */
       await window.api.savePartialData({
         sounds: { preferences: { ...preferences, eventFiles: nextEventFiles } },
       });
 
-      // Auto-start preview of the newly uploaded file from the freshly saved bytes
+      /**
+       * Auto-preview the newly uploaded sound
+       */
       try {
         const blob = new Blob([bytes], { type: "audio/mpeg" });
         const objectUrl = URL.createObjectURL(blob);
@@ -201,7 +220,9 @@ export default function SoundsModal(props: SoundsModalProps) {
     }
   };
 
-  /** Toggle preview for a given event (pause/resume behavior). */
+  /**
+   * Toggle preview for a given event (pause/resume behavior).
+   */
   const togglePreview = (eventId: SoundEventId): void => {
     const audioElement = audioRef.current;
     const isActiveEvent = playingEvent === eventId;
@@ -217,12 +238,16 @@ export default function SoundsModal(props: SoundsModalProps) {
         pausePreview();
       }
     } else {
-      // Load from disk via IPC and preview
+      /**
+       * Load sound from disk if not already in memory
+       */
       void playPreviewFromDisk(eventId);
     }
   };
 
-  /** Read raw bytes for an event from disk and preview via a blob URL. */
+  /**
+   * Read raw bytes for an event from disk and preview via a blob URL.
+   */
   const playPreviewFromDisk = async (eventId: SoundEventId): Promise<void> => {
     try {
       const bytes = await window.api.readSoundForEvent(eventId);
@@ -237,14 +262,19 @@ export default function SoundsModal(props: SoundsModalProps) {
     }
   };
 
-  /** Start previewing a given blob URL. */
+  /**
+   * Start previewing a given blob URL.
+   */
   const playPreview = (sourceUrl: string, eventId: SoundEventId): void => {
     stopPreview();
 
     try {
       const audioElement = new Audio(sourceUrl);
       audioElement.preload = "auto";
-      // Initialize preview volume from current master volume
+
+      /**
+       * Set initial volume based on current preferences
+       */
       let initialVolume = preferences.masterVolume;
       if (Number.isFinite(initialVolume) === false) {
         initialVolume = 1;
@@ -269,7 +299,9 @@ export default function SoundsModal(props: SoundsModalProps) {
     }
   };
 
-  /** Pause current preview, if any. */
+  /**
+   * Pause current preview, if any.
+   */
   const pausePreview = (): void => {
     const audioElement = audioRef.current;
     if (audioElement) {
@@ -281,7 +313,9 @@ export default function SoundsModal(props: SoundsModalProps) {
     }
   };
 
-  /** Stop and reset preview, clearing element. */
+  /**
+   * Stop and reset preview, clearing element.
+   */
   const stopPreview = (): void => {
     const audioElement = audioRef.current;
     if (audioElement) {
@@ -298,7 +332,9 @@ export default function SoundsModal(props: SoundsModalProps) {
     setDuration(0);
   };
 
-  /** Handle master volume slider change and persist. */
+  /**
+   * Handle master volume slider change and persist.
+   */
   const handleMasterVolumeChange = async (
     changeEvent: React.ChangeEvent<HTMLInputElement>
   ): Promise<void> => {

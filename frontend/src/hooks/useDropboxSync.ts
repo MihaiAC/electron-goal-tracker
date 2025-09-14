@@ -36,9 +36,6 @@ export function useDropboxSync() {
 
     const loadSavedLastSyncedFromLocalData = async () => {
       try {
-        console.info(
-          "[sync][renderer] Loading saved AppData from local storage..."
-        );
         const savedAppData = await window.api.loadData();
         if (isMounted) {
           if (
@@ -47,19 +44,14 @@ export function useDropboxSync() {
             savedAppData.lastSynced.length > 0
           ) {
             setLastSynced(savedAppData.lastSynced);
-            console.info("[sync][renderer] Loaded lastSynced from disk", {
-              lastSynced: savedAppData.lastSynced,
-            });
           } else {
             setLastSynced(null);
-            console.info("[sync][renderer] No lastSynced found on disk");
           }
         }
       } catch {
         if (isMounted) {
           setLastSynced(null);
         }
-        console.error("[sync][renderer] Failed to load AppData from disk");
       }
     };
 
@@ -78,11 +70,10 @@ export function useDropboxSync() {
       throw new Error("Missing encryption password");
     }
 
-    console.info("[sync][renderer] Starting sync to Dropbox", {
-      bars: Array.isArray(bars) ? bars.length : 0,
-    });
-
-    // Build encrypted payload with bars only (no sounds/theme inside the cipher).
+    /**
+     * Build encrypted payload with bars data
+     * Sound and theme preferences are handled separately
+     */
     const savedAppData = await window.api.loadData();
     const lastSyncedIso = new Date().toISOString();
     const encryptedBars = {
@@ -98,24 +89,21 @@ export function useDropboxSync() {
       content: bytesData,
       contentType: "application/octet-stream",
     });
-    console.info("[sync][renderer] Encrypted app data uploaded", {
-      fileName: APPDATA_FILE_NAME,
-      bytes: bytesData.length,
-    });
 
     setLastSynced(lastSyncedIso);
 
-    // Persist lastSynced alongside bars in local AppData (preserve sounds locally).
+    /**
+     * Persist lastSynced timestamp and bars to local storage
+     */
     await window.api.savePartialData({
       bars,
       lastSynced: lastSyncedIso,
     });
-    console.info("[sync][renderer] Local AppData updated after sync", {
-      lastSynced: lastSyncedIso,
-      bars: Array.isArray(bars) ? bars.length : 0,
-    });
 
-    // Save unencrypted settings (sounds + theme) as a single JSON file to Dropbox.
+    /**
+     * Save unencrypted settings as a separate JSON file
+     * This includes sound preferences and theme data
+     */
     try {
       const settingsPayload: { sounds?: SoundsData; theme?: ThemeData } = {};
       if (savedAppData?.sounds) {
@@ -133,29 +121,22 @@ export function useDropboxSync() {
           content: settingsBytes,
           contentType: "application/json",
         });
-        console.info("[sync][renderer] Settings uploaded", {
-          fileName: SETTINGS_FILE_NAME,
-          bytes: settingsBytes.length,
-          hasSounds: Boolean(settingsPayload.sounds),
-          hasTheme: Boolean(settingsPayload.theme),
-        });
-      } else {
-        console.info("[sync][renderer] No settings to upload");
       }
-    } catch {
+    } catch (error) {
       // Ignore settings upload errors; encrypted appdata already synced.
-      console.warn("[sync][renderer] Settings upload failed (ignored)");
+      console.error("Failed to upload settings to Dropbox:", error);
     }
 
-    // Also push raw .mp3s for each event to Dropbox (unencrypted, canonical filenames).
-    // Only upload sounds that are referenced in the saved preferences being synced.
+    /**
+     * Upload sound files referenced in preferences to Dropbox
+     * Only uploads files that are actually referenced in settings
+     */
     try {
       const soundPreferences = savedAppData?.sounds?.preferences;
       if (soundPreferences?.eventFiles) {
-        let uploadedCount = 0;
         for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
           const fileRef = soundPreferences.eventFiles[eventId];
-          // Only upload if this event has a sound file referenced in the synced preferences
+          // Only upload if this event has a sound file referenced in preferences
           if (typeof fileRef === "string" && fileRef.length > 0) {
             const mp3Bytes = await window.api.readSoundForEvent(eventId);
             if (mp3Bytes && mp3Bytes.length > 0) {
@@ -164,19 +145,14 @@ export function useDropboxSync() {
                 content: mp3Bytes,
                 contentType: "audio/mpeg",
               });
-              uploadedCount += 1;
             }
           }
         }
-        console.info("[sync][renderer] Sound files uploaded", {
-          count: uploadedCount,
-        });
-      } else {
-        console.info("[sync][renderer] No sound preferences to upload");
       }
-    } catch {
-      // Ignore Dropbox .mp3 upload failures; encrypted appdata already synced.
-      console.warn("[sync][renderer] Sound upload failed (ignored)");
+    } catch (error) {
+      // Sound file upload errors shouldn't prevent the overall sync from succeeding
+      // since the encrypted app data was already synced successfully
+      console.error("Failed to upload sound files to Dropbox:", error);
     }
   };
 
@@ -187,17 +163,13 @@ export function useDropboxSync() {
       throw new Error("Missing encryption password.");
     }
 
-    console.info("[sync][renderer] Starting restore from Dropbox");
-
-    // Get the sound manager instance upfront.
+    /**
+     * Initialize sound manager for restoring sound files
+     */
     const soundManager = getSoundManager();
 
     const bytesData = await window.api.driveRestore({
       fileName: APPDATA_FILE_NAME,
-    });
-    console.info("[sync][renderer] Encrypted app data downloaded", {
-      fileName: APPDATA_FILE_NAME,
-      bytes: bytesData.length,
     });
     const encryptedData = new TextDecoder().decode(bytesData);
     const jsonData = await decryptData(encryptedData, password);
@@ -212,7 +184,9 @@ export function useDropboxSync() {
       setLastSynced(null);
     }
 
-    // Read unencrypted settings (sounds + theme) from Dropbox, if present.
+    /**
+     * Download and restore settings file (sounds and theme)
+     */
     let settingsTheme: ThemeData | undefined = undefined;
     let settingsSounds: SoundsData | undefined = undefined;
     try {
@@ -226,61 +200,46 @@ export function useDropboxSync() {
       };
       settingsTheme = parsed.theme;
       settingsSounds = parsed.sounds;
-      console.info("[sync][renderer] Settings downloaded", {
-        fileName: SETTINGS_FILE_NAME,
-        bytes: settingsBytes.length,
-        hasSounds: Boolean(parsed.sounds),
-        hasTheme: Boolean(parsed.theme),
-      });
-    } catch {
-      // If not found, we'll fall back to defaults below.
-      console.info("[sync][renderer] No settings found on Dropbox");
+    } catch (error) {
+      // If settings file is not found, we'll fall back to defaults
+      console.error(
+        "No settings found on Dropbox or error reading settings:",
+        error
+      );
     }
 
-    // Attempt to restore raw .mp3s from Dropbox into local userData/sounds.
+    /**
+     * Restore sound files from Dropbox to local storage
+     * Tracks which files were successfully restored
+     */
     const restoredPresence: Partial<Record<SoundEventId, boolean>> = {};
 
-    console.log("[Sound Restore] Starting sound file restoration from Dropbox");
     for (const eventId of SOUND_EVENT_IDS as SoundEventId[]) {
       try {
         const fileName = canonicalFilenameForEvent(eventId);
-        console.log(
-          `[Sound Restore] Attempting to restore sound file: ${fileName} for event: ${eventId}`
-        );
         const mp3Bytes = await window.api.driveRestore({ fileName });
         if (mp3Bytes && mp3Bytes.length > 0) {
-          console.log(
-            `[Sound Restore] Successfully downloaded ${mp3Bytes.length} bytes for ${eventId}`
-          );
-
           // Save the sound file to local disk for future sessions.
           await window.api.saveSoundForEvent(eventId, mp3Bytes);
-          console.log(
-            `[Sound Restore] Successfully saved sound file for ${eventId}`
-          );
 
           // Also load the sound directly into the manager for the current session.
           soundManager.loadSoundFromBytes(eventId, mp3Bytes);
 
           restoredPresence[eventId] = true;
-        } else {
-          console.log(
-            `[Sound Restore] No sound data found for ${eventId} (${fileName})`
-          );
         }
       } catch (error) {
-        console.log(
-          `[Sound Restore] Failed to restore sound for ${eventId}:`,
+        // Individual sound file restore failures shouldn't block the overall restore
+        console.error(
+          `Sound file for ${eventId} not found or error restoring:`,
           error
         );
-        // Ignore if not found; not all events need to have a sound uploaded.
       }
     }
 
-    console.log("[Sound Restore] Restored presence:", restoredPresence);
-
-    // Determine final preferences to persist: construct canonical-filename
-    // preferences from restored .mp3 presence and saved settings file.
+    /**
+     * Create final sound preferences by combining restored files
+     * with settings from the settings file
+     */
     const savedPrefs = settingsSounds?.preferences;
     const nextPreferences: SoundsData["preferences"] | undefined = savedPrefs
       ? {
@@ -305,7 +264,9 @@ export function useDropboxSync() {
         }
       : undefined;
 
-    // Persist restored bars/lastSynced and sounds preferences plus theme.
+    /**
+     * Save all restored data to local storage
+     */
     await window.api.savePartialData({
       bars: barsData.bars,
       lastSynced:
@@ -313,22 +274,12 @@ export function useDropboxSync() {
       sounds: nextPreferences ? { preferences: nextPreferences } : undefined,
       theme: settingsTheme,
     });
-    console.info("[sync (renderer)] Local AppData updated after restore", {
-      bars: Array.isArray(barsData?.bars) ? barsData.bars.length : 0,
-      lastSynced:
-        typeof barsData.lastSynced === "string" ? barsData.lastSynced : null,
-      hasSoundsPrefs: Boolean(nextPreferences),
-      hasTheme: Boolean(settingsTheme),
-    });
 
-    // Update SoundManager's preferences (volume/mute) without a full reload,
-    // as sounds were already loaded from bytes directly.
+    /**
+     * Update SoundManager with restored preferences
+     */
     try {
       if (nextPreferences) {
-        console.log(
-          "[useDropboxSync] Updating SoundManager preferences (volume/mute):",
-          nextPreferences
-        );
         if (typeof nextPreferences.masterVolume === "number") {
           soundManager.setMasterVolume(nextPreferences.masterVolume);
         }
@@ -337,33 +288,33 @@ export function useDropboxSync() {
         }
       }
     } catch (error) {
-      console.error(
-        "[useDropboxSync] Error updating SoundManager preferences after restore:",
-        error
-      );
+      // Sound manager update errors shouldn't prevent the overall restore
+      console.error("Error updating sound manager preferences:", error);
     }
 
-    // Apply restored theme from settings to CSS variables (fallback to defaults if undefined)
+    /**
+     * Apply theme settings from restore
+     */
     try {
       if (settingsTheme) {
         applyTheme(settingsTheme);
-        console.info("[sync][renderer] Theme applied from settings");
       } else {
         applyTheme(DEFAULT_THEME);
-        console.info("[sync][renderer] Default theme applied");
       }
-    } catch {
-      // Ignore theme application errors
+    } catch (error) {
+      // Theme application errors shouldn't prevent the overall restore
+      console.error("Error applying theme:", error);
     }
 
-    console.info("[sync][renderer] Restore from Dropbox completed");
     return barsData.bars;
   };
 
+  /**
+   * Clear sync timestamp from local storage
+   */
   const clearLastSynced = () => {
     (async () => {
       try {
-        console.info("[sync][renderer] Clearing lastSynced locally");
         const savedAppData = await window.api.loadData();
         const barsToPersist = Array.isArray(savedAppData?.bars)
           ? savedAppData!.bars
@@ -372,7 +323,6 @@ export function useDropboxSync() {
           bars: barsToPersist,
           lastSynced: null,
         });
-        console.info("[sync][renderer] lastSynced cleared");
       } finally {
         setLastSynced(null);
       }
@@ -380,9 +330,7 @@ export function useDropboxSync() {
   };
 
   const cancelDropboxOperation = async (): Promise<void> => {
-    console.info("[sync][renderer] Cancel requested for cloud operation");
     await window.api.driveCancel();
-    console.info("[sync][renderer] Cancel signal sent");
   };
 
   return {

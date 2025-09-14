@@ -27,9 +27,7 @@ import { SuccessModal } from "./components/SuccessModal";
 import type { ProgressBarData } from "../../types/shared";
 import { applyTheme, DEFAULT_THEME } from "./utils/theme";
 
-// TODO: Fix the max listeners exceeded warning.
 // TODO: Do a QA pass on the UI/UX.
-// TODO: Remove "progress comments" that no longer make sense.
 // TODO: Too many things are happening here - modularise it.
 function App() {
   // Success modal when a progress bar is completed.
@@ -38,7 +36,6 @@ function App() {
   );
 
   const [bars, setBars] = useState<ProgressBarData[]>(() => {
-    // Let's add a second bar for easier testing of drag-and-drop
     return [
       {
         id: "1",
@@ -71,7 +68,9 @@ function App() {
     ];
   });
 
-  // Prevent autosave from overwriting disk before initial load completes
+  /**
+   * Flag to prevent autosave from overwriting disk data before initial load completes
+   */
   const [hasLoadedFromDisk, setHasLoadedFromDisk] = useState<boolean>(false);
 
   useEffect(() => {
@@ -97,7 +96,9 @@ function App() {
           });
           setBars(normalizedBars);
         }
-        // Apply saved theme (or default) at startup so CSS variables are set.
+        /**
+         * Apply saved theme or default theme at startup
+         */
         if (savedData && savedData.theme) {
           applyTheme(savedData.theme);
         } else {
@@ -105,7 +106,6 @@ function App() {
         }
       } catch (error) {
         console.error("Failed to load saved data", error);
-        // Apply a safe default theme on failure
         applyTheme(DEFAULT_THEME);
       } finally {
         setHasLoadedFromDisk(true);
@@ -137,7 +137,9 @@ function App() {
     }
   };
 
-  // UI sounds: only wire increment/decrement/complete for now (no button click)
+  /**
+   * UI sound hooks for progress bar interactions
+   */
   const {
     playProgressIncrementSound,
     playProgressDecrementSound,
@@ -145,7 +147,7 @@ function App() {
   } = useUiSounds();
 
   const onIncrement = (id: string, sign: number = 1) => {
-    // Play increment/decrement sound immediately; precedence handled in manager
+    // Play appropriate sound based on increment direction
     if (sign > 0) {
       playProgressIncrementSound();
     } else {
@@ -164,10 +166,9 @@ function App() {
           : bar
       );
 
-      // Check if the bar was just completed
+      // Check if the bar was just completed and show success modal
       const updatedBar = updatedBars.find((bar) => bar.id === id);
       if (updatedBar && updatedBar.current === updatedBar.max) {
-        // Play completion sound
         playProgressCompleteSound();
         setSuccessModalBarId(id);
       }
@@ -221,7 +222,7 @@ function App() {
   };
 
   /**
-   * Autosave progress bars to local storage whenever they change.
+   * Autosave progress bars to local storage whenever they change
    */
   useEffect(() => {
     if (hasLoadedFromDisk === false) {
@@ -235,7 +236,9 @@ function App() {
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
 
-  // Seed UI sounds from saved preferences on app startup so sounds work immediately.
+  /**
+   * Initialize sound manager with saved preferences on app startup
+   */
   useEffect(() => {
     let isMounted = true;
 
@@ -249,23 +252,21 @@ function App() {
           savedPreferences &&
           typeof savedPreferences === "object"
         ) {
-          // Initialize SoundManager with saved preferences instead of updating after creation
           const soundPreferences = {
             masterVolume:
               typeof savedPreferences.masterVolume === "number"
                 ? savedPreferences.masterVolume
                 : 0.6,
             muteAll: savedPreferences.muteAll === true,
-            soundsFolder: "/home/sounds", // Default folder path
+            soundsFolder: "/home/sounds",
             eventFiles: savedPreferences.eventFiles || {},
           };
 
-          // Get SoundManager instance with initial preferences
           const soundManager = getSoundManager();
           soundManager.setPreferences(soundPreferences);
         }
-      } catch {
-        // Ignore errors; SoundManager will use defaults
+      } catch (error) {
+        console.error("Failed to initialize sound preferences:", error);
       }
     })();
 
@@ -274,7 +275,9 @@ function App() {
     };
   }, []);
 
-  // Trigger a save before the window closes.
+  /**
+   * Save data before window closes
+   */
   useEffect(() => {
     const handleBeforeUnload = () => {
       window.api.savePartialData({ bars }).catch(console.error);
