@@ -54,7 +54,7 @@ export default function SettingsRoot(props: {
       {!menuOpen && !syncOpen && !soundsOpen && !themesOpen && !helpOpen && (
         <button
           onClick={() => setMenuOpen(true)}
-          className="fixed bottom-6 left-6 w-12 h-12 text-slate-800 rounded-md bg-white flex items-center justify-center shadow-lg hover:bg-slate-800 hover:text-white transition-colors duration-200 border border-white"
+          className="fixed bottom-6 left-6 w-12 h-12 text-background rounded-md bg-foreground flex items-center justify-center shadow-lg hover:bg-background hover:text-foreground transition-colors duration-200 border border-foreground"
         >
           <Settings className="h-6 w-6 stroke-2;" />
         </button>

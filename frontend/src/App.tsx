@@ -29,6 +29,7 @@ import { applyTheme, DEFAULT_THEME } from "./utils/theme";
 
 // TODO: Fix the max listeners exceeded warning.
 // TODO: Do a QA pass on the UI/UX.
+// TODO: Remove "progress comments" that no longer make sense.
 function App() {
   // Success modal when a progress bar is completed.
   const [successModalBarId, setSuccessModalBarId] = useState<string | null>(

@@ -277,7 +277,7 @@ export default function SyncModal({
           )}
 
           {authError && (
-            <div className="bg-red-900/50 border border-red-500 text-red-300 p-3 rounded-md flex justify-between items-center">
+            <div className="bg-error border border-error text-error p-3 rounded-md flex justify-between items-center">
               <p>Error: {authError}</p>
               <button
                 onClick={handleDismissError}

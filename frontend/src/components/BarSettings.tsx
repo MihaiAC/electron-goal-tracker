@@ -228,7 +228,7 @@ export default function BarSettings({
         }}
       >
         <div className="p-6">
-          <h2 className="text-xl font-bold mb-4">Edit Progress Bar</h2>
+          <h2 className="text-lg font-bold mb-4">Edit Progress Bar</h2>
           <Button
             onClick={onClose}
             variant="close"
@@ -246,12 +246,12 @@ export default function BarSettings({
                 <input
                   type="text"
                   {...register("title")}
-                  className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.title ? "border-red-500" : "border-transparent"} whitespace-normal break-words`}
+                  className={`w-full p-2 rounded bg-input border-2 ${errors.title ? "border-error" : "border-transparent"} whitespace-normal break-words`}
                   placeholder="Enter a title"
                   inputMode="text"
                 />
                 <p
-                  className={`mt-1 text-xs min-h-4 ${errors.title ? "text-red-400" : "opacity-0"}`}
+                  className={`mt-1 text-xs min-h-4 ${errors.title ? "text-error" : "opacity-0"}`}
                 >
                   {errors.title?.message ?? "placeholder"}
                 </p>
@@ -267,11 +267,11 @@ export default function BarSettings({
                     step={1}
                     min={0}
                     {...register("current", { valueAsNumber: true })}
-                    className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.current ? "border-red-500" : "border-transparent"}`}
+                    className={`w-full p-2 rounded bg-input border-2 ${errors.current ? "border-error" : "border-transparent"}`}
                     inputMode="numeric"
                   />
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.current ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.current ? "text-error" : "opacity-0"}`}
                   >
                     {errors.current?.message ?? "placeholder"}
                   </p>
@@ -285,11 +285,11 @@ export default function BarSettings({
                     min={1}
                     step={1}
                     {...register("max", { valueAsNumber: true })}
-                    className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.max ? "border-red-500" : "border-transparent"}`}
+                    className={`w-full p-2 rounded bg-input border-2 ${errors.max ? "border-error" : "border-transparent"}`}
                     inputMode="numeric"
                   />
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.max ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.max ? "text-error" : "opacity-0"}`}
                   >
                     {errors.max?.message ?? "placeholder"}
                   </p>
@@ -301,12 +301,12 @@ export default function BarSettings({
                 <input
                   type="text"
                   {...register("unit")}
-                  className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.unit ? "border-red-500" : "border-transparent"}`}
+                  className={`w-full p-2 rounded bg-input border-2 ${errors.unit ? "border-error" : "border-transparent"}`}
                   placeholder="e.g., days, lbs, %"
                   inputMode="text"
                 />
                 <p
-                  className={`mt-1 text-xs min-h-4 ${errors.unit ? "text-red-400" : "opacity-0"}`}
+                  className={`mt-1 text-xs min-h-4 ${errors.unit ? "text-error" : "opacity-0"}`}
                 >
                   {errors.unit?.message ?? "placeholder"}
                 </p>
@@ -321,11 +321,11 @@ export default function BarSettings({
                   min={1}
                   step={1}
                   {...register("incrementDelta", { valueAsNumber: true })}
-                  className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.incrementDelta ? "border-red-500" : "border-transparent"}`}
+                  className={`w-full p-2 rounded bg-input border-2 ${errors.incrementDelta ? "border-error" : "border-transparent"}`}
                   inputMode="numeric"
                 />
                 <p
-                  className={`mt-1 text-xs min-h-4 ${errors.incrementDelta ? "text-red-400" : "opacity-0"}`}
+                  className={`mt-1 text-xs min-h-4 ${errors.incrementDelta ? "text-error" : "opacity-0"}`}
                 >
                   {errors.incrementDelta?.message ?? "placeholder"}
                 </p>
@@ -347,7 +347,7 @@ export default function BarSettings({
                     </span>
                   </div>
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.completedColor ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.completedColor ? "text-error" : "opacity-0"}`}
                   >
                     {errors.completedColor?.message ?? "placeholder"}
                   </p>
@@ -367,7 +367,7 @@ export default function BarSettings({
                     </span>
                   </div>
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.remainingColor ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.remainingColor ? "text-error" : "opacity-0"}`}
                   >
                     {errors.remainingColor?.message ?? "placeholder"}
                   </p>
@@ -390,7 +390,7 @@ export default function BarSettings({
                     </span>
                   </div>
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.incrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.incrementHoverGlowHex ? "text-error" : "opacity-0"}`}
                   >
                     {errors.incrementHoverGlowHex?.message ?? "placeholder"}
                   </p>
@@ -410,7 +410,7 @@ export default function BarSettings({
                     </span>
                   </div>
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-error" : "opacity-0"}`}
                   >
                     {errors.decrementHoverGlowHex?.message ?? "placeholder"}
                   </p>
@@ -424,7 +424,7 @@ export default function BarSettings({
                   </label>
                   <select
                     {...register("patternId")}
-                    className={`w-full p-2 rounded bg-gray-700 border-2 ${errors.patternId ? "border-red-500" : "border-transparent"}`}
+                    className={`w-full p-2 rounded bg-input border-2 ${errors.patternId ? "border-error" : "border-transparent"}`}
                   >
                     <option value="">None</option>
                     {patterns.map((pattern) => (
@@ -434,7 +434,7 @@ export default function BarSettings({
                     ))}
                   </select>
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.patternId ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.patternId ? "text-error" : "opacity-0"}`}
                   >
                     {errors.patternId?.message ?? "placeholder"}
                   </p>
@@ -455,7 +455,7 @@ export default function BarSettings({
                     </span>
                   </div>
                   <p
-                    className={`mt-1 text-xs min-h-4 ${errors.patternColorHex ? "text-red-400" : "opacity-0"}`}
+                    className={`mt-1 text-xs min-h-4 ${errors.patternColorHex ? "text-error" : "opacity-0"}`}
                   >
                     {errors.patternColorHex?.message ?? "placeholder"}
                   </p>
@@ -465,7 +465,7 @@ export default function BarSettings({
               {/* Notes section */}
               <div className="mt-6">
                 <h3 className="text-lg font-semibold mb-2">Notes</h3>
-                <p className="text-xs text-gray-300 mb-2">
+                <p className="text-xs text-muted mb-2">
                   Created: {formatJournalDate(bar.createdAt)}
                 </p>
                 <div className="space-y-2">
@@ -473,10 +473,10 @@ export default function BarSettings({
                     value={pendingNoteText}
                     onChange={(event) => setPendingNoteText(event.target.value)}
                     placeholder="Write a note about today's progress..."
-                    className="w-full min-h-20 p-2 rounded bg-gray-700 border-2 border-transparent focus:border-blue-400"
+                    className="w-full min-h-20 p-2 rounded bg-input border-2 border-transparent focus:border-focus"
                   />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-muted">
                       {notesDraft.length} / 50 notes
                     </span>
                     <Button type="button" onClick={handleAddNote}>
@@ -485,20 +485,20 @@ export default function BarSettings({
                   </div>
                 </div>
 
-                <ul className="mt-4 space-y-3">
+                <ul className="space-y-2 mt-2">
                   {notesDraft.map((note) => (
                     <li
                       key={note.id}
-                      className="p-3 rounded bg-gray-700 border border-gray-600"
+                      className="p-3 rounded bg-input border border-input"
                     >
                       <div className="flex justify-between items-start mb-1">
-                        <div className="text-xs text-gray-300">
+                        <div className="text-xs text-muted">
                           {formatJournalDate(note.at)}
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDeleteNote(note.id)}
-                          className="text-red-500 hover:text-red-400 transition-colors p-1 -mt-1 -mr-1"
+                          className="text-error hover:text-error transition-colors p-1 -mt-1 -mr-1"
                           aria-label="Delete note"
                         >
                           <Trash2 className="h-4 w-4" />

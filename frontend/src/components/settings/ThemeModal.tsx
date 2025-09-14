@@ -24,6 +24,7 @@ export default function ThemeModal(props: ThemeModalProps) {
     buttonPrimaryHex: DEFAULT_THEME.buttonPrimaryHex,
     buttonSecondaryHex: DEFAULT_THEME.buttonSecondaryHex,
     buttonDestructiveHex: DEFAULT_THEME.buttonDestructiveHex,
+    neutralHex: DEFAULT_THEME.neutralHex,
   });
   const [busy, setBusy] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export default function ThemeModal(props: ThemeModalProps) {
           buttonDestructiveHex:
             savedTheme?.buttonDestructiveHex ??
             DEFAULT_THEME.buttonDestructiveHex,
+          neutralHex: savedTheme?.neutralHex ?? DEFAULT_THEME.neutralHex,
         };
         if (isMounted) {
           setTheme(next);
@@ -63,6 +65,7 @@ export default function ThemeModal(props: ThemeModalProps) {
             buttonPrimaryHex: DEFAULT_THEME.buttonPrimaryHex,
             buttonSecondaryHex: DEFAULT_THEME.buttonSecondaryHex,
             buttonDestructiveHex: DEFAULT_THEME.buttonDestructiveHex,
+            neutralHex: DEFAULT_THEME.neutralHex,
           });
         }
       }
@@ -107,6 +110,7 @@ export default function ThemeModal(props: ThemeModalProps) {
       buttonPrimaryHex: DEFAULT_THEME.buttonPrimaryHex,
       buttonSecondaryHex: DEFAULT_THEME.buttonSecondaryHex,
       buttonDestructiveHex: DEFAULT_THEME.buttonDestructiveHex,
+      neutralHex: DEFAULT_THEME.neutralHex,
     });
   };
 
@@ -128,7 +132,7 @@ export default function ThemeModal(props: ThemeModalProps) {
         </div>
 
         {errorMessage ? (
-          <div className="mb-4 bg-red-900/40 border border-red-500 text-red-300 p-3 rounded-md">
+          <div className="mb-4 bg-error border border-error text-error p-3 rounded-md">
             {errorMessage}
           </div>
         ) : null}
@@ -179,6 +183,17 @@ export default function ThemeModal(props: ThemeModalProps) {
                 label="Destructive"
                 value={theme.buttonDestructiveHex}
                 onChange={(v) => handleChange("buttonDestructiveHex", v)}
+              />
+            </div>
+          </section>
+
+          <section className="border border-white/10 rounded-md p-3">
+            <h3 className="font-medium mb-2">Neutral</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <ColorInput
+                label="Neutral"
+                value={theme.neutralHex}
+                onChange={(v) => handleChange("neutralHex", v)}
               />
             </div>
           </section>

@@ -104,7 +104,7 @@
   }
 
   .panel-base {
-    @apply bg-background rounded-lg border border-border;
+    @apply bg-background rounded-lg border border-neutral;
   }
 
   .icon-success {
@@ -124,13 +124,13 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #334155; /* slate-700 */
+    background: var(--neutral);
     border-radius: 3px;
-    border: 1px solid #1e293b; /* slate-800 */
+    border: 1px solid var(--background);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #475569; /* slate-600 */
+    background: color-mix(in srgb, var(--neutral) 80%, white);
   }
 
   /* Button: unified primary with hover scale */
@@ -183,7 +183,7 @@
     max-height: calc(80vh - 140px);
   }
   .modal-footer {
-    @apply sticky bottom-0 bg-background border-t border-border p-4 mt-4 -mx-6 px-6 -mb-6;
+    @apply sticky bottom-0 bg-background border-t border-neutral p-4 mt-4 -mx-6 px-6 -mb-6;
   }
 
   /* Themed gray/neutral text utilities derived from theme vars */
@@ -200,27 +200,34 @@
     color: var(--foreground);
   }
 
-  /* Modal content with sticky footer */
-  .modal-content {
-    @apply overflow-y-auto pr-1 -mr-1;
-    max-height: calc(80vh - 140px);
+  /* Gray background utilities */
+  .bg-input {
+    background-color: var(--neutral);
   }
-  .modal-footer {
-    @apply sticky bottom-0 bg-background border-t border-border p-4 mt-4 -mx-6 px-6 -mb-6;
+  .border-input {
+    border-color: var(--neutral);
   }
-
-  /* Themed gray/neutral text utilities derived from theme vars */
-  .text-muted {
-    color: color-mix(in srgb, var(--foreground) 60%, var(--background));
+  .border-neutral {
+    border-color: var(--neutral);
   }
-  .text-subtle {
-    color: color-mix(in srgb, var(--foreground) 75%, var(--background));
+  .bg-neutral {
+    background-color: var(--neutral);
   }
 
-  /* Input surface using theme background, slightly lifted for contrast */
-  .input-surface {
-    background: color-mix(in srgb, var(--background) 85%, white);
-    color: var(--foreground);
+  /* Red color utilities */
+  .text-error {
+    @apply text-red-500;
+  }
+  .border-error {
+    @apply border-red-500;
+  }
+  .bg-error {
+    @apply bg-red-500/20;
+  }
+
+  /* Blue color utilities */
+  .border-focus {
+    @apply border-blue-400;
   }
 }
 
@@ -233,8 +240,9 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--button-primary);
   --color-muted: var(--muted);
-  --color-border: var(--border);
+  --color-border: var(--neutral);
   --color-ring: var(--ring);
+  --color-neutral: var(--neutral);
 }
 
 :root {
@@ -245,13 +253,14 @@
   --button-secondary: #4b5563; /* gray-600 */
   --button-destructive: #dc2626; /* red-600 */
   --muted: #f1f5f9; /* slate-100 */
-  --border: #334155; /* slate-700 */
+  --border: #334155; /* slate-700 - DEPRECATED, use neutral instead */
   --ring: #60a5fa; /* blue-400 */
+  --neutral: #6b7280; /* gray-500 */
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-neutral outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;

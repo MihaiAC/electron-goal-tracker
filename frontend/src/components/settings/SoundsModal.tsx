@@ -6,12 +6,10 @@ import {
 import type { SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
-import { Pause, Play, X } from "lucide-react";
+import { Pause, Play, X, CheckCircle } from "lucide-react";
 import { Button } from "../Button";
 
-// TODO: Obviously, fix theming.
 // TODO: Need a better way to signal visually whether a sound has been uploaded or not.
-// TODO: Play - Pause still shifts when swapping.
 
 /** UI metadata for supported sound events. */
 const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [
@@ -354,7 +352,7 @@ export default function SoundsModal(props: SoundsModalProps) {
             </div>
 
             {errorMessage ? (
-              <div className="mb-4 bg-red-900/40 border border-red-500 text-red-300 p-3 rounded-md">
+              <div className="mb-4 bg-error border border-error text-error p-3 rounded-md">
                 {errorMessage}
               </div>
             ) : null}
@@ -475,10 +473,15 @@ export default function SoundsModal(props: SoundsModalProps) {
                       className="w-full"
                     />
 
-                    <div className="mt-1 text-xs text-gray-400">
-                      {displayFileName !== null
-                        ? displayFileName
-                        : "No sound selected"}
+                    <div className="mt-1 text-xs flex items-center gap-1">
+                      {displayFileName !== null ? (
+                        <>
+                          <CheckCircle className="h-3.5 w-3.5 icon-success" />
+                          <span className="text-muted">{displayFileName}</span>
+                        </>
+                      ) : (
+                        <span className="text-muted">No sound selected</span>
+                      )}
                     </div>
                   </div>
                 );

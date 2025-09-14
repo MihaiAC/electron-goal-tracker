@@ -118,7 +118,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
               </ul>
             </nav>
 
-            <div className="p-3 text-xs text-gray-400 border-t border-border">
+            <div className="p-3 text-xs text-muted border-t border-border">
               v1 Settings
             </div>
           </motion.aside>

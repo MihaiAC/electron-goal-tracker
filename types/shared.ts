@@ -109,4 +109,5 @@ export interface ThemeData {
   buttonPrimaryHex: string;
   buttonSecondaryHex: string;
   buttonDestructiveHex: string;
+  neutralHex: string;
 }

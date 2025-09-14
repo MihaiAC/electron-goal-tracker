@@ -40,6 +40,10 @@ export function applyTheme(theme: ThemeData): void {
     "--button-destructive",
     safe(theme.buttonDestructiveHex, DEFAULT_THEME.buttonDestructiveHex)
   );
+  root.style.setProperty(
+    "--neutral",
+    safe(theme.neutralHex, DEFAULT_THEME.neutralHex)
+  );
 }
 
 /** Default theme (hex) approximating the app's current appearance. */
@@ -49,4 +53,5 @@ export const DEFAULT_THEME: ThemeData = {
   buttonPrimaryHex: "#84cc16", // lime-500
   buttonSecondaryHex: "#4b5563", // gray-600
   buttonDestructiveHex: "#dc2626", // red-600
+  neutralHex: "#6b7280", // gray-500
 };
