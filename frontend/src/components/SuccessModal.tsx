@@ -5,6 +5,17 @@ import ReactConfetti from "react-confetti";
 import { getSoundManager } from "../sound/soundManager";
 import { useEffect, useState } from "react";
 
+// Array of success messages to display randomly
+const SUCCESS_MESSAGES = [
+  "Good job, champ!",
+  "Let's gooooo!",
+  "Completing this task fills you with determination.",
+  "One goal to rule them all!",
+  "May the force be with... your next goal!",
+  "Victory!",
+  "戦え！",
+];
+
 interface SuccessModalProps {
   barData: ProgressBarData;
   isOpen: boolean;
@@ -17,6 +28,7 @@ export function SuccessModal({
   onRequestClose,
 }: SuccessModalProps) {
   const soundManager = getSoundManager();
+  const [successMessage, setSuccessMessage] = useState<string>("");
 
   const handleRequestClose = () => {
     soundManager.stopAll();
@@ -43,9 +55,15 @@ export function SuccessModal({
     };
   }, []);
 
+  // Select a random success message when the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const randomIndex = Math.floor(Math.random() * SUCCESS_MESSAGES.length);
+      setSuccessMessage(SUCCESS_MESSAGES[randomIndex]);
+    }
+  }, [isOpen]);
+
   // TODO: Add custom uplifting dismiss messages + congratulations messages.
-  // TODO: Add completion stats? Completed after x days. Created on...
-  // TODO: Add the golden experience mission success soundbite (it was a minified, slightly muted version of the main theme).
   return (
     <>
       <ReactConfetti
@@ -72,7 +90,7 @@ export function SuccessModal({
         <h4 className="font-thin">Placeholder for a short stats sentence</h4>
 
         <Button onClick={handleRequestClose} variant="primary">
-          {"Good job, champ!"}
+          {successMessage}
         </Button>
       </Modal>
     </>
