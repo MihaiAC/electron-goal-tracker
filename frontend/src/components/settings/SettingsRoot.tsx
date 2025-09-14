@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useReducer } from "react";
 import SettingsMenu from "./SettingsMenu";
 import SyncModal from "../sync/SyncModal";
 import SoundsModal from "./SoundsModal";
@@ -6,6 +6,50 @@ import ThemeModal from "./ThemeModal";
 import HelpModal from "./HelpModal";
 import type { ProgressBarData } from "../../../../types/shared";
 import { Settings } from "lucide-react";
+
+/**
+ * Interface for the settings state managed by the reducer
+ */
+interface SettingsState {
+  menuOpen: boolean;
+  syncOpen: boolean;
+  soundsOpen: boolean;
+  themesOpen: boolean;
+  helpOpen: boolean;
+}
+
+/**
+ * Types of actions that can be dispatched to the settings reducer
+ */
+type SettingsAction =
+  | { type: "TOGGLE_MENU"; open: boolean }
+  | { type: "TOGGLE_SYNC"; open: boolean }
+  | { type: "TOGGLE_SOUNDS"; open: boolean }
+  | { type: "TOGGLE_THEMES"; open: boolean }
+  | { type: "TOGGLE_HELP"; open: boolean };
+
+/**
+ * Reducer function to manage all settings modal states
+ */
+function settingsReducer(
+  state: SettingsState,
+  action: SettingsAction
+): SettingsState {
+  switch (action.type) {
+    case "TOGGLE_MENU":
+      return { ...state, menuOpen: action.open };
+    case "TOGGLE_SYNC":
+      return { ...state, syncOpen: action.open };
+    case "TOGGLE_SOUNDS":
+      return { ...state, soundsOpen: action.open };
+    case "TOGGLE_THEMES":
+      return { ...state, themesOpen: action.open };
+    case "TOGGLE_HELP":
+      return { ...state, helpOpen: action.open };
+    default:
+      return state;
+  }
+}
 
 /**
  * SettingsRoot centralizes Settings UI:
@@ -19,12 +63,16 @@ export default function SettingsRoot(props: {
 }) {
   const { onDataRestored, currentBars } = props;
 
-  // TODO: useReducer?
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [syncOpen, setSyncOpen] = useState(false);
-  const [soundsOpen, setSoundsOpen] = useState(false);
-  const [themesOpen, setThemesOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
+  const [settingsState, dispatch] = useReducer(settingsReducer, {
+    menuOpen: false,
+    syncOpen: false,
+    soundsOpen: false,
+    themesOpen: false,
+    helpOpen: false,
+  });
+
+  const { menuOpen, syncOpen, soundsOpen, themesOpen, helpOpen } =
+    settingsState;
 
   // Prevent background scroll and layout shift when any settings UI is open
   useEffect(() => {
@@ -53,7 +101,7 @@ export default function SettingsRoot(props: {
       {/* Floating Settings button */}
       {!menuOpen && !syncOpen && !soundsOpen && !themesOpen && !helpOpen && (
         <button
-          onClick={() => setMenuOpen(true)}
+          onClick={() => dispatch({ type: "TOGGLE_MENU", open: true })}
           className="fixed bottom-6 left-6 w-12 h-12 text-background rounded-md bg-foreground flex items-center justify-center shadow-lg hover:bg-background hover:text-foreground transition-colors duration-200 border border-foreground"
         >
           <Settings className="h-6 w-6 stroke-2;" />
@@ -63,32 +111,41 @@ export default function SettingsRoot(props: {
       {/* Animated drawer */}
       <SettingsMenu
         open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        onOpenDropboxSync={() => setSyncOpen(true)}
+        onClose={() => dispatch({ type: "TOGGLE_MENU", open: false })}
+        onOpenDropboxSync={() => dispatch({ type: "TOGGLE_SYNC", open: true })}
         onOpenSounds={() => {
-          setSoundsOpen(true);
+          dispatch({ type: "TOGGLE_SOUNDS", open: true });
         }}
         onOpenThemes={() => {
-          setThemesOpen(true);
+          dispatch({ type: "TOGGLE_THEMES", open: true });
         }}
         onOpenHelp={() => {
-          setHelpOpen(true);
+          dispatch({ type: "TOGGLE_HELP", open: true });
         }}
       />
 
       {/* Cloud Sync modal now lives under Settings */}
       <SyncModal
         open={syncOpen}
-        onClose={() => setSyncOpen(false)}
+        onClose={() => dispatch({ type: "TOGGLE_SYNC", open: false })}
         onDataRestored={onDataRestored}
         currentBars={currentBars}
       />
 
-      <SoundsModal open={soundsOpen} onClose={() => setSoundsOpen(false)} />
+      <SoundsModal
+        open={soundsOpen}
+        onClose={() => dispatch({ type: "TOGGLE_SOUNDS", open: false })}
+      />
 
-      <ThemeModal open={themesOpen} onClose={() => setThemesOpen(false)} />
+      <ThemeModal
+        open={themesOpen}
+        onClose={() => dispatch({ type: "TOGGLE_THEMES", open: false })}
+      />
 
-      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <HelpModal
+        open={helpOpen}
+        onClose={() => dispatch({ type: "TOGGLE_HELP", open: false })}
+      />
     </>
   );
 }

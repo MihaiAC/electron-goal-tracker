@@ -6,8 +6,6 @@ import {
 } from "./soundConfiguration";
 import type { SoundPreferences } from "./soundConfiguration";
 
-// TODO: Sync the sound files to Dropbox as well.
-
 /**
  * Renderer-side sound manager responsible for:
  * - Managing preferences (master volume, mute, event-to-file mapping)
@@ -457,8 +455,6 @@ export function getSoundManager(): SoundManager {
   return SoundManager.getInstance();
 }
 
-// TODO: Not happy with those here. We should have a folder specifically for file operations,
-// with the same folder structure as frontend/src.
 /**
  * Return the canonical filename for a sound event. Uses DEFAULT_SOUND_FILES mapping.
  */

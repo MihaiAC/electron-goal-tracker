@@ -9,8 +9,6 @@ import { createPortal } from "react-dom";
 import { Pause, Play, X, CheckCircle } from "lucide-react";
 import { Button } from "../Button";
 
-// TODO: Need a better way to signal visually whether a sound has been uploaded or not.
-
 /** UI metadata for supported sound events. */
 const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [
   { id: "progressIncrement", label: "Increment" },

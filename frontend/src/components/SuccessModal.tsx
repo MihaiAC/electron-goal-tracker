@@ -63,7 +63,6 @@ export function SuccessModal({
     }
   }, [isOpen]);
 
-  // TODO: Add custom uplifting dismiss messages + congratulations messages.
   return (
     <>
       <ReactConfetti
