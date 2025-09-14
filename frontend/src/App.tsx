@@ -69,6 +69,9 @@ function App() {
     ];
   });
 
+  // Prevent autosave from overwriting disk before initial load completes
+  const [hasLoadedFromDisk, setHasLoadedFromDisk] = useState<boolean>(false);
+
   useEffect(() => {
     const loadSavedData = async () => {
       try {
@@ -102,6 +105,8 @@ function App() {
         console.error("Failed to load saved data", error);
         // Apply a safe default theme on failure
         applyTheme(DEFAULT_THEME);
+      } finally {
+        setHasLoadedFromDisk(true);
       }
     };
 
@@ -217,10 +222,14 @@ function App() {
    * Autosave progress bars to local storage whenever they change.
    */
   useEffect(() => {
+    if (hasLoadedFromDisk === false) {
+      return;
+    }
+
     window.api.savePartialData({ bars }).catch((error) => {
       console.error("Autosave failed:", error);
     });
-  }, [bars]);
+  }, [bars, hasLoadedFromDisk]);
 
   const editingBar = bars.find((bar) => bar.id === editingBarId);
 
