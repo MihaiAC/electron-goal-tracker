@@ -25,10 +25,56 @@ const window_controls_1 = require("./ipc/window-controls");
  * - ipc/sounds.ts: Sound file management for UI events
  * - ipc/data.ts: Local application data persistence
  * - ipc/window-controls.ts: Window minimize/maximize/close operations
+ *
+ * NOTE: DevTools may show Autofill.enable and Autofill.setAddresses errors.
+ * These are harmless console messages from DevTools trying to use Chrome protocol
+ * features not available in Electron's Chromium build. They cannot be suppressed
+ * and do not affect application functionality.
  */
 dotenv_1.default.config();
 // Global reference to window to prevent garbage collection
 let mainWindow = null;
+/**
+ * Sets up a Content Security Policy for the application.
+ * This helps protect against XSS and other injection attacks.
+ * Different policies are applied for development and production environments.
+ */
+function setupContentSecurityPolicy() {
+    electron_1.session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        // Base CSP directives for both dev and production
+        const baseDirectives = [
+            "default-src 'self'",
+            "font-src 'self' data:",
+            "img-src 'self' data:",
+            "connect-src 'self' https://api.dropboxapi.com https://content.dropboxapi.com",
+            "media-src 'self' blob:",
+        ];
+        // Add development-specific directives when in dev mode
+        const isDev = !!process.env.VITE_DEV_SERVER_URL;
+        const cspDirectives = isDev
+            ? [
+                ...baseDirectives,
+                // Allow connections to Vite dev server
+                "connect-src 'self' https://api.dropboxapi.com https://content.dropboxapi.com ws: http://localhost:*",
+                // Allow unsafe-eval AND unsafe-inline for development
+                "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+                // Allow unsafe-inline for styles in development
+                "style-src 'self' 'unsafe-inline'",
+            ]
+            : [
+                ...baseDirectives,
+                // Stricter CSP for production
+                "script-src 'self'",
+                "style-src 'self' 'unsafe-inline'", // Still need unsafe-inline for styled-components
+            ];
+        callback({
+            responseHeaders: {
+                ...details.responseHeaders,
+                "Content-Security-Policy": [cspDirectives.join("; ")],
+            },
+        });
+    });
+}
 /**
  * Creates the main application window with security-focused web preferences.
  * Loads either the Vite dev server or the built frontend based on environment.
@@ -69,6 +115,7 @@ function createWindow() {
 }
 // Initialize all IPC handlers and create window when app is ready
 electron_1.app.whenReady().then(() => {
+    setupContentSecurityPolicy();
     (0, password_1.setupPasswordIpc)();
     (0, auth_1.setupAuthIpc)();
     (0, dropbox_1.setupDropboxIpc)();

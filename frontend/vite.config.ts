@@ -6,7 +6,18 @@ import path from "node:path";
 // https://vite.dev/config/
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react({
+      // Explicitly set options to fix preamble detection
+      jsxRuntime: "automatic",
+      babel: {
+        plugins: [],
+        babelrc: false,
+        configFile: false,
+      },
+    }),
+    tailwindcss(),
+  ],
   build: {
     outDir: "dist",
     emptyOutDir: true,
