@@ -20,12 +20,9 @@ export default function HelpModal(props: HelpModalProps) {
   }
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={() => onClose()}
-    >
+    <div className="overlay-dim z-50" onClick={() => onClose()}>
       <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-lg text-gray-100"
+        className="panel-base p-6 w-full max-w-lg"
         onClick={(mouseEvent) => {
           mouseEvent.stopPropagation();
         }}
@@ -35,17 +32,17 @@ export default function HelpModal(props: HelpModalProps) {
           <button
             type="button"
             onClick={() => onClose()}
-            className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
+            className="titlebar-button titlebar-button-danger"
           >
             <X className="close-icon" />
           </button>
         </div>
 
         <div className="space-y-3 text-sm">
-          <p className="text-gray-300">
+          <p className="text-subtle">
             Quick tips for interacting with progress bars:
           </p>
-          <ul className="list-disc list-inside space-y-1 text-gray-300">
+          <ul className="list-disc list-inside space-y-1 text-subtle">
             <li>Increment progress: click the right half of a progress bar.</li>
             <li>Decrement progress: click the left half of a progress bar.</li>
             <li>Open bar settings: right-click anywhere on a bar.</li>

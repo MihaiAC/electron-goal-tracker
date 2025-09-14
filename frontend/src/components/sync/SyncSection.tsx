@@ -26,7 +26,7 @@ export default function SyncSection({
           </Button>
         </div>
 
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted">
           Last synced:{" "}
           {lastSynced ? new Date(lastSynced).toLocaleString() : "Never"}
         </p>

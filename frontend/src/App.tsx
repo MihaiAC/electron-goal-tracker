@@ -291,9 +291,7 @@ function App() {
   return (
     <div className="app-container">
       <header className="titlebar">
-        <span className="text-xs font-bold text-gray-400 pl-3">
-          Progress Bars
-        </span>
+        <span className="text-xs font-bold text-muted pl-3">Progress Bars</span>
         <WindowControls />
       </header>
       <div className="content-container">

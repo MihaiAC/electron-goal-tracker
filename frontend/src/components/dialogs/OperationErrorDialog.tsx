@@ -26,12 +26,12 @@ export default function OperationErrorDialog({
     <Dialog isOpen={isOpen} onClose={onClose}>
       <div className="p-8 text-center space-y-4">
         <div className="flex flex-col items-center space-y-2">
-          <CircleX className="h-12 w-12 text-red-500 stroke-2" />
+          <CircleX className="h-12 w-12 icon-error stroke-2" />
           <h3 className="text-xl font-bold">{title}</h3>
           <p className="text-lg">{message}</p>
-          {code && <p className="text-sm text-gray-400">Code: {code}</p>}
+          {code && <p className="text-sm text-muted">Code: {code}</p>}
           {typeof status === "number" ? (
-            <p className="text-sm text-gray-400">HTTP Status: {status}</p>
+            <p className="text-sm text-muted">HTTP Status: {status}</p>
           ) : null}
         </div>
         <div className="flex justify-center">

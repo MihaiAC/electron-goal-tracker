@@ -13,7 +13,7 @@ export function SyncingDialog({ message, onCancel }: SyncingDialogProps) {
     <Dialog isOpen={true}>
       <div className="p-8 text-center">
         <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 text-white animate-spin stroke-3" />
+          <Loader2 className="loader-icon h-8 w-8 stroke-3" />
           <p className="text-lg">{message ?? "Working..."}</p>
           {onCancel !== undefined ? (
             <Button variant="secondary" onClick={onCancel}>

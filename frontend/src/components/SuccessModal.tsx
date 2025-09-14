@@ -61,8 +61,8 @@ export function SuccessModal({
         appElement={document.getElementById("root") as HTMLElement}
         shouldCloseOnOverlayClick={true}
         onRequestClose={handleRequestClose}
-        className="relative z-50 bg-black text-white rounded-2xl p-6 w-full max-w-md mx-auto mt-40 shadow-lg outline-none flex flex-col items-center space-y-2"
-        overlayClassName="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex justify-center items-start"
+        className="relative z-50 panel-base p-6 w-full max-w-md mx-auto mt-40 shadow-lg outline-none flex flex-col items-center space-y-2"
+        overlayClassName="overlay-dim z-40 items-start"
       >
         <h1 className="font-bold text-2xl">Congratulations!</h1>
         <h2 className="font-bold text-xl">"{barData.title}" complete!</h2>

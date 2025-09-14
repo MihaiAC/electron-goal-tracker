@@ -340,12 +340,9 @@ export default function SoundsModal(props: SoundsModalProps) {
   // Scroll locking is handled globally in SettingsRoot when modals/drawers are open.
   return open
     ? createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => onClose()}
-        >
+        <div className="overlay-dim z-50" onClick={() => onClose()}>
           <div
-            className="bg-gray-800 rounded-lg p-6 w-full max-w-xl"
+            className="panel-base p-6 w-full max-w-xl"
             onClick={(mouseEvent) => mouseEvent.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-4">
@@ -353,7 +350,7 @@ export default function SoundsModal(props: SoundsModalProps) {
               <button
                 type="button"
                 onClick={() => onClose()}
-                className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
+                className="titlebar-button titlebar-button-danger"
               >
                 <X className="close-icon" />
               </button>
@@ -478,7 +475,7 @@ export default function SoundsModal(props: SoundsModalProps) {
                       }}
                       disabled={!isActiveEvent || duration <= 0}
                       aria-label={`Seek ${item.label} preview`}
-                      className="w-full [&_.bg-primary]:bg-lime-500 [&_.border-primary]:border-lime-500"
+                      className="w-full"
                     />
 
                     <div className="mt-1 text-xs text-gray-400">

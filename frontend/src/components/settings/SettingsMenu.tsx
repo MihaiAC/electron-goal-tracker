@@ -34,7 +34,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
         <>
           {/* Overlay (raised z-index, full viewport) */}
           <motion.div
-            className="fixed inset-0 bg-black/40 z-[55] no-drag"
+            className="overlay-dim z-[55] no-drag"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -44,18 +44,18 @@ export default function SettingsMenu(props: SettingsMenuProps) {
 
           {/* Drawer (topmost) */}
           <motion.aside
-            className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] bg-gray-900 text-white border-r border-white/10 z-[60] shadow-2xl flex flex-col no-drag"
+            className="fixed left-0 top-0 bottom-0 w-80 max-w-[85vw] panel-base text-foreground z-[60] shadow-2xl flex flex-col no-drag"
             initial={{ x: -320 }}
             animate={{ x: 0 }}
             exit={{ x: -320 }}
             transition={{ type: "tween", ease: "easeOut", duration: 0.22 }}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="text-lg font-semibold">Settings</h2>
               <button
                 type="button"
                 onClick={() => onClose()}
-                className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
+                className="titlebar-button titlebar-button-danger"
               >
                 <X className="close-icon" />
               </button>
@@ -121,7 +121,7 @@ export default function SettingsMenu(props: SettingsMenuProps) {
               </ul>
             </nav>
 
-            <div className="p-3 text-xs text-gray-400 border-t border-white/10">
+            <div className="p-3 text-xs text-gray-400 border-t border-border">
               v1 Settings
             </div>
           </motion.aside>

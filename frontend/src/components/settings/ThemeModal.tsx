@@ -115,12 +115,9 @@ export default function ThemeModal(props: ThemeModalProps) {
   }
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      onClick={() => onClose()}
-    >
+    <div className="overlay-dim z-50" onClick={() => onClose()}>
       <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-xl"
+        className="panel-base p-6 w-full max-w-xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
@@ -128,7 +125,7 @@ export default function ThemeModal(props: ThemeModalProps) {
           <button
             type="button"
             onClick={() => onClose()}
-            className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
+            className="titlebar-button titlebar-button-danger"
           >
             <X className="close-icon" />
           </button>

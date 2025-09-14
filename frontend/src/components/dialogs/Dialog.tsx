@@ -20,17 +20,11 @@ export default function Dialog({
 
   return (
     <div
-      className={clsx(
-        "fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[60]",
-        overlayClassName
-      )}
+      className={clsx("overlay-dim z-[60]", overlayClassName)}
       onClick={onClose}
     >
       <div
-        className={clsx(
-          "bg-gray-800 rounded-lg p-6 w-full max-w-sm",
-          containerClassName
-        )}
+        className={clsx("panel-base p-6 w-full max-w-sm", containerClassName)}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

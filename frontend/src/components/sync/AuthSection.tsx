@@ -26,8 +26,8 @@ export default function AuthenticationSection({
       <h3 className="text-lg font-semibold mb-3">Account</h3>
       {authIsLoading ? (
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center space-x-2 text-gray-400">
-            <Loader2 className="h-8 w-8 text-white animate-spin stroke-3" />
+          <div className="flex items-center space-x-2 text-muted">
+            <Loader2 className="loader-icon" />
             <span>Waiting for Dropbox sign-in...</span>
           </div>
           <Button onClick={onCancelSignIn} variant="secondary">

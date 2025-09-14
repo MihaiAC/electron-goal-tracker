@@ -239,12 +239,9 @@ export default function SyncModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-      onClick={canClose ? onClose : undefined}
-    >
+    <div className="overlay-dim z-50" onClick={canClose ? onClose : undefined}>
       <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+        className="panel-base p-6 w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
@@ -253,7 +250,7 @@ export default function SyncModal({
             type="button"
             onClick={canClose ? onClose : undefined}
             disabled={!canClose}
-            className="titlebar-button hover:bg-red-500 border-2 border-white hover:border-red-500"
+            className="titlebar-button titlebar-button-danger"
           >
             <X className="close-icon" />
           </button>

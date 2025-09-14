@@ -120,7 +120,7 @@ export default function SortableProgressBar({
           {...listeners}
           className="p-2 cursor-grab touch-none self-stretch flex items-center"
         >
-          <Grip className="w-6 h-6 text-gray-500 stroke-2" />
+          <Grip className="w-6 h-6 text-muted stroke-2" />
         </div>
 
         <div className="flex-1 pr-2">

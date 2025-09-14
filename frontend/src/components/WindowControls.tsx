@@ -37,7 +37,7 @@ export default function WindowControls() {
       <button
         type="button"
         onClick={() => window.api.close()}
-        className="titlebar-button hover:bg-red-500"
+        className="titlebar-button titlebar-button-danger"
       >
         <X className="close-icon" />
       </button>

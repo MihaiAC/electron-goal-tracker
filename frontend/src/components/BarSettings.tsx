@@ -218,12 +218,9 @@ export default function BarSettings({
   const patternColorHexValue = watch("patternColorHex");
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-      onClick={onClose}
-    >
+    <div className="overlay-dim z-50" onClick={onClose}>
       <div
-        className="bg-gray-800 rounded-lg w-full max-w-md relative overflow-hidden"
+        className="panel-base w-full max-w-md relative overflow-hidden"
         onClick={(event) => {
           if (event) {
             event.stopPropagation();
@@ -237,7 +234,7 @@ export default function BarSettings({
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="titlebar-button hover:bg-red-500 absolute top-3 right-3"
+            className="titlebar-button titlebar-button-danger absolute top-3 right-3"
           >
             <X className="close-icon" />
           </button>

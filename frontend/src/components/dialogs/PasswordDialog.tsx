@@ -33,7 +33,7 @@ export default function PasswordDialog({
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="bg-gray-700 text-white rounded-md p-2 w-full"
+          className="input-surface rounded-md p-2 w-full"
           placeholder="Enter password"
         />
         <div className="flex justify-end space-x-4">
