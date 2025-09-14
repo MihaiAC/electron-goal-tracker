@@ -294,17 +294,16 @@ export default function SyncModal({
       </div>
 
       {/* Dialogs */}
-      <SyncingDialog
-        isOpen={state.type === "SYNCING"}
-        message={
-          state.type === "SYNCING"
-            ? state.operation === "sync"
+      {state.type === "SYNCING" ? (
+        <SyncingDialog
+          message={
+            state.operation === "sync"
               ? "Syncing with Dropbox..."
               : "Restoring from Dropbox..."
-            : undefined
-        }
-        onCancel={cancelDropboxOperation}
-      />
+          }
+          onCancel={cancelDropboxOperation}
+        />
+      ) : null}
 
       <OperationSuccessDialog
         isOpen={state.type === "SUCCESS"}
