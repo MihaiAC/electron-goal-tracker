@@ -28,6 +28,7 @@ import type { ProgressBarData } from "../../types/shared";
 import { applyTheme, DEFAULT_THEME } from "./utils/theme";
 
 // TODO: Fix the max listeners exceeded warning.
+// TODO: Fix renderer error from the terminal.
 // TODO: Do a QA pass on the UI/UX.
 // TODO: Remove "progress comments" that no longer make sense.
 // TODO: Too many things are happening here - modularise it.

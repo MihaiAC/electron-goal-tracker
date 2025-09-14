@@ -121,10 +121,10 @@ export default function ThemeModal(props: ThemeModalProps) {
   return createPortal(
     <div className="overlay-dim z-50" onClick={() => onClose()}>
       <div
-        className="panel-base p-6 w-full max-w-xl"
+        className="panel-base p-6 w-full max-w-xl max-h-[80vh] flex flex-col"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 className="text-xl font-bold">Theme</h2>
           <Button variant="close" onClick={() => onClose()}>
             <X className="close-icon" />
@@ -132,12 +132,12 @@ export default function ThemeModal(props: ThemeModalProps) {
         </div>
 
         {errorMessage ? (
-          <div className="mb-4 bg-error border border-error text-error p-3 rounded-md">
+          <div className="mb-4 bg-error border border-error text-error p-3 rounded-md flex-shrink-0">
             {errorMessage}
           </div>
         ) : null}
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto pr-1 flex-grow">
           <section className="border border-white/10 rounded-md p-3">
             <h3 className="font-medium mb-2">App</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -197,35 +197,35 @@ export default function ThemeModal(props: ThemeModalProps) {
               />
             </div>
           </section>
+        </div>
 
-          <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10 flex-shrink-0">
+          <Button
+            onClick={handleResetDefaults}
+            type="button"
+            variant="secondary"
+            disabled={busy}
+          >
+            Reset defaults
+          </Button>
+
+          <div className="space-x-3">
             <Button
-              onClick={handleResetDefaults}
+              onClick={() => onClose()}
               type="button"
               variant="secondary"
               disabled={busy}
             >
-              Reset defaults
+              Close
             </Button>
-
-            <div className="space-x-3">
-              <Button
-                onClick={() => onClose()}
-                type="button"
-                variant="secondary"
-                disabled={busy}
-              >
-                Close
-              </Button>
-              <Button
-                onClick={() => void handleSave()}
-                type="button"
-                variant="primary"
-                disabled={busy}
-              >
-                Save
-              </Button>
-            </div>
+            <Button
+              onClick={() => void handleSave()}
+              type="button"
+              variant="primary"
+              disabled={busy}
+            >
+              Save
+            </Button>
           </div>
         </div>
       </div>
