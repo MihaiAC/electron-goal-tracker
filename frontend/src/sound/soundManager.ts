@@ -3,8 +3,8 @@ import {
   DEFAULT_SOUND_PREFERENCES,
   DEFAULT_SOUND_FILES,
   SOUND_EVENT_IDS,
-} from "./soundEvents";
-import type { SoundPreferences } from "./soundEvents";
+} from "./soundConfiguration";
+import type { SoundPreferences } from "./soundConfiguration";
 
 // TODO: Sync the sound files to Dropbox as well.
 

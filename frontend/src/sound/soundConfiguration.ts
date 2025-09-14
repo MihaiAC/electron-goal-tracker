@@ -1,10 +1,6 @@
 /**
- * UI sound events and preferences.
- * - Canonical filenames only are stored in preferences; renderer reads raw bytes via IPC
- *   and creates blob URLs at runtime for playback.
+ * UI sound configuration and preferences.
  */
-
-// TODO: Confusing file name + remove extra comments.
 
 import type { SoundEventId } from "../../../types/shared";
 
@@ -30,8 +26,7 @@ export const DEFAULT_MUTE_ALL = false;
 export const DEFAULT_SOUNDS_FOLDER = "/home/sounds";
 
 /**
- * Canonical list of sound event IDs. Derived from DEFAULT_SOUND_FILES keys so it scales
- * automatically as new events are added.
+ * Canonical list of sound event IDs. Derived from DEFAULT_SOUND_FILES keys.
  */
 export const SOUND_EVENT_IDS: ReadonlyArray<SoundEventId> = Object.freeze(
   Object.keys(DEFAULT_SOUND_FILES) as SoundEventId[]

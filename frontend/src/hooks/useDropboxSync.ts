@@ -10,7 +10,10 @@ import {
   canonicalFilenameForEvent,
   getSoundManager,
 } from "../sound/soundManager";
-import { SOUND_EVENT_IDS, DEFAULT_MASTER_VOLUME } from "../sound/soundEvents";
+import {
+  SOUND_EVENT_IDS,
+  DEFAULT_MASTER_VOLUME,
+} from "../sound/soundConfiguration";
 import { applyTheme, DEFAULT_THEME } from "../utils/theme";
 
 const APPDATA_FILE_NAME = "goal-tracker.appdata.enc" as const;
