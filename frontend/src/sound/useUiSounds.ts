@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { getSoundManager } from "../sound/soundManager";
+import { getSoundManager } from "./soundManager";
 
 /**
  * React hook exposing UI sound helpers backed by SoundManager.

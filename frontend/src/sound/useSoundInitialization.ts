@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getSoundManager } from "../sound/soundManager";
+import { getSoundManager } from "./soundManager";
 
 /**
  * Hook for initializing sound manager with saved preferences on app startup

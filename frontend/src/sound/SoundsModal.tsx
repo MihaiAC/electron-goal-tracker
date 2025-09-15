@@ -1,9 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  getSoundManager,
-  canonicalFilenameForEvent,
-} from "../../sound/soundManager";
-import type { SoundEventId } from "../../../../types/shared";
+import { getSoundManager, canonicalFilenameForEvent } from "./soundManager";
+import type { SoundEventId } from "../../../types/shared";
 import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
 import { Pause, Play, X, CheckCircle } from "lucide-react";

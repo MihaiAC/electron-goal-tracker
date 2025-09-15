@@ -5,7 +5,7 @@ import ProgressBar from "./ProgressBar";
 import clsx from "clsx";
 import { Grip } from "lucide-react";
 import type { CSSProperties } from "react";
-import type { ProgressBarData } from "../../../../types/shared";
+import type { ProgressBarData } from "../../../types/shared";
 import ReactConfetti from "react-confetti";
 
 interface SortableProgressBarProps {
@@ -114,7 +114,10 @@ export default function SortableProgressBar({
       onMouseMove={handleMouseMove}
       onClick={handleClick}
     >
-      <div ref={contentRef} className="relative z-10 w-full flex items-center">
+      <div
+        ref={contentRef}
+        className="relative z-10 w-full flex items-center space-x-3"
+      >
         <div
           {...attributes}
           {...listeners}

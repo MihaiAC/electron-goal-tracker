@@ -1,10 +1,10 @@
 import React, { useEffect, useReducer } from "react";
 import SettingsMenu from "./SettingsMenu";
 import SyncModal from "../sync/SyncModal";
-import SoundsModal from "./SoundsModal";
-import ThemeModal from "./ThemeModal";
-import HelpModal from "./HelpModal";
-import type { ProgressBarData } from "../../../../types/shared";
+import SoundsModal from "../sound/SoundsModal";
+import ThemeModal from "../theme/ThemeModal";
+import HelpModal from "../HelpModal";
+import type { ProgressBarData } from "../../../types/shared";
 import { Settings } from "lucide-react";
 
 /**

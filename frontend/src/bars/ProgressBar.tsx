@@ -1,7 +1,7 @@
 import React from "react";
 import clsx from "clsx";
-import type { ProgressBarData } from "../../../../types/shared";
-import { getPatternUrl, DEFAULT_PATTERN_COLOR } from "../../utils/patterns";
+import type { ProgressBarData } from "../../../types/shared";
+import { getPatternUrl, DEFAULT_PATTERN_COLOR } from "../utils/patterns";
 
 interface ProgressBarProps {
   bar: Omit<ProgressBarData, "id">;

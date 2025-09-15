@@ -1,4 +1,4 @@
-import type { OAuthUser } from "../../../../types/shared";
+import type { OAuthUser } from "../../../types/shared";
 import { Button } from "../ui/Button";
 import { Loader2, CheckCircle } from "lucide-react";
 

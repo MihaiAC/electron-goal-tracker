@@ -14,7 +14,7 @@ import {
   SOUND_EVENT_IDS,
   DEFAULT_MASTER_VOLUME,
 } from "../sound/soundConfiguration";
-import { applyTheme, DEFAULT_THEME } from "../utils/theme";
+import { applyTheme, DEFAULT_THEME } from "../theme/theme";
 
 const APPDATA_FILE_NAME = "goal-tracker.appdata.enc" as const;
 /** Unencrypted settings (sounds + theme) file name on Dropbox. */

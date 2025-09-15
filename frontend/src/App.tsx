@@ -5,16 +5,16 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-import WindowControls from "./components/WindowControls";
-import BarSettings from "./components/bars/BarSettings";
-import SortableProgressBar from "./components/bars/SortableProgressBar";
-import { Button } from "./components/ui/Button";
-import SettingsRoot from "./components/settings/SettingsRoot";
-import { SuccessModal } from "./components/ui/SuccessModal";
-import { useProgressBars } from "./hooks/useProgressBars";
-import { useDataPersistence } from "./hooks/useDataPersistence";
-import { useDragAndDrop } from "./hooks/useDragAndDrop";
-import { useSoundInitialization } from "./hooks/useSoundInitialization";
+import WindowControls from "./window/WindowControls";
+import BarSettings from "./bars/BarSettings";
+import SortableProgressBar from "./bars/SortableProgressBar";
+import { Button } from "./ui/Button";
+import SettingsRoot from "./settings/SettingsRoot";
+import { SuccessModal } from "./SuccessModal";
+import { useProgressBars } from "./bars/useProgressBars";
+import { useDataPersistence } from "./storage/useDataPersistence";
+import { useDragAndDrop } from "./ui/useDragAndDrop";
+import { useSoundInitialization } from "./sound/useSoundInitialization";
 
 // TODO: Do a QA pass on the UI/UX.
 function App() {

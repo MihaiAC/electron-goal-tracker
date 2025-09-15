@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ProgressBarData } from "../../../types/shared";
-import { useUiSounds } from "./useUiSounds";
+import { useUiSounds } from "../sound/useUiSounds";
 
 /**
  * Hook for managing progress bars state and operations

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ProgressBarData } from "../../../types/shared";
-import { applyTheme, DEFAULT_THEME } from "../utils/theme";
+import { applyTheme, DEFAULT_THEME } from "../theme/theme";
 
 /**
  * Hook for handling data persistence (loading/saving)
