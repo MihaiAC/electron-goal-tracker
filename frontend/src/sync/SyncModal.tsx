@@ -78,7 +78,7 @@ export default function SyncModal({
         dispatch({
           type: "OPERATION_SUCCESS",
           operation: "sync",
-          message: "Synced successfully",
+          message: "Data successfully backed up.",
         });
       } catch (error) {
         if (isErrorWrapper(error)) {

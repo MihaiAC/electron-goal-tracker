@@ -22,12 +22,12 @@ export default function ConfirmationDialog({
       <div className="space-y-4">
         <h3 className="text-xl font-bold">{title}</h3>
         <p>{message}</p>
-        <div className="flex justify-end space-x-4">
-          <Button onClick={onCancel} variant="secondary">
-            Cancel
-          </Button>
+        <div className="flex justify-center space-x-4">
           <Button onClick={onConfirm} variant="primary">
             Confirm
+          </Button>
+          <Button onClick={onCancel} variant="destructive">
+            Cancel
           </Button>
         </div>
       </div>
