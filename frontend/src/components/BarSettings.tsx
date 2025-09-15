@@ -4,7 +4,7 @@ import { Button } from "./Button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, AlertTriangle } from "lucide-react";
 import { patterns, DEFAULT_PATTERN_COLOR } from "../utils/patterns";
 
 interface BarSettingsProps {
@@ -217,6 +217,8 @@ export default function BarSettings({
   const decrementHoverGlowHexValue = watch("decrementHoverGlowHex");
   const patternColorHexValue = watch("patternColorHex");
 
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+
   return (
     <div className="overlay-dim z-50" onClick={onClose}>
       <div
@@ -228,17 +230,15 @@ export default function BarSettings({
         }}
       >
         <div className="p-6">
-          <h2 className="text-lg font-bold mb-4">Edit Progress Bar</h2>
-          <Button
-            onClick={onClose}
-            variant="close"
-            className="absolute top-3 right-3"
-          >
-            <X className="close-icon" />
-          </Button>
+          <div className="flex border-b-1 border-neutral -mx-6 justify-between">
+            <h2 className="text-lg font-bold mb-4 px-6">Edit Progress Bar</h2>
+            <Button onClick={onClose} variant="close" className="mr-6">
+              <X className="close-icon" />
+            </Button>
+          </div>
 
-          <form noValidate onSubmit={handleSubmit(onSubmit)}>
-            <div className="modal-content space-y-4 pb-2">
+          <form noValidate onSubmit={handleSubmit(onSubmit)} className="pt-4">
+            <div className="modal-content space-y-4 pb-2 px-4">
               <div>
                 <label className="block text-sm font-medium mb-1 break-words">
                   Title
@@ -331,135 +331,131 @@ export default function BarSettings({
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Completed Color
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      {...register("completedColor")}
-                      className="flex-1 h-10"
-                    />
-                    <span className="text-xs opacity-75">
-                      {completedColorValue}
-                    </span>
+              <div>
+                <h3 className="text-sm font-medium mb-2">Colors</h3>
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Completed Color
+                    </label>
+                    <div className="flex flex-col items-center gap-1">
+                      <input
+                        type="color"
+                        {...register("completedColor")}
+                        className="w-full h-10"
+                      />
+                      <span className="text-xs opacity-75 w-full text-center">
+                        {completedColorValue}
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-1 text-xs min-h-4 ${errors.completedColor ? "text-error" : "opacity-0"}`}
+                    >
+                      {errors.completedColor?.message ?? "placeholder"}
+                    </p>
                   </div>
-                  <p
-                    className={`mt-1 text-xs min-h-4 ${errors.completedColor ? "text-error" : "opacity-0"}`}
-                  >
-                    {errors.completedColor?.message ?? "placeholder"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Remaining Color
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      {...register("remainingColor")}
-                      className="flex-1 h-10"
-                    />
-                    <span className="text-xs opacity-75">
-                      {remainingColorValue}
-                    </span>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Remaining Color
+                    </label>
+                    <div className="flex flex-col items-center gap-1">
+                      <input
+                        type="color"
+                        {...register("remainingColor")}
+                        className="w-full h-10"
+                      />
+                      <span className="text-xs opacity-75 w-full text-center">
+                        {remainingColorValue}
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-1 text-xs min-h-4 ${errors.remainingColor ? "text-error" : "opacity-0"}`}
+                    >
+                      {errors.remainingColor?.message ?? "placeholder"}
+                    </p>
                   </div>
-                  <p
-                    className={`mt-1 text-xs min-h-4 ${errors.remainingColor ? "text-error" : "opacity-0"}`}
-                  >
-                    {errors.remainingColor?.message ?? "placeholder"}
-                  </p>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Increment Hover Glow
+                    </label>
+                    <div className="flex flex-col items-center gap-1">
+                      <input
+                        type="color"
+                        {...register("incrementHoverGlowHex")}
+                        className="w-full h-10"
+                      />
+                      <span className="text-xs opacity-75 w-full text-center">
+                        {incrementHoverGlowHexValue}
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-1 text-xs min-h-4 ${errors.incrementHoverGlowHex ? "text-error" : "opacity-0"}`}
+                    >
+                      {errors.incrementHoverGlowHex?.message ?? "placeholder"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Decrement Hover Glow
+                    </label>
+                    <div className="flex flex-col items-center gap-1">
+                      <input
+                        type="color"
+                        {...register("decrementHoverGlowHex")}
+                        className="w-full h-10"
+                      />
+                      <span className="text-xs opacity-75 w-full text-center">
+                        {decrementHoverGlowHexValue}
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-error" : "opacity-0"}`}
+                    >
+                      {errors.decrementHoverGlowHex?.message ?? "placeholder"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Pattern Color
+                    </label>
+                    <div className="flex flex-col items-center gap-1">
+                      <input
+                        type="color"
+                        {...register("patternColorHex")}
+                        className="w-full h-10"
+                        defaultValue={DEFAULT_PATTERN_COLOR}
+                      />
+                      <span className="text-xs opacity-75 w-full text-center">
+                        {patternColorHexValue || DEFAULT_PATTERN_COLOR}
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-1 text-xs min-h-4 ${errors.patternColorHex ? "text-error" : "opacity-0"}`}
+                    >
+                      {errors.patternColorHex?.message ?? "placeholder"}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Increment Hover Glow
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      {...register("incrementHoverGlowHex")}
-                      className="flex-1 h-10"
-                    />
-                    <span className="text-xs opacity-75">
-                      {incrementHoverGlowHexValue}
-                    </span>
-                  </div>
-                  <p
-                    className={`mt-1 text-xs min-h-4 ${errors.incrementHoverGlowHex ? "text-error" : "opacity-0"}`}
-                  >
-                    {errors.incrementHoverGlowHex?.message ?? "placeholder"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Decrement Hover Glow
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      {...register("decrementHoverGlowHex")}
-                      className="flex-1 h-10"
-                    />
-                    <span className="text-xs opacity-75">
-                      {decrementHoverGlowHexValue}
-                    </span>
-                  </div>
-                  <p
-                    className={`mt-1 text-xs min-h-4 ${errors.decrementHoverGlowHex ? "text-error" : "opacity-0"}`}
-                  >
-                    {errors.decrementHoverGlowHex?.message ?? "placeholder"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Pattern
-                  </label>
-                  <select
-                    {...register("patternId")}
-                    className={`w-full p-2 rounded bg-input border-2 ${errors.patternId ? "border-error" : "border-transparent"}`}
-                  >
-                    <option value="">None</option>
-                    {patterns.map((pattern) => (
-                      <option key={pattern.id} value={pattern.id}>
-                        {pattern.name}
-                      </option>
-                    ))}
-                  </select>
-                  <p
-                    className={`mt-1 text-xs min-h-4 ${errors.patternId ? "text-error" : "opacity-0"}`}
-                  >
-                    {errors.patternId?.message ?? "placeholder"}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Pattern Color
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      {...register("patternColorHex")}
-                      className="flex-1 h-10"
-                      defaultValue={DEFAULT_PATTERN_COLOR}
-                    />
-                    <span className="text-xs opacity-75">
-                      {patternColorHexValue || DEFAULT_PATTERN_COLOR}
-                    </span>
-                  </div>
-                  <p
-                    className={`mt-1 text-xs min-h-4 ${errors.patternColorHex ? "text-error" : "opacity-0"}`}
-                  >
-                    {errors.patternColorHex?.message ?? "placeholder"}
-                  </p>
-                </div>
+              <div>
+                <h3 className="text-sm font-medium mb-2">Pattern</h3>
+                <select
+                  {...register("patternId")}
+                  className={`w-full p-2 rounded bg-input border-2 ${errors.patternId ? "border-error" : "border-transparent"}`}
+                >
+                  <option value="">None</option>
+                  {patterns.map((pattern) => (
+                    <option key={pattern.id} value={pattern.id}>
+                      {pattern.name}
+                    </option>
+                  ))}
+                </select>
+                <p
+                  className={`mt-1 text-xs min-h-4 ${errors.patternId ? "text-error" : "opacity-0"}`}
+                >
+                  {errors.patternId?.message ?? "placeholder"}
+                </p>
               </div>
 
               {/* Notes section */}
@@ -513,19 +509,56 @@ export default function BarSettings({
               </div>
             </div>
             <div className="modal-footer flex justify-between">
-              <Button onClick={onDelete} variant="destructive">
+              <Button
+                onClick={() => setShowDeleteConfirmation(true)}
+                variant="destructive"
+              >
                 Delete Bar
               </Button>
 
               <div className="space-x-4">
+                <Button type="submit">Save</Button>
                 <Button onClick={onClose} type="button" variant="secondary">
                   Cancel
                 </Button>
-                <Button type="submit">Save</Button>
               </div>
             </div>
           </form>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirmation && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center p-6">
+            <div className="panel-base w-full max-w-sm p-6 space-y-4">
+              <div className="flex items-center gap-3 text-error">
+                <AlertTriangle className="h-6 w-6" />
+                <h3 className="text-lg font-bold">Delete Progress Bar</h3>
+              </div>
+
+              <p className="text-sm">
+                Are you sure you want to delete this progress bar?
+              </p>
+
+              <div className="flex justify-end space-x-4 pt-2">
+                <Button
+                  onClick={() => setShowDeleteConfirmation(false)}
+                  variant="primary"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowDeleteConfirmation(false);
+                    onDelete();
+                  }}
+                  variant="destructive"
+                >
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
