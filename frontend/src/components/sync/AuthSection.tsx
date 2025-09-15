@@ -1,6 +1,6 @@
 import type { OAuthUser } from "../../../../types/shared";
 import { Button } from "../Button";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 
 interface AuthenticationSectionProps {
   isSyncing: boolean;
@@ -30,19 +30,34 @@ export default function AuthenticationSection({
             <Loader2 className="loader-icon" />
             <span>Waiting for Dropbox sign-in...</span>
           </div>
-          <Button onClick={onCancelSignIn} variant="secondary">
+          <Button onClick={onCancelSignIn} variant="secondary" className="w-24">
             Cancel
           </Button>
         </div>
       ) : isAuthenticated ? (
         <div className="flex items-center justify-between">
-          <p>Signed in{user?.email ? ` as ${user.email}` : ""}</p>
-          <Button onClick={onSignOut} disabled={isSyncing} variant="secondary">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-[#22c55e]" />
+            <p className="font-medium">
+              Signed in{user?.email ? ` as ${user.email}` : ""}
+            </p>
+          </div>
+          <Button
+            onClick={onSignOut}
+            disabled={isSyncing}
+            variant="destructive"
+            className="w-24"
+          >
             Sign out
           </Button>
         </div>
       ) : (
-        <Button onClick={onSignIn} disabled={isSyncing} variant="primary">
+        <Button
+          onClick={onSignIn}
+          disabled={isSyncing}
+          variant="primary"
+          className="w-48"
+        >
           Sign in with Dropbox
         </Button>
       )}

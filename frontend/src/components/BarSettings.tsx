@@ -6,6 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Trash2, AlertTriangle } from "lucide-react";
 import { patterns, DEFAULT_PATTERN_COLOR } from "../utils/patterns";
+import { Separator } from "./Separator";
 
 interface BarSettingsProps {
   bar: ProgressBarData;
@@ -230,12 +231,14 @@ export default function BarSettings({
         }}
       >
         <div className="p-6">
-          <div className="flex border-b-1 border-neutral -mx-6 justify-between">
-            <h2 className="text-lg font-bold mb-4 px-6">Edit Progress Bar</h2>
-            <Button onClick={onClose} variant="close" className="mr-6">
+          <div className="flex justify-between">
+            <h2 className="text-lg font-bold mb-4">Edit Progress Bar</h2>
+            <Button onClick={onClose} variant="close">
               <X className="close-icon" />
             </Button>
           </div>
+
+          <Separator className="-mx-6 mb-4" />
 
           <form noValidate onSubmit={handleSubmit(onSubmit)} className="pt-4">
             <div className="modal-content space-y-4 pb-2 px-4">

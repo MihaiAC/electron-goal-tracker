@@ -17,11 +17,15 @@ export default function SyncSection({
     <section>
       <h3 className="text-lg font-semibold mb-3">Sync Settings</h3>
       <div className="space-y-4">
-        <div className="flex space-x-2">
+        <div className="flex justify-between space-x-4 items-center">
           <Button onClick={onSync} disabled={isSyncing} variant="primary">
             Sync to Dropbox
           </Button>
-          <Button onClick={onRestore} disabled={isSyncing} variant="secondary">
+          <Button
+            onClick={onRestore}
+            disabled={isSyncing}
+            variant="destructive"
+          >
             Restore from Dropbox
           </Button>
         </div>

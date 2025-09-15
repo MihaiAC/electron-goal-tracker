@@ -8,6 +8,7 @@ import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
 import { Pause, Play, X, CheckCircle } from "lucide-react";
 import { Button } from "../Button";
+import { Separator } from "../Separator";
 
 /** UI metadata for supported sound events. */
 const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [
@@ -385,6 +386,8 @@ export default function SoundsModal(props: SoundsModalProps) {
               </Button>
             </div>
 
+            <Separator className="-mx-6 mb-6" />
+
             {errorMessage ? (
               <div className="mb-4 bg-error border border-error text-error p-3 rounded-md">
                 {errorMessage}
@@ -432,9 +435,9 @@ export default function SoundsModal(props: SoundsModalProps) {
                 return (
                   <div
                     key={item.id}
-                    className="border border-white/10 rounded-md p-3"
+                    className="border border-white/10 rounded-md p-4"
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="font-medium">{item.label}</div>
                       <div className="flex items-center gap-2">
                         <button
@@ -445,7 +448,7 @@ export default function SoundsModal(props: SoundsModalProps) {
                             fileRef.length === 0 ||
                             busy
                           }
-                          className="btn btn-primary w-24 gap-1"
+                          className="btn btn-primary h-10 w-24 gap-1"
                         >
                           {isActuallyPlaying ? (
                             <Pause className="h-5 w-5 stroke-2" />
@@ -459,7 +462,7 @@ export default function SoundsModal(props: SoundsModalProps) {
 
                         <label
                           htmlFor={inputId}
-                          className="btn btn-secondary cursor-pointer"
+                          className="btn btn-secondary h-10 cursor-pointer"
                         >
                           Upload .mp3
                         </label>
@@ -507,14 +510,14 @@ export default function SoundsModal(props: SoundsModalProps) {
                       className="w-full"
                     />
 
-                    <div className="mt-1 text-xs flex items-center gap-1">
+                    <div className="mt-3 text-xs flex justify-end">
                       {displayFileName !== null ? (
-                        <>
-                          <CheckCircle className="h-3.5 w-3.5 icon-success" />
-                          <span className="text-muted">{displayFileName}</span>
-                        </>
+                        <span className="text-muted">{displayFileName}</span>
                       ) : (
                         <span className="text-muted">No sound selected</span>
+                      )}
+                      {displayFileName !== null && (
+                        <CheckCircle className="h-3.5 w-3.5 icon-success ml-1" />
                       )}
                     </div>
                   </div>

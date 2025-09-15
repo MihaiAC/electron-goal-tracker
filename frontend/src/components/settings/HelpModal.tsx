@@ -45,6 +45,13 @@ export default function HelpModal(props: HelpModalProps) {
             <li>Open bar settings: right-click anywhere on a bar.</li>
           </ul>
         </div>
+
+        <div className="text-sm text-subtle pt-4">
+          <p>
+            Syncing is either done manually, or automatically when you close the
+            app.
+          </p>
+        </div>
       </div>
     </div>,
     document.body

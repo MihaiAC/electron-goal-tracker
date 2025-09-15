@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import type { ThemeData } from "../../../../types/shared";
 import { applyTheme, DEFAULT_THEME } from "../../utils/theme";
 import { Button } from "../Button";
+import { Separator } from "../Separator";
 
 export interface ThemeModalProps {
   open: boolean;
@@ -131,6 +132,8 @@ export default function ThemeModal(props: ThemeModalProps) {
           </Button>
         </div>
 
+        <Separator className="-mx-6 mb-6" />
+
         {errorMessage ? (
           <div className="mb-4 bg-error border border-error text-error p-3 rounded-md flex-shrink-0">
             {errorMessage}
@@ -203,7 +206,7 @@ export default function ThemeModal(props: ThemeModalProps) {
           <Button
             onClick={handleResetDefaults}
             type="button"
-            variant="secondary"
+            variant="destructive"
             disabled={busy}
           >
             Reset defaults
@@ -211,20 +214,20 @@ export default function ThemeModal(props: ThemeModalProps) {
 
           <div className="space-x-3">
             <Button
-              onClick={() => onClose()}
-              type="button"
-              variant="secondary"
-              disabled={busy}
-            >
-              Close
-            </Button>
-            <Button
               onClick={() => void handleSave()}
               type="button"
               variant="primary"
               disabled={busy}
             >
               Save
+            </Button>
+            <Button
+              onClick={() => onClose()}
+              type="button"
+              variant="secondary"
+              disabled={busy}
+            >
+              Close
             </Button>
           </div>
         </div>

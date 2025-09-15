@@ -16,6 +16,7 @@ import OperationErrorDialog from "../dialogs/OperationErrorDialog";
 import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
 import { X } from "lucide-react";
 import { Button } from "../Button";
+import { Separator } from "../Separator";
 
 interface SyncModalProps {
   open: boolean;
@@ -246,7 +247,7 @@ export default function SyncModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Settings</h2>
+          <h2 className="text-xl font-bold">Cloud sync</h2>
           <Button
             variant="close"
             onClick={canClose ? onClose : undefined}
@@ -255,6 +256,8 @@ export default function SyncModal({
             <X className="close-icon" />
           </Button>
         </div>
+
+        <Separator className="-mx-6 mb-6" />
 
         <div className="space-y-6">
           <AuthenticationSection
@@ -268,24 +271,32 @@ export default function SyncModal({
           />
 
           {isAuthenticated && (
-            <SyncSection
-              isSyncing={isBusy}
-              lastSynced={lastSynced}
-              onSync={() => handleAttemptSync()}
-              onRestore={() => handleAttemptRestore()}
-            />
+            <>
+              <Separator className="-mx-6 my-6" />
+
+              <SyncSection
+                isSyncing={isBusy}
+                lastSynced={lastSynced}
+                onSync={() => handleAttemptSync()}
+                onRestore={() => handleAttemptRestore()}
+              />
+            </>
           )}
 
           {authError && (
-            <div className="bg-error border border-error text-error p-3 rounded-md flex justify-between items-center">
-              <p>Error: {authError}</p>
-              <button
-                onClick={handleDismissError}
-                className="text-sm underline"
-              >
-                Dismiss
-              </button>
-            </div>
+            <>
+              <Separator className="-mx-6 my-6" />
+
+              <div className="bg-error border border-error text-error p-3 rounded-md flex justify-between items-center">
+                <p>Error: {authError}</p>
+                <button
+                  onClick={handleDismissError}
+                  className="text-sm underline"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
