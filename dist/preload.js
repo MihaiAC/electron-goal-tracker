@@ -53,6 +53,18 @@ const api = {
     driveSync: (params) => invokeAndUnwrap("drive-sync", params),
     driveRestore: (params) => invokeAndUnwrap("drive-restore", params),
     driveCancel: () => invokeAndUnwrap("drive-cancel"),
+    autoSyncOnClose: (params) => invokeAndUnwrap("auto-sync-on-close", params),
+    // Auto-sync event handlers - simplified to a single event
+    onStartAutoSync: (callback) => {
+        const handler = (_event, message) => callback(message);
+        electron_1.ipcRenderer.on("start-auto-sync", handler);
+        return () => {
+            electron_1.ipcRenderer.removeListener("start-auto-sync", handler);
+        };
+    },
+    sendAutoSyncComplete: (success) => {
+        electron_1.ipcRenderer.send("auto-sync-complete", success);
+    },
     /** Save a user-uploaded .mp3 sound under a canonical filename for the event. */
     saveSoundForEvent: (eventId, content) => invokeAndUnwrap("sounds-save", eventId, content),
     /** Read raw .mp3 bytes for a given event from disk. */

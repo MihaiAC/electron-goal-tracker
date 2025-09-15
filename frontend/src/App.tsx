@@ -15,8 +15,8 @@ import { useProgressBars } from "./bars/useProgressBars";
 import { useDataPersistence } from "./storage/useDataPersistence";
 import { useDragAndDrop } from "./ui/useDragAndDrop";
 import { useSoundInitialization } from "./sound/useSoundInitialization";
+import { AutoSyncHandler } from "./sync/AutoSyncHandler";
 
-// TODO: Do a QA pass on the UI/UX.
 function App() {
   // Progress bars state and operations
   const {
@@ -108,6 +108,9 @@ function App() {
           onRequestClose={() => setSuccessModalBarId(null)}
         />
       )}
+
+      {/* Auto-sync handler for app close */}
+      <AutoSyncHandler />
     </div>
   );
 }

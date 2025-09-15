@@ -73,6 +73,20 @@ const api: IElectronAPI = {
   driveRestore: (params: DropboxRestoreParameters) =>
     invokeAndUnwrap<Uint8Array>("drive-restore", params),
   driveCancel: () => invokeAndUnwrap<void>("drive-cancel"),
+  autoSyncOnClose: (params: DropboxSyncParameters) =>
+    invokeAndUnwrap<void>("auto-sync-on-close", params),
+
+  // Auto-sync event handlers - simplified to a single event
+  onStartAutoSync: (callback: (message: string) => void) => {
+    const handler = (_event: any, message: string) => callback(message);
+    ipcRenderer.on("start-auto-sync", handler);
+    return () => {
+      ipcRenderer.removeListener("start-auto-sync", handler);
+    };
+  },
+  sendAutoSyncComplete: (success: boolean) => {
+    ipcRenderer.send("auto-sync-complete", success);
+  },
 
   /** Save a user-uploaded .mp3 sound under a canonical filename for the event. */
   saveSoundForEvent: (eventId, content) =>

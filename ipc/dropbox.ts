@@ -26,6 +26,7 @@ import {
  * - drive-sync: Uploads a file to Dropbox (maintains legacy naming for UI compatibility)
  * - drive-restore: Downloads a file from Dropbox
  * - drive-cancel: Cancels ongoing sync/restore operations
+ * - auto-sync-on-close: Performs a sync operation before app close
  */
 
 // Keys for OAuth token storage
@@ -41,6 +42,7 @@ const dropboxStore = new Store<DropboxStoreSchema>();
 // Controllers for managing concurrent operations
 let driveSyncController: AbortController | null = null;
 let driveRestoreController: AbortController | null = null;
+let autoSyncController: AbortController | null = null;
 
 /**
  * Retrieves and decrypts the stored refresh token.
@@ -196,4 +198,42 @@ export function setupDropboxIpc() {
     driveSyncController = null;
     driveRestoreController = null;
   });
+
+  // Auto-sync on app close
+  handleInvoke(
+    "auto-sync-on-close",
+    async (syncParameters: {
+      fileName: string;
+      content: Uint8Array;
+      contentType?: string;
+    }) => {
+      // If we're already in the middle of a sync, don't start another one
+      if (driveSyncController || autoSyncController) {
+        console.info("[cloud] Sync already in progress, skipping auto-sync");
+        return;
+      }
+
+      console.info("[cloud] Starting auto-sync before app close");
+      autoSyncController = new AbortController();
+      const signal = autoSyncController.signal;
+
+      try {
+        const accessToken = await getAccessToken(signal);
+        const { fileName, content } = syncParameters;
+
+        console.info("[cloud] Auto-sync uploading", {
+          fileName,
+          bytes: content?.length ?? 0,
+        });
+
+        await uploadDropboxFile(accessToken, fileName, content, signal);
+        console.info("[cloud] Auto-sync success", { fileName });
+      } catch (error) {
+        console.error("[cloud] Auto-sync failed", { error });
+        // We don't rethrow the error here, as we want to continue with app close
+      } finally {
+        autoSyncController = null;
+      }
+    }
+  );
 }

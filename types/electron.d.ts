@@ -42,6 +42,11 @@ export interface IElectronAPI {
   driveSync: (params: DropboxSyncParameters) => Promise<void>;
   driveRestore: (params: DropboxRestoreParameters) => Promise<Uint8Array>;
   driveCancel: () => Promise<void>;
+  autoSyncOnClose: (params: DropboxSyncParameters) => Promise<void>;
+
+  // Auto-sync event handlers - simplified
+  onStartAutoSync: (callback: (message: string) => void) => () => void;
+  sendAutoSyncComplete: (success: boolean) => void;
 
   // Sound management
   saveSoundForEvent: (
