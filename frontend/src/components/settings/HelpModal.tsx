@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { Button } from "../Button";
+import { Button } from "../ui/Button";
 import { X } from "lucide-react";
 
 export interface HelpModalProps {

@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import React from "react";
 import { Cloud, Volume2, Palette, HelpCircle, X } from "lucide-react";
-import { Button } from "../Button";
+import { Button } from "../ui/Button";
 import "./SettingsMenu.css";
 
 /**

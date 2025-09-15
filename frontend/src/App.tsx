@@ -6,11 +6,11 @@ import {
 } from "@dnd-kit/sortable";
 
 import WindowControls from "./components/WindowControls";
-import BarSettings from "./components/BarSettings";
-import SortableProgressBar from "./components/SortableProgressBar";
-import { Button } from "./components/Button";
+import BarSettings from "./components/bars/BarSettings";
+import SortableProgressBar from "./components/bars/SortableProgressBar";
+import { Button } from "./components/ui/Button";
 import SettingsRoot from "./components/settings/SettingsRoot";
-import { SuccessModal } from "./components/SuccessModal";
+import { SuccessModal } from "./components/ui/SuccessModal";
 import { useProgressBars } from "./hooks/useProgressBars";
 import { useDataPersistence } from "./hooks/useDataPersistence";
 import { useDragAndDrop } from "./hooks/useDragAndDrop";

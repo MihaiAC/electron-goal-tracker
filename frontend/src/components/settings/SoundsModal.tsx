@@ -7,8 +7,8 @@ import type { SoundEventId } from "../../../../types/shared";
 import { Slider } from "../ui/slider";
 import { createPortal } from "react-dom";
 import { Pause, Play, X, CheckCircle } from "lucide-react";
-import { Button } from "../Button";
-import { Separator } from "../Separator";
+import { Button } from "../ui/Button";
+import { Separator } from "../ui/Separator";
 
 /** UI metadata for supported sound events. */
 const EVENT_ITEMS: Array<{ id: SoundEventId; label: string }> = [

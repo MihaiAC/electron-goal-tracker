@@ -15,8 +15,8 @@ import OperationSuccessDialog from "../dialogs/OperationSuccessDialog";
 import OperationErrorDialog from "../dialogs/OperationErrorDialog";
 import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
 import { X } from "lucide-react";
-import { Button } from "../Button";
-import { Separator } from "../Separator";
+import { Button } from "../ui/Button";
+import { Separator } from "../ui/Separator";
 
 interface SyncModalProps {
   open: boolean;

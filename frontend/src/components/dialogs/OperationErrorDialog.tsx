@@ -1,6 +1,6 @@
 import React from "react";
 import Dialog from "./Dialog";
-import { Button } from "../Button";
+import { Button } from "../ui/Button";
 import { CircleX } from "lucide-react";
 
 interface OperationErrorDialogProps {

@@ -5,7 +5,7 @@ import ProgressBar from "./ProgressBar";
 import clsx from "clsx";
 import { Grip } from "lucide-react";
 import type { CSSProperties } from "react";
-import type { ProgressBarData } from "../../../types/shared";
+import type { ProgressBarData } from "../../../../types/shared";
 import ReactConfetti from "react-confetti";
 
 interface SortableProgressBarProps {

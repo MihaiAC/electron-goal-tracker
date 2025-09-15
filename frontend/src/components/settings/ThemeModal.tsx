@@ -3,8 +3,8 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import type { ThemeData } from "../../../../types/shared";
 import { applyTheme, DEFAULT_THEME } from "../../utils/theme";
-import { Button } from "../Button";
-import { Separator } from "../Separator";
+import { Button } from "../ui/Button";
+import { Separator } from "../ui/Separator";
 
 export interface ThemeModalProps {
   open: boolean;

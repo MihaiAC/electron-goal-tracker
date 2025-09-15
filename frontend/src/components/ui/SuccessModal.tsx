@@ -1,8 +1,8 @@
 import Modal from "react-modal";
-import type { ProgressBarData } from "../../../types/shared";
+import type { ProgressBarData } from "../../../../types/shared";
 import { Button } from "./Button";
 import ReactConfetti from "react-confetti";
-import { getSoundManager } from "../sound/soundManager";
+import { getSoundManager } from "../../sound/soundManager";
 import { useEffect, useState } from "react";
 
 // Array of success messages to display randomly

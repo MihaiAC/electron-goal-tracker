@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Minus, Square, Copy, X } from "lucide-react";
-import { Button } from "./Button";
+import { Button } from "./ui/Button";
 import "./WindowControls.css";
 
 export default function WindowControls() {

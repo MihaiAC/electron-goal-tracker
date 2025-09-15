@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import type { ProgressBarData, BarNote } from "../../../types/shared";
-import { Button } from "./Button";
+import type { ProgressBarData, BarNote } from "../../../../types/shared";
+import { Button } from "../ui/Button";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Trash2, AlertTriangle } from "lucide-react";
-import { patterns, DEFAULT_PATTERN_COLOR } from "../utils/patterns";
-import { Separator } from "./Separator";
+import { patterns, DEFAULT_PATTERN_COLOR } from "../../utils/patterns";
+import { Separator } from "../ui/Separator";
 
 interface BarSettingsProps {
   bar: ProgressBarData;

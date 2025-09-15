@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Dialog from "./Dialog";
-import { Button } from "../Button";
+import { Button } from "../ui/Button";
 
 interface PasswordDialogProps {
   isOpen: boolean;
