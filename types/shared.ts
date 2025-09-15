@@ -61,6 +61,10 @@ export type OAuthTokens = {
   access_token?: string;
   refresh_token?: string;
   id_token?: string;
+  /** Token expiration time in seconds */
+  expires_in?: number;
+  /** Token type (usually "bearer") */
+  token_type?: string;
 };
 
 export interface AuthStatus {

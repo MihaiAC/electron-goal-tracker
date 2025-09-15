@@ -1,4 +1,4 @@
-import { safeStorage } from "electron";
+import { safeStorage, ipcMain } from "electron";
 import Store from "electron-store";
 import { handleInvoke } from "./ipc-helpers";
 import { refreshAccessToken } from "../utils/auth";
@@ -44,6 +44,20 @@ let driveSyncController: AbortController | null = null;
 let driveRestoreController: AbortController | null = null;
 let autoSyncController: AbortController | null = null;
 
+// Token cache to avoid unnecessary refreshes
+interface TokenCache {
+  accessToken: string;
+  expiresAt: number;
+}
+let tokenCache: TokenCache | null = null;
+
+// Token expiry buffer (5 minutes in milliseconds)
+const TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000;
+
+// Conservative default token expiration time in seconds (1 hour)
+// This is used only if the API doesn't return an expires_in value
+const CONSERVATIVE_TOKEN_EXPIRY = 60 * 60; // 1 hour in seconds
+
 /**
  * Retrieves and decrypts the stored refresh token.
  * Throws appropriate errors if token is missing or decryption fails.
@@ -71,10 +85,22 @@ function getDecryptedRefreshToken(): string {
 }
 
 /**
- * Obtains a fresh access token by refreshing the stored refresh token.
- * Handles token refresh flow and validates the response.
+ * Obtains an access token, using a cached token if available and not expired.
+ * Only refreshes the token when necessary.
  */
 async function getAccessToken(signal?: AbortSignal): Promise<string> {
+  // Check if we have a valid cached token
+  const now = Date.now();
+  if (
+    tokenCache &&
+    tokenCache.accessToken &&
+    tokenCache.expiresAt > now + TOKEN_EXPIRY_BUFFER
+  ) {
+    console.info("[cloud] Using cached access token");
+    return tokenCache.accessToken;
+  }
+
+  // No valid cached token, need to refresh
   const appKey = process.env.DROPBOX_APP_KEY;
 
   if (!appKey) {
@@ -95,7 +121,36 @@ async function getAccessToken(signal?: AbortSignal): Promise<string> {
     throw new TokenRefreshFailedError("Failed to obtain access token.");
   }
 
-  console.info("[cloud] Access token obtained (not logging token)");
+  // Get the expiration time from the response, or use a conservative default
+  // According to Dropbox docs, expires_in is returned but not guaranteed
+  const tokenResponse = refreshedTokens as any;
+  let expiresInSeconds = CONSERVATIVE_TOKEN_EXPIRY;
+
+  if (
+    typeof tokenResponse.expires_in === "number" &&
+    tokenResponse.expires_in > 0
+  ) {
+    // If API provided a valid expiration time, use it
+    // But cap it at our conservative default to be safe
+    expiresInSeconds = Math.min(
+      tokenResponse.expires_in,
+      CONSERVATIVE_TOKEN_EXPIRY
+    );
+    console.info(
+      `[cloud] Token expires in ${expiresInSeconds} seconds (from API)`
+    );
+  } else {
+    console.info(
+      `[cloud] No expiration provided by API, using conservative default of ${expiresInSeconds} seconds`
+    );
+  }
+
+  tokenCache = {
+    accessToken,
+    expiresAt: now + expiresInSeconds * 1000,
+  };
+
+  console.info("[cloud] Access token obtained and cached (not logging token)");
   return accessToken;
 }
 
@@ -104,6 +159,13 @@ async function getAccessToken(signal?: AbortSignal): Promise<string> {
  * Call this function during app initialization to register the handlers.
  */
 export function setupDropboxIpc() {
+  // Listen for sign-out events to clear the token cache
+  ipcMain.on("auth-sign-out", () => {
+    console.info("[cloud] Sign-out detected, clearing token cache");
+    tokenCache = null;
+    dropboxStore.delete(OAUTH_REFRESH_TOKEN_KEY);
+  });
+
   // Upload a file to Dropbox (sync operation)
   handleInvoke(
     "drive-sync",
