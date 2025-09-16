@@ -81,8 +81,8 @@ function setupContentSecurityPolicy() {
  */
 function createWindow() {
     // Try PNG first (better for Ubuntu), fall back to SVG
-    const pngIconPath = path_1.default.join(__dirname, "../assets/icon.png");
-    const svgIconPath = path_1.default.join(__dirname, "../assets/icon.svg");
+    const pngIconPath = path_1.default.join(__dirname, "/assets/icon.png");
+    const svgIconPath = path_1.default.join(__dirname, "/assets/icon.svg");
     const iconPath = fs_1.default.existsSync(pngIconPath) ? pngIconPath : svgIconPath;
     mainWindow = new electron_1.BrowserWindow({
         title: "Progress Tracker",
