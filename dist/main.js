@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const password_1 = require("./ipc/password");
 const auth_1 = require("./ipc/auth");
@@ -79,13 +80,19 @@ function setupContentSecurityPolicy() {
  * Loads either the Vite dev server or the built frontend based on environment.
  */
 function createWindow() {
+    // Try PNG first (better for Ubuntu), fall back to SVG
+    const pngIconPath = path_1.default.join(__dirname, "/assets/icon.png");
+    const svgIconPath = path_1.default.join(__dirname, "/assets/icon.svg");
+    const iconPath = fs_1.default.existsSync(pngIconPath) ? pngIconPath : svgIconPath;
     mainWindow = new electron_1.BrowserWindow({
+        title: "Progress Tracker",
         width: 1000,
         height: 800,
         minWidth: 900,
         minHeight: 700,
         show: false,
         frame: false,
+        icon: iconPath,
         webPreferences: {
             preload: path_1.default.join(__dirname, "preload.js"),
             contextIsolation: true,
@@ -117,6 +124,7 @@ function createWindow() {
  * Sets up all IPC handlers and creates the main window
  */
 electron_1.app.whenReady().then(() => {
+    electron_1.app.setName("Progress Tracker");
     setupContentSecurityPolicy();
     (0, password_1.setupPasswordIpc)();
     (0, auth_1.setupAuthIpc)();

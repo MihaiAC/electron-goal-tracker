@@ -24,7 +24,7 @@
   }
 
   .titlebar {
-    @apply fixed top-0 left-0 w-full h-8 flex items-center justify-between z-50 bg-background;
+    @apply fixed top-0 left-0 w-full h-10 flex items-center justify-between z-50 bg-background;
     -webkit-app-region: drag;
   }
 
@@ -55,7 +55,7 @@
   }
 
   .app-container {
-    @apply h-screen flex flex-col pt-8 bg-background text-foreground;
+    @apply h-screen flex flex-col pt-10 bg-background text-foreground;
   }
 
   .content-container {

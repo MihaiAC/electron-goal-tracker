@@ -50,8 +50,11 @@ function App() {
 
   return (
     <div className="app-container">
-      <header className="titlebar">
-        <span className="text-xs font-bold text-muted pl-3">Progress Bars</span>
+      <header className="titlebar border-b-1 border-neutral">
+        <div className="flex items-center pl-3">
+          <img src="/app-icon.svg" alt="App icon" className="w-5 h-5 mr-2" />
+          <span className="text-xs font-bold text-muted">Progress Tracker</span>
+        </div>
         <WindowControls />
       </header>
       <div className="content-container">
