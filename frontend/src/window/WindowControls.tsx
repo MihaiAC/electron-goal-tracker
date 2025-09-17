@@ -24,7 +24,7 @@ export default function WindowControls() {
         }}
         className="titlebar-button"
       >
-        <Minus className="window-control-icon" />
+        <Minus className="window-control-icon minus text-foreground" />
         {/* <MinimizeIcon /> */}
       </button>
       <button
@@ -33,9 +33,9 @@ export default function WindowControls() {
         className="titlebar-button"
       >
         {isMaximized ? (
-          <Copy className="window-control-icon" />
+          <Copy className="window-control-icon text-foreground" />
         ) : (
-          <Square className="window-control-icon" />
+          <Square className="window-control-icon text-foreground" />
         )}
       </button>
       <Button variant="close" onClick={() => window.api.close()}>
