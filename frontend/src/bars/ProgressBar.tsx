@@ -47,11 +47,11 @@ export default function ProgressBar({
     : "";
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col space-y-3">
       <h3 className="text-center">{title}</h3>
       <div
         className={clsx(
-          "w-full h-6 rounded-xl overflow-hidden",
+          "w-full h-8 rounded-xl overflow-hidden",
           isComplete && "gold-glow"
         )}
         style={{
@@ -61,7 +61,7 @@ export default function ProgressBar({
       >
         <div
           className={clsx(
-            "h-6 rounded-xl transition-all duration-500",
+            "h-8 rounded-xl transition-all duration-500",
             isComplete && "complete-progress"
           )}
           style={{
