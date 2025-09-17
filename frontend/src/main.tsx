@@ -19,9 +19,9 @@ function render() {
 render();
 
 // Handle HMR updates
-if (import.meta.hot) {
-  import.meta.hot.accept("./App", () => {
-    // Re-render the app when App or its dependencies change
-    render();
-  });
-}
+// if (import.meta.hot) {
+//   import.meta.hot.accept("./App", () => {
+//     // Re-render the app when App or its dependencies change
+//     render();
+//   });
+// }

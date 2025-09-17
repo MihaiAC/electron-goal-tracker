@@ -177,3 +177,6 @@ dist/preload.js.map
 # Ignore sounds folder - we won't back this up at all.
 # We will back up user preferences though.
 **/sounds/*
+
+# Ignore build artifacts.
+/release/*

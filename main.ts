@@ -31,6 +31,12 @@ import { setupWindowControlsIpc } from "./ipc/window-controls";
 
 dotenv.config();
 
+// Ensure GNOME/Wayland maps this process to the correct .desktop entry.
+// Electron reads CHROME_DESKTOP to derive the desktop file ID, which becomes
+// the Wayland app_id (desktop file basename without ".desktop").
+// Must be set before app.whenReady().
+process.env.CHROME_DESKTOP = "progress-tracker.desktop";
+
 // Global reference to window to prevent garbage collection
 let mainWindow: BrowserWindow | null = null;
 
@@ -130,7 +136,7 @@ function createWindow() {
  * Sets up all IPC handlers and creates the main window
  */
 app.whenReady().then(() => {
-  app.setName("Progress Tracker");
+  app.setName("ProgressTracker");
   setupContentSecurityPolicy();
   setupPasswordIpc();
   setupAuthIpc();

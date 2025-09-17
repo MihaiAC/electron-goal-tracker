@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "description": "A desktop app for creating customizable, widget-like progress bars. Built with Electron, React, and Tailwind.",
   "main": "dist/main.js",
+  "desktopName": "progress-tracker.desktop",
   "scripts": {
     "dev": "npm run compile && concurrently -k \"npm:watch\" \"npm:dev:*\"",
     "dev:react": "cd frontend && npm run dev",
     "dev:electron": "wait-on tcp:5173 && VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
     "build": "npm run compile && cd frontend && npm run build",
+    "pack": "npm run build && electron-builder --linux deb",
     "start": "electron .",
     "compile": "tsc",
     "watch": "tsc -w",
@@ -18,7 +20,10 @@
     "url": "git+https://github.com/MihaiAC/electron-progress-bar.git"
   },
   "keywords": [],
-  "author": "",
+  "author": {
+    "name": "MihaiAC",
+    "email": "alexmihai.ciobanu@gmail.com"
+  },
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
@@ -44,5 +49,31 @@
     "dotenv": "^17.2.1",
     "electron-store": "^8.2.0",
     "pkce-challenge": "^5.0.0"
+  },
+  "build": {
+    "appId": "com.mihaiac.progresstracker",
+    "productName": "ProgressTracker",
+    "files": [
+      "dist/main.js",
+      "dist/preload.js",
+      "dist/ipc",
+      "dist/utils",
+      "dist/types",
+      "frontend/dist/**/*",
+      "assets/icon.png"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "linux": {
+      "target": "deb",
+      "category": "Utility",
+      "icon": "assets/icons",
+      "executableName": "progress-tracker",
+      "desktop": {
+        "StartupWMClass": "ProgressTracker"
+      }
+    }
   }
 }

@@ -33,6 +33,11 @@ const window_controls_1 = require("./ipc/window-controls");
  * and do not affect application functionality.
  */
 dotenv_1.default.config();
+// Ensure GNOME/Wayland maps this process to the correct .desktop entry.
+// Electron reads CHROME_DESKTOP to derive the desktop file ID, which becomes
+// the Wayland app_id (desktop file basename without ".desktop").
+// Must be set before app.whenReady().
+process.env.CHROME_DESKTOP = "progress-tracker.desktop";
 // Global reference to window to prevent garbage collection
 let mainWindow = null;
 /**
@@ -81,8 +86,8 @@ function setupContentSecurityPolicy() {
  */
 function createWindow() {
     // Try PNG first (better for Ubuntu), fall back to SVG
-    const pngIconPath = path_1.default.join(__dirname, "/assets/icon.png");
-    const svgIconPath = path_1.default.join(__dirname, "/assets/icon.svg");
+    const pngIconPath = path_1.default.join(__dirname, "../assets/icon.png");
+    const svgIconPath = path_1.default.join(__dirname, "../assets/icon.svg");
     const iconPath = fs_1.default.existsSync(pngIconPath) ? pngIconPath : svgIconPath;
     mainWindow = new electron_1.BrowserWindow({
         title: "Progress Tracker",
@@ -124,7 +129,7 @@ function createWindow() {
  * Sets up all IPC handlers and creates the main window
  */
 electron_1.app.whenReady().then(() => {
-    electron_1.app.setName("Progress Tracker");
+    electron_1.app.setName("ProgressTracker");
     setupContentSecurityPolicy();
     (0, password_1.setupPasswordIpc)();
     (0, auth_1.setupAuthIpc)();

@@ -23,6 +23,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
+    /* Path alias for src */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
     /* Custom types */
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
