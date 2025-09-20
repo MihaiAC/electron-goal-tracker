@@ -2,7 +2,36 @@ import {
   CanceledError,
   NetworkError,
   DropboxApiError,
+  OAuthConfigError,
 } from "./main-process-errors";
+
+/**
+ * Built-in Dropbox app key fallback for production builds where .env is not available.
+ * This is a public identifier, safe to embed in the client. Prefer overriding via
+ * the DROPBOX_APP_KEY environment variable in development.
+ */
+const BUILT_IN_DROPBOX_APP_KEY = "infsw3y8bz1yxkx";
+
+/**
+ * Resolves the Dropbox app key from environment variable or built-in fallback.
+ * Throws OAuthConfigError if no valid key is available.
+ */
+export function resolveDropboxAppKey(): string {
+  const appKeyFromEnvironment = process.env.DROPBOX_APP_KEY;
+  const resolvedDropboxAppKey =
+    typeof appKeyFromEnvironment === "string" &&
+    appKeyFromEnvironment.length > 0
+      ? appKeyFromEnvironment
+      : BUILT_IN_DROPBOX_APP_KEY;
+
+  if (!resolvedDropboxAppKey || resolvedDropboxAppKey.length === 0) {
+    throw new OAuthConfigError(
+      "Dropbox app key is missing. Set the DROPBOX_APP_KEY environment variable or define BUILT_IN_DROPBOX_APP_KEY."
+    );
+  }
+
+  return resolvedDropboxAppKey;
+}
 
 /**
  * Check if a file exists in Dropbox app folder.

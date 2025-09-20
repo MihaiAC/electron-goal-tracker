@@ -10,6 +10,7 @@ import {
   exchangeAuthorizationCodeForTokens,
   getDropboxUserInfo,
 } from "../utils/auth";
+import { resolveDropboxAppKey } from "../utils/dropbox";
 import {
   CryptoError,
   OAuthConfigError,
@@ -54,18 +55,14 @@ let authController: AbortController | null = null;
  * Ensures environment variables and safe storage are available.
  */
 function ensureOAuthPreconditions(): { appKey: string } {
-  const appKey = process.env.DROPBOX_APP_KEY;
-
-  if (!appKey) {
-    throw new OAuthConfigError("Missing DROPBOX_APP_KEY in .env");
-  }
+  const resolvedDropboxAppKey = resolveDropboxAppKey();
 
   if (!safeStorage.isEncryptionAvailable()) {
     throw new CryptoError("Safe storage is not available on this system.");
   }
 
-  console.info("[auth] Preconditions OK (env and safeStorage)");
-  return { appKey };
+  console.info("[auth] Preconditions OK (resolved app key and safeStorage)");
+  return { appKey: resolvedDropboxAppKey };
 }
 
 /**

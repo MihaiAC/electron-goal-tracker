@@ -6,6 +6,7 @@ import {
   dropboxFileExists,
   uploadDropboxFile,
   downloadDropboxFile,
+  resolveDropboxAppKey,
 } from "../utils/dropbox";
 import {
   CryptoError,
@@ -101,17 +102,13 @@ async function getAccessToken(signal?: AbortSignal): Promise<string> {
   }
 
   // No valid cached token, need to refresh
-  const appKey = process.env.DROPBOX_APP_KEY;
-
-  if (!appKey) {
-    throw new OAuthConfigError("Missing DROPBOX_APP_KEY in .env");
-  }
+  const resolvedDropboxAppKey = resolveDropboxAppKey();
 
   console.info("[cloud] Refreshing access token...");
   const refreshToken = getDecryptedRefreshToken();
 
   const refreshedTokens = await refreshAccessToken(
-    appKey,
+    resolvedDropboxAppKey,
     refreshToken,
     signal
   );
