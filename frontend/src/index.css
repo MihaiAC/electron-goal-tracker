@@ -167,13 +167,13 @@
   .bar-hover-right {
     /* Fixed opacity ~60% via color-mix; default lime-500 if var not set */
     box-shadow: 0 0 20px 5px
-      color-mix(in srgb, var(--bar-increment-hover, #84cc16) 60%, transparent);
+      color-mix(in srgb, var(--bar-increment-hover, #84cc16) 60%, transparent) !important;
     transition: box-shadow 100ms linear;
   }
   .bar-hover-left {
     /* Fixed opacity ~60% via color-mix; default orange-600 if var not set */
     box-shadow: 0 0 20px 5px
-      color-mix(in srgb, var(--bar-decrement-hover, #ea580c) 60%, transparent);
+      color-mix(in srgb, var(--bar-decrement-hover, #ea580c) 60%, transparent) !important;
     transition: box-shadow 100ms linear;
   }
 
