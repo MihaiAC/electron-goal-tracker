@@ -32,7 +32,7 @@ export default function SyncSection({
 
         <p className="text-sm text-muted">
           Last synced:{" "}
-          {lastSynced ? new Date(lastSynced).toLocaleString() : "Never"}
+          {lastSynced ? new Date(lastSynced).toLocaleString("en-GB") : "Never"}
         </p>
       </div>
     </section>
