@@ -5,10 +5,6 @@ import { getPatternUrl, DEFAULT_PATTERN_COLOR } from "../utils/patterns";
 
 interface ProgressBarProps {
   bar: Omit<ProgressBarData, "id">;
-  onRightClick: (e: React.MouseEvent) => void;
-  onIncrement: () => void;
-  onDecrement: () => void;
-  onCustomValueChange?: (value: number) => void;
 }
 
 export default function ProgressBar({
@@ -22,24 +18,9 @@ export default function ProgressBar({
     patternId,
     patternColorHex,
   },
-  onRightClick,
-  onIncrement,
-  onDecrement,
-  onCustomValueChange,
 }: ProgressBarProps) {
   const progress = Math.max(0, Math.min(100, (100 * current) / max));
   const isComplete = current >= max;
-
-  const handleClick = (e: React.MouseEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const xCoord = e.clientX - rect.left;
-
-    if (xCoord > rect.width / 2) {
-      onIncrement();
-    } else {
-      onDecrement();
-    }
-  };
 
   // Get pattern URL if a pattern is specified
   const patternUrl = patternId
@@ -57,7 +38,6 @@ export default function ProgressBar({
         style={{
           backgroundColor: remainingColor,
         }}
-        onClick={handleClick}
       >
         <div
           className={clsx(

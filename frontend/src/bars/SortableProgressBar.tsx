@@ -71,10 +71,15 @@ export default function SortableProgressBar({
     setHoverSide(xCoord > rect.width / 2 ? "right" : "left");
   };
 
-  const handleClick = () => {
-    if (hoverSide === "right") {
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (!contentRef.current) {
+      return;
+    }
+    const rect = contentRef.current.getBoundingClientRect();
+    const xCoord = e.clientX - rect.left;
+    if (xCoord > rect.width / 2) {
       onIncrement();
-    } else if (hoverSide === "left") {
+    } else {
       onDecrement();
     }
   };
@@ -112,7 +117,7 @@ export default function SortableProgressBar({
         setHoverSide(null);
       }}
       onMouseMove={handleMouseMove}
-      onClick={handleClick}
+      onClick={handleContainerClick}
     >
       <div
         ref={contentRef}
@@ -127,12 +132,7 @@ export default function SortableProgressBar({
         </div>
 
         <div className="flex-1 pr-2">
-          <ProgressBar
-            bar={bar}
-            onRightClick={onContextMenu}
-            onIncrement={onIncrement}
-            onDecrement={onDecrement}
-          />
+          <ProgressBar bar={bar} />
         </div>
       </div>
     </div>
