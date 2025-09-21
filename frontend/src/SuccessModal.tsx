@@ -86,7 +86,6 @@ export function SuccessModal({
         <h3 className="text-lg">
           {barData.max} / {barData.max}
         </h3>
-        <h4 className="font-thin">Placeholder for a short stats sentence</h4>
 
         <Button onClick={handleRequestClose} variant="primary">
           {successMessage}
