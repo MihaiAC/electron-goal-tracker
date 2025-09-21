@@ -95,12 +95,12 @@
     position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 45;
+    z-index: 60; /* above modal content (z-50) */
   }
 
   .overlay-dim {
     @apply fixed inset-0 flex items-center justify-center p-4;
-    background: color-mix(in srgb, var(--background) 55%, black);
+    background: color-mix(in srgb, var(--background) 55%, transparent);
   }
 
   .panel-base {
